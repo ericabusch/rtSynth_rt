@@ -8,6 +8,7 @@ import logging
 import threading
 import websocket
 from queue import Queue, Empty
+import pandas as pd
 # import project modules
 # Add base project path (two directories up)
 currPath = os.path.dirname(os.path.realpath(__file__))
@@ -27,9 +28,25 @@ class WsFeedbackReceiver:
     needLogin = True
     shouldExit = False
     validationError = None
+    recvThread = None
     msgQueue = Queue()
     # Synchronizing across threads
     clientLock = threading.Lock()
+
+    @staticmethod
+    def startReceiverThread(serverAddr, retryInterval=10,
+                            username=None, password=None,
+                            testMode=False):
+        WsFeedbackReceiver.recvThread = \
+            threading.Thread(name='recvThread',
+                             target=WsFeedbackReceiver.runReceiver,
+                             args=(serverAddr,),
+                             kwargs={'retryInterval': retryInterval,
+                                     'username': username,
+                                     'password': password,
+                                     'testMode': testMode})
+        WsFeedbackReceiver.recvThread.setDaemon(True)
+        WsFeedbackReceiver.recvThread.start()
 
     @staticmethod
     def runReceiver(serverAddr, retryInterval=10,
@@ -155,6 +172,13 @@ if __name__ == "__main__":
                         help="rtcloud website password")
     parser.add_argument('--test', default=False, action='store_true',
                         help='Use unsecure non-encrypted connection')
+    parser.add_argument('-sub', action="store", dest="sub", default="pilot_sub001",
+                        help="the name of subject as subxxx")
+    parser.add_argument('-ses', action="store", dest="ses", default="2",
+                        help="This is the sess number of the current day, e.g. in day2 sess is 2")
+    parser.add_argument('-run', action="store", dest="run", default="01",
+                        help="which feedback run is this?")
+    
     args = parser.parse_args()
 
     if not re.match(r'.*:\d+', args.server):
@@ -163,6 +187,21 @@ if __name__ == "__main__":
         sys.exit()
 
     addr, port = args.server.split(':')
+    sub = args.sub
+    ses = args.ses
+    run = args.run
+    if 'watts' in os.getcwd():
+        main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+    else:
+        main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
+
+    parameterWriteFile = main_dir+f"subjects/{sub}/ses{ses}_feedbackParameter/run_{run}.csv"
+
+    if not os.path.isdir(f"{main_dir}subjects/{sub}"):
+        os.mkdir(f"{main_dir}subjects/{sub}")
+    if not os.path.isdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/"):
+        os.mkdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/")
+
     # Check if the ssl certificate is valid for this server address
     if checkSSLCertAltName(certFile, addr) is False:
         # Addr not listed in sslCert, recreate ssl Cert
@@ -170,27 +209,30 @@ if __name__ == "__main__":
 
     print("Server: {}, interval {}".format(args.server, args.interval))
 
-    recvThread = threading.Thread(name='recvThread', target=WsFeedbackReceiver.runReceiver,
-                                  args=(args.server,),
-                                  kwargs={'retryInterval': args.interval,
-                                          'username': args.username,
-                                          'password': args.password,
-                                          'testMode': args.test})
-    recvThread.setDaemon(True)
-    recvThread.start()
+    WsFeedbackReceiver.startReceiverThread(args.server,
+                                           retryInterval=args.interval,
+                                           username=args.username,
+                                           password=args.password,
+                                           testMode=args.test)
 
-    # Above thread is equivalent to calling:
-    # WsFeedbackReceiver.runReceiver(args.server,
-    #                                retryInterval=args.interval,
-    #                                username=args.username,
-    #                                password=args.password,
-    #                                testMode=args.test)
+    parameters = pd.DataFrame(columns=['runId','trId','value','timestamp'])
 
     while True:
         feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)
+        
+        runId=feedbackMsg.get('runId')
+        trId=feedbackMsg.get('trId')
+        value=feedbackMsg.get('value')
+        timestamp=feedbackMsg.get('timestamp')
+        # parameterFileName=f"{parameterWriteFolder}{runId}"
         print("Dequeue run: {}, tr: {}, value: {}, timestamp: {}".
-              format(feedbackMsg.get('runId'),
-                     feedbackMsg.get('trId'),
-                     feedbackMsg.get('value'),
-                     feedbackMsg.get('timestamp')))
-    
+              format(runId,trId,value,timestamp))
+
+        parameters = parameters.append({'runId':runId,
+                            'trId':trId,
+                            'value':value,
+                            'timestamp':timestamp},
+                            ignore_index=True)
+        print('parameters=',parameters)
+        parameters.to_csv(parameterWriteFile)
+

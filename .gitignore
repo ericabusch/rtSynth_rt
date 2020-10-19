@@ -102,3 +102,26 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+
+# customized
+*.DS_Store
+*.png
+*.txt
+*.log
+*.psydat
+*.npy
+*.pyc
+*.zip
+*.nii
+*.nii.gz
+*.dicom
+*.DICOM
+*.json
+*.gif
+*.xml
+*.dcm
+*checkpoint.ipynb
+*.joblib
+*.pkl
+

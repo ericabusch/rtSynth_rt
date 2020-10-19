@@ -98,7 +98,7 @@ class TestServers:
 
     def test_validateRequestedFile(self):
         print("test_validateRequestedFile")
-        res = WsFileWatcher.validateRequestedFile('/tmp/data', None, 'test')
+        res = WsFileWatcher.validateRequestedFile('/tmp/data', None, 'test', '/Users/kailong/Desktop/rtEnv/rt-cloud/projects/sample/dicomDir/20190219.0219191_faceMatching.0219191_faceMatching')
         assert res is True
 
         res = WsFileWatcher.validateRequestedFile('/tmp/data', 'file.dcm', 'test')

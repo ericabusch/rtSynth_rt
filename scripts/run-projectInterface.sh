@@ -53,7 +53,7 @@ fi
 # activate rtcloud conda env if needed
 if [ -z $CONDA_DEFAULT_ENV ] || [ $CONDA_DEFAULT_ENV != "rtcloud" ]; then
   source ~/.bashrc
-  conda activate rtcloud
+  conda activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 fi
 
 python projects/$PROJECT/projectMain.py $R_PARAM $CFG_PARAM $TEST_PARAM

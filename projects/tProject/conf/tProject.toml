@@ -1,0 +1,25 @@
+# sample.toml -> tProject.toml
+# Config file for sample.py project
+title = 'Sample Project'
+sessionId = "20180310T123000"
+
+
+subjectNum = 101
+subjectDay = 1
+sessionNum = 1
+runNum = [1]
+scanNum = [1]
+
+## important variables about the dicom files
+dicomNamePattern = "001_0000{}_000{}.dcm"  
+minExpectedDicomSize = 300000
+
+## design myself for feedback parameters.
+realtimeFolder_subjectName="rtSynth_pilot001_2"
+subjectName = "pilot_sub001"
+#YYYYMMDD="20201009"
+YYYYMMDD="20201019"
+session=2
+whichRun=1
+whichScan=3
+num_total_TRs=150
