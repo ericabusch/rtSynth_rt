@@ -1,0 +1,24 @@
+# sample.toml -> tProject.toml
+# Config file for sample.py project
+title = 'Sample Project'
+sessionId = "20180310T123000"
+
+# subjectName = "0219191_faceMatching"
+# subjectName = "0301181_sample"
+subjectName = "saCPM_sub01_day2"
+
+# datestr = "20190219"
+datestr = "20190926"
+
+subjectNum = 101
+subjectDay = 1
+sessionNum = 1
+runNum = [1]
+scanNum = [1]
+
+## important variables about the dicom files
+dicomNamePattern = "001_0000{}_000{}.dcm" 
+# "001_0000{scanNum}_000{this_TR}.dcm" 
+minExpectedDicomSize = 300000
+
+
