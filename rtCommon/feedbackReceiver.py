@@ -196,7 +196,7 @@ if __name__ == "__main__":
         main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
 
     parameterWriteFile = main_dir+f"subjects/{sub}/ses{ses}_feedbackParameter/run_{run}.csv"
-
+    print('parameterWriteFile=',parameterWriteFile)
     if not os.path.isdir(f"{main_dir}subjects/{sub}"):
         os.mkdir(f"{main_dir}subjects/{sub}")
     if not os.path.isdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/"):
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                                            password=args.password,
                                            testMode=args.test)
 
-    parameters = pd.DataFrame(columns=['runId','trId','value','timestamp'])
+    parameters = pd.DataFrame(columns=['runId','trId','value','timestamp','writeTime'])
 
     while True:
         feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)
@@ -231,7 +231,8 @@ if __name__ == "__main__":
         parameters = parameters.append({'runId':runId,
                             'trId':trId,
                             'value':value,
-                            'timestamp':timestamp},
+                            'timestamp':timestamp,
+                            'writeTime':time.time()}, #time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(1347517370))
                             ignore_index=True)
         print('parameters=',parameters)
         parameters.to_csv(parameterWriteFile)

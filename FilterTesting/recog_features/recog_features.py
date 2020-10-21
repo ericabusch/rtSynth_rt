@@ -14,7 +14,33 @@ The "input" of this code is
     where is the behavior data? at what time is each image presented? That would be the regressor file
 '''
 
-def filtering(timeseries=None,filterType='highPassRealTime'): 
+import pandas as pd
+import nibabel as nib
+from glob import glob
+import os
+from subprocess import call
+import sys
+import numpy as np    
+import time
+# sys.path.append('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten')
+import ray
+from pykalman import KalmanFilter
+
+ray.init()
+@ray.remote(num_cpus = 0.5)
+def kalman_filter_voxel(measurement):
+    kf = KalmanFilter(n_dim_state = measurement.shape[1], n_dim_obs = measurement.shape[1], 
+                          observation_matrices = np.eye(measurement.shape[1]),
+                          observation_covariance = np.eye(measurement.shape[1]),
+                          observation_offsets = np.zeros(measurement.shape[1]))
+    kf = kf.em(measurement, n_iter=5,
+                  em_vars = ['transition_matrices', 'transition_offsets', 'transition_covariance',
+                            'observation_covariance', 'initial_state_mean', 'initial_state_covariance']
+                  )
+    (filtered_state_means, filtered_state_covariances) = kf.filter(measurement)
+    return filtered_state_means.reshape(-1)
+    
+def filtering(timeseries=None, filterType='highPassRealTime'): 
     '''
     filterType can be 
         highPassRealTime 
@@ -25,9 +51,6 @@ def filtering(timeseries=None,filterType='highPassRealTime'):
         KalmanFilter_smooth
         noFilter
     '''
-    import numpy as np    
-    import sys
-    sys.path.append('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten')
     timeseries=timeseries.astype(np.float)
     oldShape=timeseries.shape
     timeseries=timeseries.reshape(timeseries.shape[0],-1)
@@ -49,20 +72,43 @@ def filtering(timeseries=None,filterType='highPassRealTime'):
             return np.transpose(highpass(np.transpose(A_matrix), cutoff/(2*TR), False))
 
         filtered_timeseries = highPassBetweenRuns(timeseries,1.5,56)
-    elif filterType == 'UnscentedKalmanFilter_filter' :
-        from pykalman import UnscentedKalmanFilter
-        ukf = UnscentedKalmanFilter(lambda x, w: x + np.sin(w), lambda x, v: x + v, observation_covariance=0.1)
+    elif filterType == 'KalmanFilter_filter_analyze_voxel_by_voxel':
         filtered_timeseries=np.zeros(timeseries.shape)
+        print("time series shape", timeseries.shape)
+        futures = []
         for curr_voxel in range(timeseries.shape[1]):
-            (filtered_timeseries_state_means, filtered_timeseries_state_covariances) = ukf.filter(timeseries[:,curr_voxel])
-            filtered_timeseries[:,curr_voxel] = filtered_timeseries_state_means.reshape(-1)
-    elif filterType == 'UnscentedKalmanFilter_smooth':
-        from pykalman import UnscentedKalmanFilter
-        ukf = UnscentedKalmanFilter(lambda x, w: x + np.sin(w), lambda x, v: x + v, observation_covariance=0.1)
-        filtered_timeseries=np.zeros(timeseries.shape)
-        for curr_voxel in range(timeseries.shape[1]):
-            (smoothed_state_means, smoothed_state_covariances) = ukf.smooth(data)
-            filtered_timeseries[:,curr_voxel] = smoothed_state_means.reshape(-1)
+            measurements = np.asarray(timeseries[:,curr_voxel].reshape(-1, 1)) 
+            futures.append(kalman_filter_voxel.remote(measurements))
+        results = ray.get(futures)
+        filtered_timeseries = np.array(results).T # transpose because results are organized by [voxel, time] 
+        print("filtered_timeseries=", filtered_timeseries)
+    # elif filterType == 'UnscentedKalmanFilter_filter' :
+    #     from pykalman import UnscentedKalmanFilter
+    #     ukf = UnscentedKalmanFilter(lambda x, w: x + np.sin(w), lambda x, v: x + v, observation_covariance=0.1)
+    #     filtered_timeseries=np.zeros(timeseries.shape)
+    #     for curr_voxel in range(timeseries.shape[1]):
+    #         (filtered_timeseries_state_means, filtered_timeseries_state_covariances) = ukf.filter(timeseries[:,curr_voxel])
+    #         filtered_timeseries[:,curr_voxel] = filtered_timeseries_state_means.reshape(-1)
+    # elif filterType == 'UnscentedKalmanFilter_smooth':
+    #     from pykalman import UnscentedKalmanFilter
+    #     ukf = UnscentedKalmanFilter(lambda x, w: x + np.sin(w), lambda x, v: x + v, observation_covariance=0.1)
+    #     filtered_timeseries=np.zeros(timeseries.shape)
+    #     for curr_voxel in range(timeseries.shape[1]):
+    #         (smoothed_state_means, smoothed_state_covariances) = ukf.smooth(data)
+    #         filtered_timeseries[:,curr_voxel] = smoothed_state_means.reshape(-1)
+    # elif filterType == 'KalmanFilter_filter_analyze_all_voxels': # KALMAN FILTER ALL VOXELS NOT WORKING
+    #     print('oldShape=',oldShape)
+    #     kf = KalmanFilter(n_dim_state = oldShape[1], n_dim_obs = oldShape[1], 
+    #                       observation_matrices = np.eye(oldShape[1]),
+    #                       observation_covariance = np.eye(oldShape[1]),
+    #                       observation_offsets = np.zeros(oldShape[1]))
+    #     print("time series shape", timeseries.shape)
+    #     kf = kf.em(timeseries, run, n_iter=5,
+    #               em_vars = ['transition_matrices', 'transition_offsets', 'transition_covariance',
+    #                         'observation_covariance', 'initial_state_mean', 'initial_state_covariance']
+    #               )
+    #     (filtered_state_means, filtered_state_covariances) = kf.filter(measurements)
+    #     filtered_timeseries[:,curr_voxel] = filtered_state_means.reshape(-1)
     # elif filterType == 'KalmanFilter_filter':
     #     from pykalman import KalmanFilter
     #     kf = KalmanFilter(transition_matrices = None, observation_matrices = None)
@@ -72,26 +118,24 @@ def filtering(timeseries=None,filterType='highPassRealTime'):
     #         kf = kf.em(measurements, n_iter=5)
     #         (filtered_state_means, filtered_state_covariances) = kf.filter(measurements)
     #         filtered_timeseries[:,curr_voxel] = filtered_state_means.reshape(-1)
-    elif filterType == 'KalmanFilter_filter':
-        from pykalman import KalmanFilter
-        kf = KalmanFilter(n_dim_obs = timeseries.shape[1], n_dim_state = timeseries.shape[1], 
-                              observation_matrices = sparse.eye(timeseries.shape[1]), 
-                              observation_offsets = np.zeros(timeseries.shape[1]),
-                              observation_covariance = sparse.eye(timeseries.shape[1]))
-        kf = kf.em(timeseries, run, n_iter=10)
-        (filtered_state_means, filtered_state_covariances) = kf.filter(timeseries)
-        filtered_timeseries = filtered_state_means.reshape(-1)
-
-
-    elif filterType == 'KalmanFilter_smooth':
-        from pykalman import KalmanFilter
-        kf = KalmanFilter(transition_matrices = None, observation_matrices = None)
-        filtered_timeseries=np.zeros(timeseries.shape)
-        for curr_voxel in range(timeseries.shape[1]):
-            measurements = np.asarray(timeseries[:,curr_voxel]) 
-            kf = kf.em(measurements, n_iter=5)
-            (smoothed_state_means, smoothed_state_covariances) = kf.smooth(measurements)
-            filtered_timeseries[:,curr_voxel] = smoothed_state_means.reshape(-1)
+    # elif filterType == 'KalmanFilter_filter':
+    #     from pykalman import KalmanFilter
+    #     kf = KalmanFilter(n_dim_obs = timeseries.shape[1], n_dim_state = timeseries.shape[1], 
+    #                           observation_matrices = sparse.eye(timeseries.shape[1]), 
+    #                           observation_offsets = np.zeros(timeseries.shape[1]),
+    #                           observation_covariance = sparse.eye(timeseries.shape[1]))
+    #     kf = kf.em(timeseries, run, n_iter=10)
+    #     (filtered_state_means, filtered_state_covariances) = kf.filter(timeseries)
+    #     filtered_timeseries = filtered_state_means.reshape(-1)
+    # elif filterType == 'KalmanFilter_smooth':
+    #     from pykalman import KalmanFilter
+    #     kf = KalmanFilter(transition_matrices = None, observation_matrices = None)
+    #     filtered_timeseries=np.zeros(timeseries.shape)
+    #     for curr_voxel in range(timeseries.shape[1]):
+    #         measurements = np.asarray(timeseries[:,curr_voxel]) 
+    #         kf = kf.em(measurements, n_iter=5)
+    #         (smoothed_state_means, smoothed_state_covariances) = kf.smooth(measurements)
+    #         filtered_timeseries[:,curr_voxel] = smoothed_state_means.reshape(-1)
     elif filterType == 'noFilter':
         filtered_timeseries = timeseries
     else:
@@ -102,11 +146,6 @@ def filtering(timeseries=None,filterType='highPassRealTime'):
 
 
 def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
-    import os
-    import sys
-    import numpy as np
-    import pandas as pd
-    import nibabel as nib
 
     os.chdir('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten/')
     subject = subject.split('_')[0]
@@ -152,7 +191,12 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
             timeseries = nib.load(filt_func.format(subject, subject, run))
             timeseries = timeseries.get_data().transpose((3, 0, 1, 2))
             
-            timeseries = filtering(timeseries=timeseries,filterType=filterType)
+            A=time.time()
+            timeseries = filtering(timeseries=timeseries, filterType=filterType)
+            B=time.time()
+            print('timeseries.shape=',timeseries.shape)
+            print(f'filtering time passed={B-A} s for run {run} ')
+
             # use information in regressor/run_x folder to make hasImage vector
             # associated TR is just the hasImage index, converted to a float
             Onsets = [0]*240
@@ -190,10 +234,6 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
             x.columns = ['subj','label','run_num', 'TR_num']
             x.to_csv('{}/metadata_{}_{}_{}.csv'.format(out_dir, subject, roiname, phase))
 
-from glob import glob
-import os
-from subprocess import call
-import sys
 
 #installing rtAtten is very simple, just `conda env create -f environment.yml ; source activate rtAtten ; python setup.py install`
 working_dir='/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten/' 
@@ -211,25 +251,30 @@ if not os.path.isdir(f"{working_dir}complete/"):
     os.mkdir(f"{working_dir}complete/")
 if not os.path.exists(complete):
     recog_features(subject=sub, filterType = filterType)
-    call(f"touch {complete}",shell=True)
+    call(f"touch {complete}", shell=True)
 
 
 # ## - to run all the subjects
 # # bash to submit jobs, in the folder of recognition code
 
+
 # # recog_features_child.sh
 # #!/bin/bash
 # #SBATCH --partition=short,scavenge
-# #SBATCH --job-name rt_sketch
+# #SBATCH --nodes=1
+# #SBATCH --ntasks-per-node=1
+# #SBATCH --cpus-per-task=4
 # #SBATCH --time=3:00:00
-# #SBATCH --output=logs/rt_sketch-%j.out
-# #SBATCH --mem=50g
+# #SBATCH --job-name=recog_features
+# #SBATCH --output=logs/recog_features-%j.out
+# #SBATCH --mem-per-cpu=30G
 # #SBATCH --mail-type=FAIL
+# mkdir -p logs/
 # module load miniconda
 # source activate /gpfs/milgram/project/turk-browne/kp578/conda_envs/rtAtten
 # sub=$1
 # filters=$2
-# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/recog_features/recog_features.py $sub $filters
+# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/recog_features/recog_features.py $sub $filters
 
 
 # # recog_features_parent.py
@@ -244,9 +289,10 @@ if not os.path.exists(complete):
 # #'UnscentedKalmanFilter_smooth', #takes too long
 # # 'KalmanFilter_filter', #takes too long if done seperately for each voxel, takes too much memory if processing everything at the same time.
 # # 'KalmanFilter_smooth',
-# 'noFilter',
-# 'highPassRealTime',
-# 'highPassBetweenRuns' 
+# # 'noFilter',
+# # 'highPassRealTime',
+# # 'highPassBetweenRuns',
+# 'KalmanFilter_filter_analyze_voxel_by_voxel'
 # ]
 # for sub in subjects:
 #     for curr_filter in filters:
