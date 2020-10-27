@@ -1,3 +1,10 @@
+# (in the case of target axis AB) 
+# Calculate only the A evidence for A (input A for classifier AC and AD) compared 
+# with A evidence for B (input B for classifier AC and AD) ; 
+# B evidence for B (input B for classifier BC and BD) compared with B 
+# evidence for A (input A for classifier BC and BD)
+
+
 import os
 import numpy as np
 import pandas as pd
@@ -10,6 +17,17 @@ from sklearn.linear_model import LogisticRegression
 from IPython.display import clear_output
 import sys
 from subprocess import call
+import pickle
+import pdb
+import time
+
+def save_obj(obj, name):
+    with open(name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name):
+    with open(name + '.pkl', 'rb') as f:
+        return pickle.load(f)
 
 def normalize(X):
     X = X - X.mean(0)
@@ -28,6 +46,24 @@ def other(target):
 def red_vox(n_vox, prop=0.1):
     return int(np.ceil(n_vox * prop))
 
+def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a list a probability
+    # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+    targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+    Evidence=[clf.predict_proba(X[i].reshape(1,-1))[0][j] for i,j in enumerate(targetID)]
+    # print('targetID=', targetID)
+    # print('Evidence=',Evidence)
+    return np.asarray(Evidence)
+
+def saveNpInDf(array):
+    dataDir='./saveNpInDf/'
+    if not os.path.isdir(dataDir):
+        os.mkdir(dataDir)
+    fileName=dataDir+str(time.time())
+    np.save(fileName,array)
+    return fileName
+def loadNpInDf(fileName):
+    return np.load(fileName+'.npy')
+
 def get_inds(X, Y, pair, testRun=None):
     
     inds = {}
@@ -44,7 +80,7 @@ def get_inds(X, Y, pair, testRun=None):
     
     # Main classifier on 5 runs, testing on 6th
     clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                             multi_class='multinomial').fit(trainX, trainY)
+                            multi_class='multinomial').fit(trainX, trainY)
     B = clf.coef_[0]  # pull betas
 
     # retrieve only the first object, then only the second object
@@ -69,16 +105,18 @@ def get_inds(X, Y, pair, testRun=None):
     # add to a dictionary for later use
     inds[clf.classes_[0]] = sortmult1X
     inds[clf.classes_[1]] = sortmult2X
-             
+            
     return inds
 
-def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1):
+def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6):
     # each testRun, each subject, each target axis, each target obj would generate one.
     META = METADICT[sub]
+    print('META.shape=',META.shape)
     FEAT = FEATDICT[sub]
     # Using the trained model, get the evidence
-    testRun=6
+    
     objects=['bed', 'bench', 'chair', 'table']
+
     allpairs = itertools.combinations(objects,2)
     for pair in allpairs: #pair=('bed', 'bench')
         # Find the control (remaining) objects for this pair
@@ -88,35 +126,65 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             # find the evidence for bed from the (bed chair) and (bed table) classifier
 
             # get the test data and seperate the test data into category obj and category other
-            objIX = META.index[(META['label'].isin([obj])) & (META['run_num'] == int(testRun))]
-            otherObjIX = META.index[(META['label'].isin(other(obj))) & (META['run_num'] == int(testRun))]
+            otherObj=[i for i in pair if i!=obj][0]
+            print('otherObj=',otherObj)
+            objID = META.index[(META['label'].isin([obj])) & (META['run_num'] == int(testRun))]
+            otherObjID = META.index[(META['label'].isin([otherObj])) & (META['run_num'] == int(testRun))]
+            
+            obj_X=FEAT[objID]
+            # obj_Y=META.iloc[objID].label
+            otherObj_X=FEAT[otherObjID]
+            # otherObj_Y=META.iloc[otherObjID].label
 
-            obj_X=FEAT[objIX]
-            obj_Y=META.iloc[objIX].label
-            otherObj_X=FEAT[otherObjIX]
-            otherObj_Y=META.iloc[otherObjIX].label
-
-            model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{filterType}/'
+            model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/'
+            print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
+            print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
             clf1 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
             clf2 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
 
-            s1 = clf1.score(obj_X, obj_Y)
-            s2 = clf2.score(obj_X, obj_Y)
-            obj_evidence = np.mean([s1, s2])
+            if include < 1:
+                selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.selectedFeatures')
+                obj_X=obj_X[:,selectedFeatures]
+                otherObj_X=otherObj_X[:,selectedFeatures]
+
+            s1_obj_evidence = classifierEvidence(clf1,obj_X,[obj] * obj_X.shape[0])
+            s2_obj_evidence = classifierEvidence(clf2,obj_X,[obj] * obj_X.shape[0])
+            obj_evidence = np.mean([s1_obj_evidence, s2_obj_evidence],axis=0) # when axis=0, the output would be obj_evidence for each trial in the testing data.
             print('obj_evidence=',obj_evidence)
 
-            s1 = clf1.score(otherObj_X, otherObj_Y)
-            s2 = clf2.score(otherObj_X, otherObj_Y)
-            otherObj_evidence = np.mean([s1, s2])
+            s1_otherObj_evidence = classifierEvidence(clf1,otherObj_X,[obj] * otherObj_X.shape[0])
+            s2_otherObj_evidence = classifierEvidence(clf2,otherObj_X,[obj] * otherObj_X.shape[0])
+            otherObj_evidence = np.mean([s1_otherObj_evidence, s2_otherObj_evidence],axis=0)
             print('otherObj_evidence=',otherObj_evidence)
-
+            
+            # testEvidence = testEvidence.append({
+            #     'sub':sub,
+            #     'testRun':testRun,
+            #     'targetAxis':pair,
+            #     'obj':obj,
+            #     'obj_evidence':np.mean(obj_evidence),
+            #     'otherObj_evidence':np.mean(otherObj_evidence),
+            #     'objMinusOther_evidence':np.mean(obj_evidence) - np.mean(otherObj_evidence),
+            #     'filterType':filterType,
+            #     'include':include,
+            #     'roi':roi
+            #     },
+            #     ignore_index=True)
             testEvidence = testEvidence.append({
                 'sub':sub,
                 'testRun':testRun,
                 'targetAxis':pair,
                 'obj':obj,
-                'obj_evidence':obj_evidence,
-                'otherObj_evidence':otherObj_evidence,
+                
+                'AC_A_evidence':saveNpInDf(s1_obj_evidence), # AC evidence for A
+                'AD_A_evidence':saveNpInDf(s2_obj_evidence), # AD evidence for A
+                'AC_B_evidence':saveNpInDf(s1_otherObj_evidence), # AC evidence for B
+                'AD_B_evidence':saveNpInDf(s2_otherObj_evidence), # AD evidence for B
+
+                'obj_evidence':saveNpInDf(obj_evidence),
+                'otherObj_evidence':saveNpInDf(otherObj_evidence),
+                'objMinusOther_evidence':np.mean(obj_evidence) - np.mean(otherObj_evidence),
+
                 'filterType':filterType,
                 'include':include,
                 'roi':roi
@@ -143,9 +211,6 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     subjects = subjects[:subs]
     print(subjects)
 
-    highdict = {}
-    scoredict = {}
-
     objects = ['bed', 'bench', 'chair', 'table']
     phases = ['12', '34', '56']
 
@@ -154,40 +219,39 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     METADICT = {}
     subjects_new=[]
     for si, sub in enumerate(subjects[:]):
-        print('{}/{}'.format(si+1, len(subjects)))
-        diffs = []
-        scores = []
-        subcount = 0
-        for phase in phases:
-            _feat = np.load(data_dir+'/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
-            _feat = normalize(_feat)
-            _meta = pd.read_csv(data_dir+'/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
-            if phase!='12':
-                assert _feat.shape[1]==FEAT.shape[1], 'feat shape not matched'
-            FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
-            META = _meta if phase == "12" else pd.concat((META, _meta))
-        META = META.reset_index(drop=True)
+        try:
+            print('{}/{}'.format(si+1, len(subjects)))
+            for phase in phases:
+                _feat = np.load(data_dir+'/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
+                _feat = normalize(_feat)
+                _meta = pd.read_csv(data_dir+'/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
+                if phase!='12':
+                    assert _feat.shape[1]==FEAT.shape[1], 'feat shape not matched'
+                FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
+                META = _meta if phase == "12" else pd.concat((META, _meta))
+            META = META.reset_index(drop=True)
 
-        assert FEAT.shape[0] == META.shape[0]
+            assert FEAT.shape[0] == META.shape[0]
 
-        METADICT[sub] = META
-        FEATDICT[sub] = FEAT
-        clear_output(wait=True)
-        subjects_new.append(sub)
+            METADICT[sub] = META
+            FEATDICT[sub] = FEAT
+            clear_output(wait=True)
+            subjects_new.append(sub)
+        except:
+            pass
+
 
     # Which run to use as test data (leave as None to not have test data)
     subjects=subjects_new
 
-    # Decide on the proportion of crescent data to use for classification
-    
+    # train the models; Decide on the proportion of crescent data to use for classification
     for si,sub in enumerate(subjects):
+        # try:
         print('{}/{}'.format(si+1, len(subjects)))
         print(sub)
         META = METADICT[sub]
         FEAT = FEATDICT[sub]
-        
         allpairs = itertools.combinations(objects,2)
-        
         # Iterate over all the possible target pairs of objects
         for pair in allpairs:
             # Find the control (remaining) objects for this pair
@@ -198,11 +262,10 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
             
             # Find the number of voxels that will be left given your inclusion parameter above
             nvox = red_vox(FEAT.shape[1], include)
-            
+
             for obj in pair:
                 # foil = [i for i in pair if i != obj][0]
                 for altobj in altpair:
-                    
                     # establish a naming convention where it is $TARGET_$CLASSIFICATION
                     # Target is the NF pair (e.g. bed/bench)
                     # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
@@ -234,9 +297,9 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
                     clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
                                             multi_class='multinomial').fit(trainX, trainY)
                     
-                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}'
-                    call(f"mkdir -p {model_folder}",shell=True)
-                    joblib.dump(clf, model_folder +'{}_{}_{}.joblib'.format(sub, naming))
+                    joblib.dump(clf, model_folder + '{}_{}.joblib'.format(sub, naming))
+                    save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}.selectedFeatures')
+
                     # Monitor progress by printing accuracy (only useful if you're running a test set)
                     acc = clf.score(testX, testY)
                     if (si+1)%10==0:
@@ -253,20 +316,34 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
                         'roi':roi
                         },
                         ignore_index=True)
+        # except:
+        #     pass
     
     for sub in subjects:
-        testEvidence=getEvidence(sub,testEvidence,METADICT=METADICT,FEATDICT=FEATDICT,filterType=filterType,roi=roi,include=include)
-    print(accuracyContainer)
-    print(testEvidence)
+        try:
+            testEvidence=getEvidence(sub,testEvidence,
+            METADICT=METADICT,
+            FEATDICT=FEATDICT,
+            filterType=filterType,
+            roi=roi,
+            include=include,
+            testRun=6
+            )
+        except:
+            pass
+    print('accuracyContainer=',accuracyContainer)
+    print('testEvidence=',testEvidence)
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
-    testEvidence.to_csv(f'{model_folder}testEvidence.csv')
+    testEvidence.to_csv(f'{model_folder}testEvidence_.csv')
 
 
-include=int(sys.argv[1])
+include=np.float(sys.argv[1])
 roi=sys.argv[2]
 filterType=sys.argv[3]
-
-minimalClass(filterType = include, roi=roi, include = include, testRun = 6)
+model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/'
+print('model_folder=',model_folder)
+call(f"mkdir -p {model_folder}",shell=True)
+minimalClass(include = include, roi=roi, filterType = filterType, testRun = 6)
 
 
 # ## - to run in parallel
@@ -274,14 +351,14 @@ minimalClass(filterType = include, roi=roi, include = include, testRun = 6)
 
 # # testMiniclass_child.sh
 # #!/bin/bash
-# #SBATCH --partition=short,scavenge
+# #SBATCH --partition=short,scavenge,interactive,long,verylong
 # #SBATCH --nodes=1
 # #SBATCH --ntasks-per-node=1
-# #SBATCH --cpus-per-task=4
+# #SBATCH --cpus-per-task=1
 # #SBATCH --time=3:00:00
 # #SBATCH --job-name=miniClass
 # #SBATCH --output=logs/miniClass-%j.out
-# #SBATCH --mem-per-cpu=30G
+# #SBATCH --mem-per-cpu=10G
 # #SBATCH --mail-type=FAIL
 # mkdir -p logs/
 # module load miniconda
@@ -298,63 +375,149 @@ minimalClass(filterType = include, roi=roi, include = include, testRun = 6)
 # from subprocess import call
 # for include in [0.1,0.3,0.6,0.9,1]:
 #     for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
-#         for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns']:
-#             minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1)
+#         for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
 #             command=f'sbatch testMiniclass_child.sh {include} {roi} {filterType}'
 #             print(command)
 #             # call(command, shell=True)        
 
 
-
-
-
-# noFilter,testEvidence_noFilter=minimalClass(filterType = 'noFilter')
-# noFilter.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/noFilter.csv')
-# testEvidence_noFilter.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_noFilter.csv')
-
-# highPassRealTime,testEvidence_highPassRealTime=minimalClass(filterType = 'highPassRealTime')
-# highPassRealTime.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/highPassRealTime.csv')
-# testEvidence_highPassRealTime.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassRealTime.csv')
-
-# highPassBetweenRuns,testEvidence_highPassBetweenRuns=minimalClass(filterType = 'highPassBetweenRuns')
-# highPassBetweenRuns.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/highPassBetweenRuns.csv')
-# testEvidence_highPassBetweenRuns.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassBetweenRuns.csv')
-
-
 # # load and plot data
-# testEvidence_noFilter=pd.read_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_noFilter.csv')
-# testEvidence_highPassRealTime=pd.read_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassRealTime.csv')
-# testEvidence_highPassBetweenRuns=pd.read_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassBetweenRuns.csv')
-# def bar(L,labels=None,title=None):
-#     import matplotlib.pyplot as plt
-#     CTEs = [np.mean(i) for i in L]
-#     error = [np.std(i) for i in L]
-#     x_pos = np.arange(len(labels))
-#     fig, ax = plt.subplots(figsize=(10,10))
-#     ax.bar(x_pos, CTEs, yerr=error, align='center', alpha=0.5, ecolor='black', capsize=10)
-#     ax.set_ylabel('object evidence')
-#     ax.set_xticks(x_pos)
-#     ax.set_xticklabels(labels)
-#     ax.set_title(title)
-#     ax.yaxis.grid(True)
-#     plt.tight_layout()
-#     plt.xticks(rotation=30)
-#     plt.show()
-# bar([np.asarray(testEvidence_noFilter['obj_evidence']),
-#     np.asarray(testEvidence_noFilter['otherObj_evidence']),
-#     [],
-#     np.asarray(testEvidence_highPassRealTime['obj_evidence']),
-#     np.asarray(testEvidence_highPassRealTime['otherObj_evidence']),
-#     [],
-#     np.asarray(testEvidence_highPassBetweenRuns['obj_evidence']),
-#     np.asarray(testEvidence_highPassBetweenRuns['otherObj_evidence'])],
-#     labels=[
-#     'noFilter_obj',
-#     'noFilter_otherObj',
-#     '',
-#     'highPassRealTime_obj',
-#     'highPassRealTime_otherObj',
-#     '',
-#     'highpassOffline_obj',
-#     'highpassOffline_otherObj'],title=None)
+def loadPlot():
+    accuracyContainer=[]
+    testEvidence=[]
+    for include in [0.1,0.3,0.6,0.9,1]:
+        for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
+            for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
+                model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/'
+                accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
+                testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
+    accuracyContainer=pd.concat(accuracyContainer, ignore_index=True)
+    testEvidence=pd.concat(testEvidence, ignore_index=True)
 
+    def resample(L):
+        L=np.asarray(L)
+    sample_mean=[]
+    for iter in tqdm(range(10000)):
+        resampleID=np.random.choice(len(L), len(L), replace=True)
+        resample_acc=L[resampleID]
+        sample_mean.append(np.nanmean(resample_acc))
+    sample_mean=np.asarray(sample_mean)
+    m = np.nanmean(sample_mean,axis=0)
+    upper=np.percentile(sample_mean, 97.5, axis=0)
+    lower=np.percentile(sample_mean, 2.5, axis=0)
+    return m,m-lower,upper-m
+    def bar(LL,labels=None,title=None):
+        import matplotlib.pyplot as plt
+        D=np.asarray([resample(L) for L in LL])
+        m=D[:,0]
+        lower=D[:,1]
+        upper=D[:,2]
+        x_pos = np.arange(len(labels))
+        fig, ax = plt.subplots(figsize=(10,10))
+        ax.bar(x_pos, m, yerr=[lower,upper], align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('object evidence')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(labels)
+        ax.set_title(title)
+        ax.yaxis.grid(True)
+        plt.tight_layout()
+        plt.xticks(rotation=30,ha='right')
+        plt.show()
+        return m,lower,upper
+
+    # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    subjects=np.unique(accuracyContainer['sub'])
+    filterType=np.unique(accuracyContainer['filterType'])
+    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    a=[]
+    labels=[]
+    for i in range(len(filterType)):
+        a.append([list(testEvidence[np.logical_and(
+            np.logical_and(
+                testEvidence['roi']=='V1', 
+                testEvidence['filterType']==filterType[i]),
+            testEvidence['include']==1.)]['obj_evidence'])])
+        a.append([list(testEvidence[np.logical_and(
+            np.logical_and(
+                testEvidence['roi']=='V1', 
+                testEvidence['filterType']==filterType[i]),
+            testEvidence['include']==1.)]['otherObj_evidence'])])
+        a.append([])
+        labels.append(filterType[i] + ' obj_evidence')
+        labels.append(filterType[i] + ' otherObj_evidence')
+        labels.append('')
+    bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
+
+    # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    subjects=np.unique(accuracyContainer['sub'])
+    filterType=np.unique(accuracyContainer['filterType'])
+    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    a=[]
+    labels=[]
+    for i in range(len(filterType)):
+        t=testEvidence[np.logical_and(
+            np.logical_and(
+                testEvidence['roi']=='V1', 
+                testEvidence['filterType']==filterType[i]),
+            testEvidence['include']==1.)]
+        t=list(np.asarray(t['obj_evidence'])-np.asarray(t['otherObj_evidence']))
+        a.append([t])
+    bar(a,labels=filterType,title='across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.')
+
+
+    # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    subjects=np.unique(accuracyContainer['sub'])
+    filterType=np.unique(accuracyContainer['filterType'])
+    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    a=[]
+    labels=[]
+    def kp_and(L):
+        if len(L)==2:
+            return np.logical_and(L[0],L[1])
+        else:
+            return np.logical_and(L[0],kp_and(L[1:]))
+    a=[]
+    for i in range(len(filterType)):
+        c=[]
+        d=[]
+        for sub in subjects:
+            t=testEvidence[kp_and([
+                testEvidence['roi']=='V1',
+                testEvidence['filterType']==filterType[i],
+                testEvidence['include']==1.,
+                testEvidence['sub']==sub
+            ])]['obj_evidence']
+            c.append(np.nanmean(t))
+            d.append(np.nanmean(testEvidence[kp_and([
+                testEvidence['roi']=='V1',
+                testEvidence['filterType']==filterType[i],
+                testEvidence['include']==1.,
+                testEvidence['sub']==sub
+            ])]['otherObj_evidence']))
+        a.append(c)
+        a.append(d)
+        a.append([])
+        labels.append(filterType[i] + ' obj_evidence')
+        labels.append(filterType[i] + ' otherObj_evidence')
+        labels.append('')
+    bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
+
+
+
+    # accuracy: across filterType, take subject mean, within only V1, include=1.
+    subjects=np.unique(accuracyContainer['sub'])
+    filterType=np.unique(accuracyContainer['filterType'])
+    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    a=[]
+    for sub in subjects:
+        t=[list(accuracyContainer[
+                kp_and([
+                    accuracyContainer['roi']=='V1', 
+                    accuracyContainer['filterType']==filterType[i],
+                    accuracyContainer['sub']==sub,
+                    accuracyContainer['include']==1.
+                ])]['acc']) for i in range(len(filterType))]             
+        a.append(np.mean(np.asarray(t),axis=1))
+    a=np.asarray(a)
+    b=[a[:,i] for i in range(a.shape[1])]
+    bar(b,labels=list(filterType),title='across filterType, take subject mean, within only V1, include=1.')
