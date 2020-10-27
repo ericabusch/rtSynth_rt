@@ -147,6 +147,7 @@ def get_inds(X, Y, pair, testRun=None):
 
 def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6,accuracyContainer=None):
     # each testRun, each subject, each target axis, each target obj would generate one.
+    pdb.set_trace()
     META = METADICT[sub]
     print('META.shape=',META.shape)
     FEAT = FEATDICT[sub]
@@ -277,7 +278,7 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             ax.set_title(title)
             plt.show()
 
-            pdb.set_trace()
+            
 
             # accuracyContainer[_and_([
             #     accuracyContainer['sub']==110171,
@@ -340,8 +341,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     subjects = np.unique([i.split('_')[0] for i in feats if i.split('_')[0] not in ['1121161','0112174']]) # 1121161 has a grid spacing issue and 0112174 lacks one of regressor file
     # If you want to reduce the number of subjects used for testing purposes
     # subs=len(subjects) # 
-    subs=1
-    subjects = subjects[:subs]
+    subs=np.arange(1,3)
+    subjects = subjects[subs]
     print('subjects=',subjects)
 
     objects = ['bed', 'bench', 'chair', 'table']
