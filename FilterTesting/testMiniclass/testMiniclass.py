@@ -474,7 +474,6 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence_.csv')
 
-
 include=1
 roi='V1'
 filterType='noFilter'
