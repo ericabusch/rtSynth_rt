@@ -61,8 +61,6 @@ def saveNpInDf(array):
     fileName=dataDir+str(time.time())
     np.save(fileName,array)
     return fileName
-def loadNpInDf(fileName):
-    return np.load(fileName+'.npy')
 
 def get_inds(X, Y, pair, testRun=None):
     
@@ -198,18 +196,17 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     accuracyContainer = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','altobj','acc','filterType','roi'])
     testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','obj_evidence','otherObj_evidence','filterType','roi'])
 
-    working_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
-    os.chdir(working_dir)
+    # working_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
+    # os.chdir(working_dir)
 
     data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
     files = os.listdir(data_dir)
     feats = [i for i in files if 'metadata' not in i]
     subjects = np.unique([i.split('_')[0] for i in feats if i.split('_')[0] not in ['1121161','0112174']]) # 1121161 has a grid spacing issue and 0112174 lacks one of regressor file
     # If you want to reduce the number of subjects used for testing purposes
-    subs=len(subjects)
-    # subs=1
+    subs=len(subjects) # subs=1
     subjects = subjects[:subs]
-    print(subjects)
+    print('subjects=',subjects)
 
     objects = ['bed', 'bench', 'chair', 'table']
     phases = ['12', '34', '56']
@@ -340,14 +337,15 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
 include=np.float(sys.argv[1])
 roi=sys.argv[2]
 filterType=sys.argv[3]
-model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/'
+testRun=int(sys.argv[4])
+model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
 print('model_folder=',model_folder)
 call(f"mkdir -p {model_folder}",shell=True)
-minimalClass(include = include, roi=roi, filterType = filterType, testRun = 6)
+minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun)
 
 
-# ## - to run in parallel
-# # bash to submit jobs, in the folder of testMiniclass
+## - to run in parallel
+# bash to submit jobs, in the folder of testMiniclass
 
 # # testMiniclass_child.sh
 # #!/bin/bash
@@ -366,7 +364,8 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = 6)
 # include=$1
 # roi=$2
 # filterType=$3
-# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/testMiniclass.py $include $roi $filterType
+# testRun=$4
+# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/testMiniclass.py $include $roi $filterType $testRun
 
 
 # # testMiniclass_parent.py
@@ -376,36 +375,58 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = 6)
 # for include in [0.1,0.3,0.6,0.9,1]:
 #     for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
 #         for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
-#             command=f'sbatch testMiniclass_child.sh {include} {roi} {filterType}'
-#             print(command)
+#             for testRun in [1,2,3,4,5,6]:
+#                 command=f'sbatch testMiniclass_child.sh {include} {roi} {filterType} {testRun}'
+#                 print(command)
 #             # call(command, shell=True)        
 
 
-# # load and plot data
+## - load and plot data
 def loadPlot():
+    import pandas as pd
+    import numpy as np
+    from tqdm import tqdm
+
+    def loadNpInDf(fileName):
+        main_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
+        return np.load(main_dir+fileName+'.npy')
+
+    def _and_(L):
+        if len(L)==2:
+            return np.logical_and(L[0],L[1])
+        else:
+            return np.logical_and(L[0],_and_(L[1:]))
+
     accuracyContainer=[]
     testEvidence=[]
     for include in [0.1,0.3,0.6,0.9,1]:
         for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
             for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
-                model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/'
-                accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
-                testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
+                for testRun in [1,2,3,4,5,6]:
+                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
+                    accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
+                    testEvidence.append(pd.read_csv(f'{model_folder}testEvidence_.csv'))
     accuracyContainer=pd.concat(accuracyContainer, ignore_index=True)
     testEvidence=pd.concat(testEvidence, ignore_index=True)
+    for i in range(len(testEvidence)):
+        testEvidence['AC_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_A_evidence'].iloc[i])
+        testEvidence['AD_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_A_evidence'].iloc[i])
+        testEvidence['AC_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_B_evidence'].iloc[i])
+        testEvidence['AD_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_B_evidence'].iloc[i])
 
     def resample(L):
         L=np.asarray(L)
-    sample_mean=[]
-    for iter in tqdm(range(10000)):
-        resampleID=np.random.choice(len(L), len(L), replace=True)
-        resample_acc=L[resampleID]
-        sample_mean.append(np.nanmean(resample_acc))
-    sample_mean=np.asarray(sample_mean)
-    m = np.nanmean(sample_mean,axis=0)
-    upper=np.percentile(sample_mean, 97.5, axis=0)
-    lower=np.percentile(sample_mean, 2.5, axis=0)
-    return m,m-lower,upper-m
+        sample_mean=[]
+        for iter in tqdm(range(10000)):
+            resampleID=np.random.choice(len(L), len(L), replace=True)
+            resample_acc=L[resampleID]
+            sample_mean.append(np.nanmean(resample_acc))
+        sample_mean=np.asarray(sample_mean)
+        m = np.nanmean(sample_mean,axis=0)
+        upper=np.percentile(sample_mean, 97.5, axis=0)
+        lower=np.percentile(sample_mean, 2.5, axis=0)
+        return m,m-lower,upper-m
+
     def bar(LL,labels=None,title=None):
         import matplotlib.pyplot as plt
         D=np.asarray([resample(L) for L in LL])
@@ -424,6 +445,9 @@ def loadPlot():
         plt.xticks(rotation=30,ha='right')
         plt.show()
         return m,lower,upper
+
+
+
 
     # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
@@ -448,6 +472,9 @@ def loadPlot():
         labels.append('')
     bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
 
+
+
+
     # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
     filterType=np.unique(accuracyContainer['filterType'])
@@ -465,30 +492,28 @@ def loadPlot():
     bar(a,labels=filterType,title='across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.')
 
 
+
+
     # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
     filterType=np.unique(accuracyContainer['filterType'])
     filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
     a=[]
     labels=[]
-    def kp_and(L):
-        if len(L)==2:
-            return np.logical_and(L[0],L[1])
-        else:
-            return np.logical_and(L[0],kp_and(L[1:]))
+
     a=[]
     for i in range(len(filterType)):
         c=[]
         d=[]
         for sub in subjects:
-            t=testEvidence[kp_and([
+            t=testEvidence[_and_([
                 testEvidence['roi']=='V1',
                 testEvidence['filterType']==filterType[i],
                 testEvidence['include']==1.,
                 testEvidence['sub']==sub
             ])]['obj_evidence']
             c.append(np.nanmean(t))
-            d.append(np.nanmean(testEvidence[kp_and([
+            d.append(np.nanmean(testEvidence[_and_([
                 testEvidence['roi']=='V1',
                 testEvidence['filterType']==filterType[i],
                 testEvidence['include']==1.,
@@ -504,6 +529,7 @@ def loadPlot():
 
 
 
+
     # accuracy: across filterType, take subject mean, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
     filterType=np.unique(accuracyContainer['filterType'])
@@ -511,7 +537,7 @@ def loadPlot():
     a=[]
     for sub in subjects:
         t=[list(accuracyContainer[
-                kp_and([
+                _and_([
                     accuracyContainer['roi']=='V1', 
                     accuracyContainer['filterType']==filterType[i],
                     accuracyContainer['sub']==sub,
