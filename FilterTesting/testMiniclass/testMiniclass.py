@@ -20,6 +20,7 @@ from subprocess import call
 import pickle
 import pdb
 import time
+from tqdm import tqdm
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
@@ -149,12 +150,12 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             AC_A_evidence = classifierEvidence(AC_clf,obj_X,[obj] * obj_X.shape[0]) #AC classifier A evidence for A trials
             AD_A_evidence = classifierEvidence(AD_clf,obj_X,[obj] * obj_X.shape[0]) #AD classifier A evidence for A trials
             A_evidence_forATrials = np.mean([AC_A_evidence, AD_A_evidence],axis=0) # AC and AD classifier A evidence for A trials
-            print('A_evidence_forATrials=',A_evidence_forATrials)
+            # print('A_evidence_forATrials=',A_evidence_forATrials)
 
             AC_B_evidence = classifierEvidence(AC_clf,otherObj_X,[obj] * otherObj_X.shape[0]) #AC classifier A evidence for B trials
             AD_B_evidence = classifierEvidence(AD_clf,otherObj_X,[obj] * otherObj_X.shape[0]) #AD classifier A evidence for B trials
             A_evidence_forBTrials = np.mean([AC_B_evidence, AD_B_evidence],axis=0) # AC and AD classifier A evidence for B trials
-            print('A_evidence_forBTrials=',A_evidence_forBTrials)
+            # print('A_evidence_forBTrials=',A_evidence_forBTrials)
             
             # testEvidence = testEvidence.append({
             #     'sub':sub,
@@ -320,7 +321,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
         # except:
         #     pass
     
-    for sub in subjects:
+    for sub in tqdm(subjects):
         # try:
         testEvidence=getEvidence(sub,testEvidence,
         METADICT=METADICT,
@@ -387,12 +388,15 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = test
 
 ## - load and plot data
 def loadPlot():
+
+    # modules and functions
     import pandas as pd
     import numpy as np
     from tqdm import tqdm
+    import pdb
 
     def loadNpInDf(fileName):
-        main_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
+        main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/'
         return np.load(main_dir+fileName+'.npy')
 
     def preloadDfnumpy(testEvidence,List=['AC_A_evidence','AD_A_evidence','AC_B_evidence','AD_B_evidence','A_evidence_forATrials','A_evidence_forBTrials']):
@@ -407,23 +411,6 @@ def loadPlot():
             return np.logical_and(L[0],L[1])
         else:
             return np.logical_and(L[0],_and_(L[1:]))
-
-    accuracyContainer=[]
-    testEvidence=[]
-    for include in [0.1,0.3,0.6,0.9,1]:
-        for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
-            for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
-                for testRun in [1,2,3,4,5,6]:
-                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
-                    accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
-                    testEvidence.append(pd.read_csv(f'{model_folder}testEvidence_.csv'))
-    accuracyContainer=pd.concat(accuracyContainer, ignore_index=True)
-    testEvidence=pd.concat(testEvidence, ignore_index=True)
-    for i in range(len(testEvidence)):
-        testEvidence['AC_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_A_evidence'].iloc[i])
-        testEvidence['AD_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_A_evidence'].iloc[i])
-        testEvidence['AC_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_B_evidence'].iloc[i])
-        testEvidence['AD_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_B_evidence'].iloc[i])
 
     def resample(L):
         L=np.asarray(L)
@@ -459,48 +446,66 @@ def loadPlot():
 
 
 
-
-    # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
-    subjects=np.unique(accuracyContainer['sub'])
-    filterType=np.unique(accuracyContainer['filterType'])
-    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-    a=[]
-    labels=[]
-    for i in range(len(filterType)):
-        a.append([list(testEvidence[np.logical_and(
-            np.logical_and(
-                testEvidence['roi']=='V1', 
-                testEvidence['filterType']==filterType[i]),
-            testEvidence['include']==1.)]['obj_evidence'])])
-        a.append([list(testEvidence[np.logical_and(
-            np.logical_and(
-                testEvidence['roi']=='V1', 
-                testEvidence['filterType']==filterType[i]),
-            testEvidence['include']==1.)]['otherObj_evidence'])])
-        a.append([])
-        labels.append(filterType[i] + ' obj_evidence')
-        labels.append(filterType[i] + ' otherObj_evidence')
-        labels.append('')
-    bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
+    # load saved results
+    accuracyContainer=[]
+    testEvidence=[]
+    for include in tqdm([0.1,0.3,0.6,0.9,1]):
+        for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
+            for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
+                for testRun in [1,2,3,4,5,6]:
+                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
+                    accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
+                    testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
+    accuracyContainer=pd.concat(accuracyContainer, ignore_index=True)
+    testEvidence=pd.concat(testEvidence, ignore_index=True)
+    # for i in range(len(testEvidence)):
+    #     testEvidence['AC_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_A_evidence'].iloc[i])
+    #     testEvidence['AD_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_A_evidence'].iloc[i])
+    #     testEvidence['AC_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_B_evidence'].iloc[i])
+    #     testEvidence['AD_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_B_evidence'].iloc[i])
 
 
+    # # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    # subjects=np.unique(accuracyContainer['sub'])
+    # filterType=np.unique(accuracyContainer['filterType'])
+    # filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    # a=[]
+    # labels=[]
+    # for i in range(len(filterType)):
+    #     a.append([list(testEvidence[np.logical_and(
+    #         np.logical_and(
+    #             testEvidence['roi']=='V1', 
+    #             testEvidence['filterType']==filterType[i]),
+    #         testEvidence['include']==1.)]['obj_evidence'])])
+    #     a.append([list(testEvidence[np.logical_and(
+    #         np.logical_and(
+    #             testEvidence['roi']=='V1', 
+    #             testEvidence['filterType']==filterType[i]),
+    #         testEvidence['include']==1.)]['otherObj_evidence'])])
+    #     a.append([])
+    #     labels.append(filterType[i] + ' obj_evidence')
+    #     labels.append(filterType[i] + ' otherObj_evidence')
+    #     labels.append('')
+    # bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
 
 
-    # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
-    subjects=np.unique(accuracyContainer['sub'])
-    filterType=np.unique(accuracyContainer['filterType'])
-    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-    a=[]
-    labels=[]
-    for i in range(len(filterType)):
-        t=testEvidence[np.logical_and(
-            np.logical_and(
-                testEvidence['roi']=='V1', 
-                testEvidence['filterType']==filterType[i]),
-            testEvidence['include']==1.)]
-        t=list(np.asarray(t['obj_evidence'])-np.asarray(t['otherObj_evidence']))
-        a.append([t])
-    bar(a,labels=filterType,title='across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.')
+
+
+    # # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    # subjects=np.unique(accuracyContainer['sub'])
+    # filterType=np.unique(accuracyContainer['filterType'])
+    # filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    # a=[]
+    # labels=[]
+    # for i in range(len(filterType)):
+    #     t=testEvidence[np.logical_and(
+    #         np.logical_and(
+    #             testEvidence['roi']=='V1', 
+    #             testEvidence['filterType']==filterType[i]),
+    #         testEvidence['include']==1.)]
+    #     t=list(np.asarray(t['obj_evidence'])-np.asarray(t['otherObj_evidence']))
+    #     a.append([t])
+    # bar(a,labels=filterType,title='across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.')
 
 
 
@@ -509,11 +514,10 @@ def loadPlot():
     subjects=np.unique(accuracyContainer['sub'])
     filterType=np.unique(accuracyContainer['filterType'])
     filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-    a=[]
-    labels=[]
 
     a=[]
-    for i in range(len(filterType)):
+    labels=[]
+    for i in range(len(filterType)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
         c=[]
         d=[]
         for sub in subjects:
@@ -522,19 +526,18 @@ def loadPlot():
                 testEvidence['filterType']==filterType[i],
                 testEvidence['include']==1.,
                 testEvidence['sub']==sub
-            ])]['obj_evidence']
-            c.append(np.nanmean(t))
-            d.append(np.nanmean(testEvidence[_and_([
-                testEvidence['roi']=='V1',
-                testEvidence['filterType']==filterType[i],
-                testEvidence['include']==1.,
-                testEvidence['sub']==sub
-            ])]['otherObj_evidence']))
+            ])]
+            t=preloadDfnumpy(t)
+            pdb.set_trace()
+
+            c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
+            d.append(np.nanmean(np.asarray(list(t['A_evidence_forBTrials']))))
+
         a.append(c)
         a.append(d)
         a.append([])
-        labels.append(filterType[i] + ' obj_evidence')
-        labels.append(filterType[i] + ' otherObj_evidence')
+        labels.append(filterType[i] + ' A_evidence_forATrials')
+        labels.append(filterType[i] + ' A_evidence_forBTrials')
         labels.append('')
     bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
 
@@ -546,15 +549,18 @@ def loadPlot():
     filterType=np.unique(accuracyContainer['filterType'])
     filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
     a=[]
-    for sub in subjects:
-        t=[list(accuracyContainer[
-                _and_([
-                    accuracyContainer['roi']=='V1', 
-                    accuracyContainer['filterType']==filterType[i],
-                    accuracyContainer['sub']==sub,
-                    accuracyContainer['include']==1.
-                ])]['acc']) for i in range(len(filterType))]             
-        a.append(np.mean(np.asarray(t),axis=1))
+    for sub in tqdm(subjects):
+        try: # some subjects don't have KalmanFilter_filter_analyze_voxel_by_voxel data
+            t=[list(accuracyContainer[
+                    _and_([
+                        accuracyContainer['roi']=='V1', 
+                        accuracyContainer['filterType']==filterType[i],
+                        accuracyContainer['sub']==sub,
+                        accuracyContainer['include']==1.
+                    ])]['acc']) for i in range(len(filterType))]             
+            a.append(np.mean(np.asarray(t),axis=1))
+        except:
+            pass
     a=np.asarray(a)
     b=[a[:,i] for i in range(a.shape[1])]
-    bar(b,labels=list(filterType),title='across filterType, take subject mean, within only V1, include=1.')
+    bar(b,labels=list(filterType),title='across filterType, within only V1, include=1.')
