@@ -54,6 +54,11 @@ def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed',
     # print('Evidence=',Evidence)
     return np.asarray(Evidence)
 
+def _and_(L):
+    if len(L)==2:
+        return np.logical_and(L[0],L[1])
+    else:
+        return np.logical_and(L[0],_and_(L[1:]))
 def saveNpInDf(array):
     dataDir='./saveNpInDf/'
     if not os.path.isdir(dataDir):
@@ -106,7 +111,7 @@ def get_inds(X, Y, pair, testRun=None):
             
     return inds
 
-def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6):
+def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6,accuracyContainer=None):
     # each testRun, each subject, each target axis, each target obj would generate one.
     META = METADICT[sub]
     print('META.shape=',META.shape)
@@ -154,7 +159,96 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             s2_otherObj_evidence = classifierEvidence(clf2,otherObj_X,[obj] * otherObj_X.shape[0])
             otherObj_evidence = np.mean([s1_otherObj_evidence, s2_otherObj_evidence],axis=0)
             print('otherObj_evidence=',otherObj_evidence)
-            
+
+            pdb.set_trace()
+            # test here
+            AC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib') #AC classifier
+            AD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib') #AD classifier
+            BC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{otherObj}{altpair[0]}.joblib') #BC classifier
+            BD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{otherObj}{altpair[1]}.joblib') #BD classifier
+
+            AC_A=classifierEvidence(AC_clf,obj_X,[obj] * obj_X.shape[0]) #AC evidence for A : AC classifier, A evidence
+            AD_A=classifierEvidence(AD_clf,obj_X,[obj] * obj_X.shape[0]) #AD evidence for A : AD classifier, A evidence
+            BC_A=classifierEvidence(BC_clf,obj_X,[otherObj] * obj_X.shape[0]) #BC evidence for A : BC classifier, B evidence
+            BD_A=classifierEvidence(BD_clf,obj_X,[otherObj] * obj_X.shape[0]) #BD evidence for A : BD classifier, B evidence
+            a=np.asarray([AC_A,AD_A,BC_A,BD_A]) # 4 x numTrials
+
+            AC_B=classifierEvidence(AC_clf,otherObj_X,[obj] * obj_X.shape[0]) #AC evidence for B
+            AD_B=classifierEvidence(AD_clf,otherObj_X,[obj] * obj_X.shape[0]) #AD evidence for B
+            BC_B=classifierEvidence(BC_clf,otherObj_X,[otherObj] * obj_X.shape[0]) #BC evidence for B
+            BD_B=classifierEvidence(BD_clf,otherObj_X,[otherObj] * obj_X.shape[0]) #BD evidence for B
+            b=np.asarray([AC_B,AD_B,BC_B,BD_B]) # 4 x numTrials
+
+            t=np.concatenate((a, b), axis=1)
+            _=plt.figure()
+            _=plt.plot(t[0,:],c='g')
+            _=plt.plot(t[1,:],c='g')
+            _=plt.plot(t[2,:],c='r')
+            _=plt.plot(t[3,:],c='r')
+            # A=obj
+            # B=otherObj
+            # C=altpair[0]
+            # D=altpair[1]
+            AC_acc = accuracyContainer[_and_([
+                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['obj']==obj, #A
+                accuracyContainer['altobj']==altpair[0], #C
+
+                accuracyContainer['sub']==int(sub),
+                accuracyContainer['testRun']==testRun,
+                accuracyContainer['filterType']==filterType,
+                accuracyContainer['include']==include,
+                accuracyContainer['roi']==roi
+                ])]['acc'].iloc[0]
+            AD_acc = accuracyContainer[_and_([
+                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['obj']==obj, #A
+                accuracyContainer['altobj']==altpair[1], #D
+
+                accuracyContainer['sub']==int(sub),
+                accuracyContainer['testRun']==testRun,
+                accuracyContainer['filterType']==filterType,
+                accuracyContainer['include']==include,
+                accuracyContainer['roi']==roi
+                ])]['acc'].iloc[0]
+            BC_acc = accuracyContainer[_and_([
+                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['obj']==otherObj, #B
+                accuracyContainer['altobj']==altpair[0], #C
+
+                accuracyContainer['sub']==int(sub),
+                accuracyContainer['testRun']==testRun,
+                accuracyContainer['filterType']==filterType,
+                accuracyContainer['include']==include,
+                accuracyContainer['roi']==roi
+                ])]['acc'].iloc[0]
+            BD_acc = accuracyContainer[_and_([
+                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['obj']==otherObj, #B
+                accuracyContainer['altobj']==altpair[1], #C
+
+                accuracyContainer['sub']==int(sub),
+                accuracyContainer['testRun']==testRun,
+                accuracyContainer['filterType']==filterType,
+                accuracyContainer['include']==include,
+                accuracyContainer['roi']==roi
+                ])]['acc'].iloc[0]
+            title=f'AC_acc={AC_acc};AD_acc={AD_acc};BC_acc={BC_acc};BD_acc={BD_acc}'
+            print(title)
+            plt.title(title)
+            plt.show()
+
+            # accuracyContainer[_and_([
+            #     accuracyContainer['sub']==110171,
+            #     accuracyContainer['testRun']==6,
+            #     accuracyContainer['targetAxis']=="('bed', 'bench')", #AB
+            #     accuracyContainer['obj']=='bed', #A
+            #     accuracyContainer['altobj']=='chair', #B
+            #     accuracyContainer['filterType']=='noFilter',
+            #     accuracyContainer['include']==1.,
+            #     accuracyContainer['roi']=='V1'
+            #     ])]
+
             # testEvidence = testEvidence.append({
             #     'sub':sub,
             #     'testRun':testRun,
@@ -304,15 +398,16 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
                     accuracyContainer = accuracyContainer.append({
                         'sub':sub,
                         'testRun':testRun,
-                        'targetAxis':pair,
-                        'obj':obj,
-                        'altobj':altobj,
+                        'targetAxis':pair, #AB
+                        'obj':obj, #A
+                        'altobj':altobj,#B
                         'acc':acc,
                         'filterType':filterType,
                         'include':include,
                         'roi':roi
                         },
                         ignore_index=True)
+
         # except:
         #     pass
     
@@ -324,7 +419,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
             filterType=filterType,
             roi=roi,
             include=include,
-            testRun=6
+            testRun=testRun,
+            accuracyContainer=accuracyContainer
             )
         except:
             pass
@@ -334,10 +430,10 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     testEvidence.to_csv(f'{model_folder}testEvidence_.csv')
 
 
-include=np.float(sys.argv[1])
-roi=sys.argv[2]
-filterType=sys.argv[3]
-testRun=int(sys.argv[4])
+include=1
+roi='V1'
+filterType='noFilter'
+testRun=6
 model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
 print('model_folder=',model_folder)
 call(f"mkdir -p {model_folder}",shell=True)
