@@ -20,6 +20,7 @@ from subprocess import call
 import pickle
 import pdb
 import time
+from tqdm import tqdm
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
