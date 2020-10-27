@@ -292,11 +292,14 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
                         testX = testX[:, obj_inds[-nvox:]]
                     
                     # Train your classifier
-                    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                            multi_class='multinomial').fit(trainX, trainY)
-                    
-                    joblib.dump(clf, model_folder + '{}_{}.joblib'.format(sub, naming))
-                    save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}.selectedFeatures')
+                    model_path=model_folder + '{}_{}.joblib'.format(sub, naming)
+                    if os.path.exists(model_path):
+                       clf=joblib.load(model_path)
+                    else:
+                        clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                                multi_class='multinomial').fit(trainX, trainY)
+                        joblib.dump(clf, model_path)
+                        save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}.selectedFeatures')
 
                     # Monitor progress by printing accuracy (only useful if you're running a test set)
                     acc = clf.score(testX, testY)
@@ -318,21 +321,21 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
         #     pass
     
     for sub in subjects:
-        try:
-            testEvidence=getEvidence(sub,testEvidence,
-            METADICT=METADICT,
-            FEATDICT=FEATDICT,
-            filterType=filterType,
-            roi=roi,
-            include=include,
-            testRun=6
-            )
-        except:
-            pass
+        # try:
+        testEvidence=getEvidence(sub,testEvidence,
+        METADICT=METADICT,
+        FEATDICT=FEATDICT,
+        filterType=filterType,
+        roi=roi,
+        include=include,
+        testRun=testRun
+        )
+        # except:
+        #     pass
     print('accuracyContainer=',accuracyContainer)
     print('testEvidence=',testEvidence)
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
-    testEvidence.to_csv(f'{model_folder}testEvidence_.csv')
+    testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
 
 include=np.float(sys.argv[1])
@@ -391,6 +394,13 @@ def loadPlot():
     def loadNpInDf(fileName):
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
         return np.load(main_dir+fileName+'.npy')
+
+    def preloadDfnumpy(testEvidence,List=['AC_A_evidence','AD_A_evidence','AC_B_evidence','AD_B_evidence','A_evidence_forATrials','A_evidence_forBTrials']):
+        # this function convert the dataframe cell numpy array into real numpy array, was a string pointing to a file
+        for i in range(len(testEvidence)):
+            for L in List:
+                testEvidence[L].iloc[i]=loadNpInDf(testEvidence[L].iloc[i])
+        return testEvidence
 
     def _and_(L):
         if len(L)==2:
