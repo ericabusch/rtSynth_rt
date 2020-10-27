@@ -137,8 +137,8 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
             print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
             print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
-            clf1 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib') # AC classifier
-            clf2 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib') # AD classifier
+            AC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib') # AC classifier
+            AD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib') # AD classifier
 
             if include < 1:
                 selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.selectedFeatures') # AC classifier
@@ -146,15 +146,15 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
                 selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.selectedFeatures') # AD classifier
                 otherObj_X=otherObj_X[:,selectedFeatures]
 
-            s1_obj_evidence = classifierEvidence(clf1,obj_X,[obj] * obj_X.shape[0])
-            s2_obj_evidence = classifierEvidence(clf2,obj_X,[obj] * obj_X.shape[0])
-            obj_evidence = np.mean([s1_obj_evidence, s2_obj_evidence],axis=0) # when axis=0, the output would be obj_evidence for each trial in the testing data.
-            print('obj_evidence=',obj_evidence)
+            AC_A_evidence = classifierEvidence(AC_clf,obj_X,[obj] * obj_X.shape[0]) #AC classifier A evidence for A trials
+            AD_A_evidence = classifierEvidence(AD_clf,obj_X,[obj] * obj_X.shape[0]) #AD classifier A evidence for A trials
+            A_evidence_forATrials = np.mean([AC_A_evidence, AD_A_evidence],axis=0) # AC and AD classifier A evidence for A trials
+            print('A_evidence_forATrials=',A_evidence_forATrials)
 
-            s1_otherObj_evidence = classifierEvidence(clf1,otherObj_X,[obj] * otherObj_X.shape[0])
-            s2_otherObj_evidence = classifierEvidence(clf2,otherObj_X,[obj] * otherObj_X.shape[0])
-            otherObj_evidence = np.mean([s1_otherObj_evidence, s2_otherObj_evidence],axis=0)
-            print('otherObj_evidence=',otherObj_evidence)
+            AC_B_evidence = classifierEvidence(AC_clf,otherObj_X,[obj] * otherObj_X.shape[0]) #AC classifier A evidence for B trials
+            AD_B_evidence = classifierEvidence(AD_clf,otherObj_X,[obj] * otherObj_X.shape[0]) #AD classifier A evidence for B trials
+            A_evidence_forBTrials = np.mean([AC_B_evidence, AD_B_evidence],axis=0) # AC and AD classifier A evidence for B trials
+            print('A_evidence_forBTrials=',A_evidence_forBTrials)
             
             # testEvidence = testEvidence.append({
             #     'sub':sub,
@@ -175,14 +175,14 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
                 'targetAxis':pair,
                 'obj':obj,
                 
-                'AC_A_evidence':saveNpInDf(s1_obj_evidence), # AC evidence for A
-                'AD_A_evidence':saveNpInDf(s2_obj_evidence), # AD evidence for A
-                'AC_B_evidence':saveNpInDf(s1_otherObj_evidence), # AC evidence for B
-                'AD_B_evidence':saveNpInDf(s2_otherObj_evidence), # AD evidence for B
+                'AC_A_evidence':saveNpInDf(AC_A_evidence), # AC classifier A evidence for A
+                'AD_A_evidence':saveNpInDf(AD_A_evidence), # AD classifier A evidence for A
+                'AC_B_evidence':saveNpInDf(AC_B_evidence), # AC classifier A evidence for B
+                'AD_B_evidence':saveNpInDf(AD_B_evidence), # AD classifier A evidence for B
 
-                'obj_evidence':saveNpInDf(obj_evidence),
-                'otherObj_evidence':saveNpInDf(otherObj_evidence),
-                'objMinusOther_evidence':np.mean(obj_evidence) - np.mean(otherObj_evidence),
+                'A_evidence_forATrials':saveNpInDf(A_evidence_forATrials),
+                'A_evidence_forBTrials':saveNpInDf(A_evidence_forBTrials),
+                'A_evidence_forBTrials_minus_A_evidence_forBTrials':np.mean(A_evidence_forATrials) - np.mean(A_evidence_forBTrials),
 
                 'filterType':filterType,
                 'include':include,
