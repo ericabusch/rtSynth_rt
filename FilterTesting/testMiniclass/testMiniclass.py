@@ -59,6 +59,7 @@ def _and_(L):
         return np.logical_and(L[0],L[1])
     else:
         return np.logical_and(L[0],_and_(L[1:]))
+
 def saveNpInDf(array):
     dataDir='./saveNpInDf/'
     if not os.path.isdir(dataDir):
@@ -67,6 +68,38 @@ def saveNpInDf(array):
     np.save(fileName,array)
     return fileName
 
+def resample(L):
+    L=np.asarray(L)
+    sample_mean=[]
+    for iter in tqdm(range(10000)):
+        resampleID=np.random.choice(len(L), len(L), replace=True)
+        resample_acc=L[resampleID]
+        sample_mean.append(np.nanmean(resample_acc))
+    sample_mean=np.asarray(sample_mean)
+    m = np.nanmean(sample_mean,axis=0)
+    upper=np.percentile(sample_mean, 97.5, axis=0)
+    lower=np.percentile(sample_mean, 2.5, axis=0)
+    return m,m-lower,upper-m
+
+def bar(LL,labels=None,title=None):
+    import matplotlib.pyplot as plt
+    D=np.asarray([resample(L) for L in LL])
+    m=D[:,0]
+    lower=D[:,1]
+    upper=D[:,2]
+    x_pos = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax.bar(x_pos, m, yerr=[lower,upper], align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_ylabel('object evidence')
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(labels)
+    ax.set_title(title)
+    ax.yaxis.grid(True)
+    plt.tight_layout()
+    plt.xticks(rotation=30,ha='right')
+    plt.show()
+    return m,lower,upper
+    
 def get_inds(X, Y, pair, testRun=None):
     
     inds = {}
@@ -139,16 +172,11 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             otherObj_X=FEAT[otherObjID]
             # otherObj_Y=META.iloc[otherObjID].label
 
-            model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/'
+            model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
             print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
             print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
             clf1 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
             clf2 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
-
-            if include < 1:
-                selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.selectedFeatures')
-                obj_X=obj_X[:,selectedFeatures]
-                otherObj_X=otherObj_X[:,selectedFeatures]
 
             s1_obj_evidence = classifierEvidence(clf1,obj_X,[obj] * obj_X.shape[0])
             s2_obj_evidence = classifierEvidence(clf2,obj_X,[obj] * obj_X.shape[0])
@@ -160,7 +188,7 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             otherObj_evidence = np.mean([s1_otherObj_evidence, s2_otherObj_evidence],axis=0)
             print('otherObj_evidence=',otherObj_evidence)
 
-            pdb.set_trace()
+            
             # test here
             AC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib') #AC classifier
             AD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib') #AD classifier
@@ -173,70 +201,99 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             BD_A=classifierEvidence(BD_clf,obj_X,[otherObj] * obj_X.shape[0]) #BD evidence for A : BD classifier, B evidence
             a=np.asarray([AC_A,AD_A,BC_A,BD_A]) # 4 x numTrials
 
+            plt.figure()
+            bar([a[i,:] for i in range(a.shape[0])],labels=['AC_A','AD_A',"BC_A","BD_A"])
+
             AC_B=classifierEvidence(AC_clf,otherObj_X,[obj] * obj_X.shape[0]) #AC evidence for B
             AD_B=classifierEvidence(AD_clf,otherObj_X,[obj] * obj_X.shape[0]) #AD evidence for B
             BC_B=classifierEvidence(BC_clf,otherObj_X,[otherObj] * obj_X.shape[0]) #BC evidence for B
             BD_B=classifierEvidence(BD_clf,otherObj_X,[otherObj] * obj_X.shape[0]) #BD evidence for B
             b=np.asarray([AC_B,AD_B,BC_B,BD_B]) # 4 x numTrials
+            
+            plt.figure()
+            bar([b[i,:] for i in range(b.shape[0])],labels=['AC_B','AD_B',"BC_B","BD_B"])
 
             t=np.concatenate((a, b), axis=1)
             _=plt.figure()
-            _=plt.plot(t[0,:],c='g')
-            _=plt.plot(t[1,:],c='g')
-            _=plt.plot(t[2,:],c='r')
-            _=plt.plot(t[3,:],c='r')
+            _=plt.plot(t[0,:],'g.')
+            _=plt.plot(t[1,:],'g.')
+            _=plt.plot(t[2,:],'r+')
+            _=plt.plot(t[3,:],'r+')
             # A=obj
             # B=otherObj
             # C=altpair[0]
             # D=altpair[1]
+
+            pdb.set_trace()
             AC_acc = accuracyContainer[_and_([
-                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['targetAxis']==pair, #AB
                 accuracyContainer['obj']==obj, #A
                 accuracyContainer['altobj']==altpair[0], #C
-
-                accuracyContainer['sub']==int(sub),
+                accuracyContainer['sub']==sub,
                 accuracyContainer['testRun']==testRun,
                 accuracyContainer['filterType']==filterType,
                 accuracyContainer['include']==include,
                 accuracyContainer['roi']==roi
                 ])]['acc'].iloc[0]
             AD_acc = accuracyContainer[_and_([
-                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['targetAxis']==pair, #AB
                 accuracyContainer['obj']==obj, #A
                 accuracyContainer['altobj']==altpair[1], #D
 
-                accuracyContainer['sub']==int(sub),
+                accuracyContainer['sub']==sub,
                 accuracyContainer['testRun']==testRun,
                 accuracyContainer['filterType']==filterType,
                 accuracyContainer['include']==include,
                 accuracyContainer['roi']==roi
                 ])]['acc'].iloc[0]
             BC_acc = accuracyContainer[_and_([
-                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['targetAxis']==pair, #AB
                 accuracyContainer['obj']==otherObj, #B
                 accuracyContainer['altobj']==altpair[0], #C
 
-                accuracyContainer['sub']==int(sub),
+                accuracyContainer['sub']==sub,
                 accuracyContainer['testRun']==testRun,
                 accuracyContainer['filterType']==filterType,
                 accuracyContainer['include']==include,
                 accuracyContainer['roi']==roi
                 ])]['acc'].iloc[0]
             BD_acc = accuracyContainer[_and_([
-                accuracyContainer['targetAxis']==str(pair), #AB
+                accuracyContainer['targetAxis']==pair, #AB
                 accuracyContainer['obj']==otherObj, #B
                 accuracyContainer['altobj']==altpair[1], #C
 
-                accuracyContainer['sub']==int(sub),
+                accuracyContainer['sub']==sub,
                 accuracyContainer['testRun']==testRun,
                 accuracyContainer['filterType']==filterType,
                 accuracyContainer['include']==include,
                 accuracyContainer['roi']==roi
                 ])]['acc'].iloc[0]
+
+
+#                 accuracyContainer[_and_([accuracyContainer['targetAxis']==str(pair), accuracyContainer['obj']==otherObj, accuracyContainer['altobj']==altpair[1], accuracyContainer['sub']==int(sub),accuracyContainer['testRun']==testRun,accuracyContainer['filterType']==filterType,accuracyContainer['include']==include,accuracyContainer['roi']==roi])]['acc'].iloc[0]
+# accuracyContainer[_and_([accuracyContainer['targetAxis']==str(pair), accuracyContainer['obj']==otherObj, accuracyContainer['altobj']==altpair[1], accuracyContainer['sub']==int(sub),accuracyContainer['testRun']==testRun,accuracyContainer['filterType']==filterType,accuracyContainer['include']==include,accuracyContainer['roi']==roi])]            
+                
+                
+                
+                
+
+#                 accuracyContainer[_and_([
+#                 accuracyContainer['targetAxis']==pair,
+#                 accuracyContainer['testRun']==testRun,
+#                 accuracyContainer['obj']==otherObj, 
+#                 accuracyContainer['sub']==sub,
+#                 accuracyContainer['altobj']==altpair[1], 
+#                 accuracyContainer['filterType']==filterType,
+#                 accuracyContainer['include']==include,
+#                 accuracyContainer['roi']==roi
+#                 ])]
+
             title=f'AC_acc={AC_acc};AD_acc={AD_acc};BC_acc={BC_acc};BD_acc={BD_acc}'
             print(title)
             plt.title(title)
             plt.show()
+
+            
 
             # accuracyContainer[_and_([
             #     accuracyContainer['sub']==110171,
@@ -298,7 +355,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
     feats = [i for i in files if 'metadata' not in i]
     subjects = np.unique([i.split('_')[0] for i in feats if i.split('_')[0] not in ['1121161','0112174']]) # 1121161 has a grid spacing issue and 0112174 lacks one of regressor file
     # If you want to reduce the number of subjects used for testing purposes
-    subs=len(subjects) # subs=1
+    # subs=len(subjects) # 
+    subs=1
     subjects = subjects[:subs]
     print('subjects=',subjects)
 
@@ -512,41 +570,6 @@ def loadPlot():
         testEvidence['AD_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_A_evidence'].iloc[i])
         testEvidence['AC_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_B_evidence'].iloc[i])
         testEvidence['AD_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_B_evidence'].iloc[i])
-
-    def resample(L):
-        L=np.asarray(L)
-        sample_mean=[]
-        for iter in tqdm(range(10000)):
-            resampleID=np.random.choice(len(L), len(L), replace=True)
-            resample_acc=L[resampleID]
-            sample_mean.append(np.nanmean(resample_acc))
-        sample_mean=np.asarray(sample_mean)
-        m = np.nanmean(sample_mean,axis=0)
-        upper=np.percentile(sample_mean, 97.5, axis=0)
-        lower=np.percentile(sample_mean, 2.5, axis=0)
-        return m,m-lower,upper-m
-
-    def bar(LL,labels=None,title=None):
-        import matplotlib.pyplot as plt
-        D=np.asarray([resample(L) for L in LL])
-        m=D[:,0]
-        lower=D[:,1]
-        upper=D[:,2]
-        x_pos = np.arange(len(labels))
-        fig, ax = plt.subplots(figsize=(10,10))
-        ax.bar(x_pos, m, yerr=[lower,upper], align='center', alpha=0.5, ecolor='black', capsize=10)
-        ax.set_ylabel('object evidence')
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(labels)
-        ax.set_title(title)
-        ax.yaxis.grid(True)
-        plt.tight_layout()
-        plt.xticks(rotation=30,ha='right')
-        plt.show()
-        return m,lower,upper
-
-
-
 
     # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
