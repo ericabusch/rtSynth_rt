@@ -258,3 +258,13 @@ _=ax.set_xticks(x_pos)
 labels=['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']
 _=ax.set_xticklabels(labels)
 _=ax.set_ylabel('accuracy')
+
+# get 4 way classifier accuracy for wanted run
+roi="V1"
+filterType='noFilter'
+model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{roi}/{filterType}/'
+accuracyContainer=pd.read_csv(f"{model_folder}4WayClassifier_accuracy.csv")
+accuracyContainer[_and_([
+    accuracyContainer['sub']==int('0110171'),
+    accuracyContainer['curr_run']==6
+])]['acc'].iloc[0]
