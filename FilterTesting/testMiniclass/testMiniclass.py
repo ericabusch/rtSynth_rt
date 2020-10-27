@@ -215,17 +215,17 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             bar([b[i,:] for i in range(b.shape[0])],labels=['AC_B','AD_B',"BC_B","BD_B"])
 
             t=np.concatenate((a, b), axis=1)
-            _=plt.figure()
-            _=plt.plot(t[0,:],'g.')
-            _=plt.plot(t[1,:],'g.')
-            _=plt.plot(t[2,:],'r+')
-            _=plt.plot(t[3,:],'r+')
+            fig, ax = plt.subplots(figsize=(20,5))
+            _=ax.plot(t[0,:],'g.')
+            _=ax.plot(t[1,:],'g.')
+            _=ax.plot(t[2,:],'r+')
+            _=ax.plot(t[3,:],'r+')
+
             # A=obj
             # B=otherObj
             # C=altpair[0]
             # D=altpair[1]
 
-            pdb.set_trace()
             AC_acc = accuracyContainer[_and_([
                 accuracyContainer['targetAxis']==pair, #AB
                 accuracyContainer['obj']==obj, #A
@@ -261,7 +261,7 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             BD_acc = accuracyContainer[_and_([
                 accuracyContainer['targetAxis']==pair, #AB
                 accuracyContainer['obj']==otherObj, #B
-                accuracyContainer['altobj']==altpair[1], #C
+                accuracyContainer['altobj']==altpair[1], #D
 
                 accuracyContainer['sub']==sub,
                 accuracyContainer['testRun']==testRun,
@@ -271,30 +271,13 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
                 ])]['acc'].iloc[0]
 
 
-#                 accuracyContainer[_and_([accuracyContainer['targetAxis']==str(pair), accuracyContainer['obj']==otherObj, accuracyContainer['altobj']==altpair[1], accuracyContainer['sub']==int(sub),accuracyContainer['testRun']==testRun,accuracyContainer['filterType']==filterType,accuracyContainer['include']==include,accuracyContainer['roi']==roi])]['acc'].iloc[0]
-# accuracyContainer[_and_([accuracyContainer['targetAxis']==str(pair), accuracyContainer['obj']==otherObj, accuracyContainer['altobj']==altpair[1], accuracyContainer['sub']==int(sub),accuracyContainer['testRun']==testRun,accuracyContainer['filterType']==filterType,accuracyContainer['include']==include,accuracyContainer['roi']==roi])]            
-                
-                
-                
-                
-
-#                 accuracyContainer[_and_([
-#                 accuracyContainer['targetAxis']==pair,
-#                 accuracyContainer['testRun']==testRun,
-#                 accuracyContainer['obj']==otherObj, 
-#                 accuracyContainer['sub']==sub,
-#                 accuracyContainer['altobj']==altpair[1], 
-#                 accuracyContainer['filterType']==filterType,
-#                 accuracyContainer['include']==include,
-#                 accuracyContainer['roi']==roi
-#                 ])]
-
             title=f'AC_acc={AC_acc};AD_acc={AD_acc};BC_acc={BC_acc};BD_acc={BD_acc}'
             print(title)
-            plt.title(title)
+            # plt.title(title)
+            ax.set_title(title)
             plt.show()
 
-            
+            pdb.set_trace()
 
             # accuracyContainer[_and_([
             #     accuracyContainer['sub']==110171,
