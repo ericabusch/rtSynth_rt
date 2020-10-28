@@ -47,12 +47,10 @@ def other(target):
 def red_vox(n_vox, prop=0.1):
     return int(np.ceil(n_vox * prop))
 
-def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a list a probability
+def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-    Evidence=[clf.predict_proba(X[i].reshape(1,-1))[0][j] for i,j in enumerate(targetID)]
-    # print('targetID=', targetID)
-    # print('Evidence=',Evidence)
+    Evidence=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)]
     return np.asarray(Evidence)
 
 def saveNpInDf(array):
@@ -107,7 +105,7 @@ def get_inds(X, Y, pair, testRun=None):
             
     return inds
 
-def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6):
+def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6,model_folder=None):
     # each testRun, each subject, each target axis, each target obj would generate one.
     META = METADICT[sub]
     print('META.shape=',META.shape)
@@ -117,64 +115,55 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
     objects=['bed', 'bench', 'chair', 'table']
 
     allpairs = itertools.combinations(objects,2)
-    for pair in allpairs: #pair=('bed', 'bench')
+    for pair in allpairs: # e.g. pair=('bed', 'bench')
         # Find the control (remaining) objects for this pair
         altpair = other(pair) #altpair=('chair', 'table')
-        for obj in pair: #obj='bed'
+
+        # obj is A
+        # otherObj is B
+        # altpair[0] is C
+        # altpair[1] is D
+
+        for obj in pair: # obj='bed', obj is A
             # in the current target axis pair=('bed', 'bench') altpair=('chair', 'table'), display image obj='bed'
             # find the evidence for bed from the (bed chair) and (bed table) classifier
 
             # get the test data and seperate the test data into category obj and category other
-            otherObj=[i for i in pair if i!=obj][0]
-            print('otherObj=',otherObj)
+            otherObj=[i for i in pair if i!=obj][0] # otherObj is B
+            print('otherObj=',otherObj) # This is B
             objID = META.index[(META['label'].isin([obj])) & (META['run_num'] == int(testRun))]
             otherObjID = META.index[(META['label'].isin([otherObj])) & (META['run_num'] == int(testRun))]
             
-            obj_X=FEAT[objID]
-            # obj_Y=META.iloc[objID].label
-            otherObj_X=FEAT[otherObjID]
-            # otherObj_Y=META.iloc[otherObjID].label
+            obj_X=FEAT[objID] # A features
+            otherObj_X=FEAT[otherObjID] # B features
 
-            model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
             print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
             print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
             AC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib') # AC classifier
             AD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib') # AD classifier
 
             if include < 1:
+                # This is selected features by importance
                 selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.selectedFeatures') # AC classifier
                 obj_X=obj_X[:,selectedFeatures]
                 selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.selectedFeatures') # AD classifier
                 otherObj_X=otherObj_X[:,selectedFeatures]
 
-            AC_A_evidence = classifierEvidence(AC_clf,obj_X,[obj] * obj_X.shape[0]) #AC classifier A evidence for A trials
-            AD_A_evidence = classifierEvidence(AD_clf,obj_X,[obj] * obj_X.shape[0]) #AD classifier A evidence for A trials
-            A_evidence_forATrials = np.mean([AC_A_evidence, AD_A_evidence],axis=0) # AC and AD classifier A evidence for A trials
-            # print('A_evidence_forATrials=',A_evidence_forATrials)
+            AC_A_evidence = classifierEvidence(AC_clf,obj_X,[obj] * obj_X.shape[0]) # AC classifier A evidence for A trials
+            AD_A_evidence = classifierEvidence(AD_clf,obj_X,[obj] * obj_X.shape[0]) # AD classifier A evidence for A trials
+            A_evidence_forATrials = np.mean([AC_A_evidence, AD_A_evidence],axis=0) # AC and AD classifier A evidence for A trials ; shape=(20,)
 
-            AC_B_evidence = classifierEvidence(AC_clf,otherObj_X,[obj] * otherObj_X.shape[0]) #AC classifier A evidence for B trials
-            AD_B_evidence = classifierEvidence(AD_clf,otherObj_X,[obj] * otherObj_X.shape[0]) #AD classifier A evidence for B trials
-            A_evidence_forBTrials = np.mean([AC_B_evidence, AD_B_evidence],axis=0) # AC and AD classifier A evidence for B trials
-            # print('A_evidence_forBTrials=',A_evidence_forBTrials)
+            AC_B_evidence = classifierEvidence(AC_clf,otherObj_X,[obj] * otherObj_X.shape[0]) # AC classifier A evidence for B trials
+            AD_B_evidence = classifierEvidence(AD_clf,otherObj_X,[obj] * otherObj_X.shape[0]) # AD classifier A evidence for B trials
+            A_evidence_forBTrials = np.mean([AC_B_evidence, AD_B_evidence],axis=0) # AC and AD classifier A evidence for B trials ; shape=(20,)
             
-            # testEvidence = testEvidence.append({
-            #     'sub':sub,
-            #     'testRun':testRun,
-            #     'targetAxis':pair,
-            #     'obj':obj,
-            #     'obj_evidence':np.mean(obj_evidence),
-            #     'otherObj_evidence':np.mean(otherObj_evidence),
-            #     'objMinusOther_evidence':np.mean(obj_evidence) - np.mean(otherObj_evidence),
-            #     'filterType':filterType,
-            #     'include':include,
-            #     'roi':roi
-            #     },
-            #     ignore_index=True)
+            # save the evidenced to testEvidence df
             testEvidence = testEvidence.append({
                 'sub':sub,
                 'testRun':testRun,
                 'targetAxis':pair,
                 'obj':obj,
+                'otherObj':otherObj,
                 
                 'AC_A_evidence':saveNpInDf(AC_A_evidence), # AC classifier A evidence for A
                 'AD_A_evidence':saveNpInDf(AD_A_evidence), # AD classifier A evidence for A
@@ -193,7 +182,7 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
 
     return testEvidence
 
-def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #include is the proportion of features selected
+def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model_folder=None): #include is the proportion of features selected
     
     accuracyContainer = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','altobj','acc','filterType','roi'])
     testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','obj_evidence','otherObj_evidence','filterType','roi'])
@@ -329,7 +318,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1): #in
         filterType=filterType,
         roi=roi,
         include=include,
-        testRun=testRun
+        testRun=testRun,
+        model_folder=model_folder
         )
         # except:
         #     pass
@@ -346,7 +336,7 @@ testRun=int(sys.argv[4])
 model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
 print('model_folder=',model_folder)
 call(f"mkdir -p {model_folder}",shell=True)
-minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun)
+minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun,model_folder=model_folder)
 
 
 ## - to run in parallel
@@ -413,10 +403,11 @@ def loadPlot():
             return np.logical_and(L[0],_and_(L[1:]))
 
     def resample(L):
-        L=np.asarray(L)
+        L=np.asarray(L).reshape(-1)
+        print('L.shape=',L.shape)
         sample_mean=[]
         for iter in tqdm(range(10000)):
-            resampleID=np.random.choice(len(L), len(L), replace=True)
+            resampleID=np.random.choice(L.shape[0], L.shape[0], replace=True)
             resample_acc=L[resampleID]
             sample_mean.append(np.nanmean(resample_acc))
         sample_mean=np.asarray(sample_mean)
@@ -458,79 +449,32 @@ def loadPlot():
                     testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
     accuracyContainer=pd.concat(accuracyContainer, ignore_index=True)
     testEvidence=pd.concat(testEvidence, ignore_index=True)
-    # for i in range(len(testEvidence)):
-    #     testEvidence['AC_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_A_evidence'].iloc[i])
-    #     testEvidence['AD_A_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_A_evidence'].iloc[i])
-    #     testEvidence['AC_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AC_B_evidence'].iloc[i])
-    #     testEvidence['AD_B_evidence'].iloc[i]=loadNpInDf(testEvidence['AD_B_evidence'].iloc[i])
-
-
-    # # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
-    # subjects=np.unique(accuracyContainer['sub'])
-    # filterType=np.unique(accuracyContainer['filterType'])
-    # filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-    # a=[]
-    # labels=[]
-    # for i in range(len(filterType)):
-    #     a.append([list(testEvidence[np.logical_and(
-    #         np.logical_and(
-    #             testEvidence['roi']=='V1', 
-    #             testEvidence['filterType']==filterType[i]),
-    #         testEvidence['include']==1.)]['obj_evidence'])])
-    #     a.append([list(testEvidence[np.logical_and(
-    #         np.logical_and(
-    #             testEvidence['roi']=='V1', 
-    #             testEvidence['filterType']==filterType[i]),
-    #         testEvidence['include']==1.)]['otherObj_evidence'])])
-    #     a.append([])
-    #     labels.append(filterType[i] + ' obj_evidence')
-    #     labels.append(filterType[i] + ' otherObj_evidence')
-    #     labels.append('')
-    # bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
-
-
-
-
-    # # acrosacross filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
-    # subjects=np.unique(accuracyContainer['sub'])
-    # filterType=np.unique(accuracyContainer['filterType'])
-    # filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-    # a=[]
-    # labels=[]
-    # for i in range(len(filterType)):
-    #     t=testEvidence[np.logical_and(
-    #         np.logical_and(
-    #             testEvidence['roi']=='V1', 
-    #             testEvidence['filterType']==filterType[i]),
-    #         testEvidence['include']==1.)]
-    #     t=list(np.asarray(t['obj_evidence'])-np.asarray(t['otherObj_evidence']))
-    #     a.append([t])
-    # bar(a,labels=filterType,title='across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.')
-
-
 
 
     # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
-    filterType=np.unique(accuracyContainer['filterType'])
     filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
 
+    # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+    # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
     a=[]
     labels=[]
     for i in range(len(filterType)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
         c=[]
         d=[]
+
+        # to get one single number for A_evidence_forATrials for each subject. 
+        # you will need to extract the corresponding conditions and conbine the data together. 
         for sub in subjects:
-            t=testEvidence[_and_([
+            t=testEvidence[_and_([ #extract
                 testEvidence['roi']=='V1',
                 testEvidence['filterType']==filterType[i],
                 testEvidence['include']==1.,
                 testEvidence['sub']==sub
             ])]
             t=preloadDfnumpy(t)
-            pdb.set_trace()
 
-            c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
+            c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials'])))) #conbine the data together
             d.append(np.nanmean(np.asarray(list(t['A_evidence_forBTrials']))))
 
         a.append(c)
@@ -541,26 +485,81 @@ def loadPlot():
         labels.append('')
     bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
 
+    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    _=plt.boxplot(e)
+
 
 
 
     # accuracy: across filterType, take subject mean, within only V1, include=1.
     subjects=np.unique(accuracyContainer['sub'])
-    filterType=np.unique(accuracyContainer['filterType'])
     filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    # I want to construction a list whose 1st element is the accuracy for noFilter, 2nd for highpass and so on.
+    # each element is 32 numbers for 32 subjects. each number is the mean accuracy for that subject.
     a=[]
-    for sub in tqdm(subjects):
-        try: # some subjects don't have KalmanFilter_filter_analyze_voxel_by_voxel data
-            t=[list(accuracyContainer[
-                    _and_([
-                        accuracyContainer['roi']=='V1', 
-                        accuracyContainer['filterType']==filterType[i],
-                        accuracyContainer['sub']==sub,
-                        accuracyContainer['include']==1.
-                    ])]['acc']) for i in range(len(filterType))]             
-            a.append(np.mean(np.asarray(t),axis=1))
-        except:
-            pass
-    a=np.asarray(a)
-    b=[a[:,i] for i in range(a.shape[1])]
-    bar(b,labels=list(filterType),title='across filterType, within only V1, include=1.')
+    for i in range(len(filterType)):
+        b=[]
+        for sub in tqdm(subjects):
+            try:
+                b.append(np.mean(accuracyContainer[
+                        _and_([
+                            accuracyContainer['roi']=='V1', 
+                            accuracyContainer['filterType']==filterType[i],
+                            accuracyContainer['sub']==sub,
+                            accuracyContainer['include']==1.
+                        ])]['acc']))
+            except:
+                pass
+        a.append(np.asarray(b))
+    bar(a,labels=list(filterType),title='across filterType, within only V1, include=1.')
+    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    _=plt.boxplot(e)
+
+
+
+
+    # compare between includes using accuracy
+    # I want to construct a comparison between different includes by having includes
+    includes=[0.1,0.3,0.6,0.9,1]
+    filterType='noFilter'
+    a=[]
+    for include in includes:
+        b=[]
+        for sub in tqdm(subjects):
+            try:
+                b.append(np.mean(accuracyContainer[
+                        _and_([
+                            accuracyContainer['roi']=='V1', 
+                            accuracyContainer['filterType']==filterType,
+                            accuracyContainer['sub']==sub,
+                            accuracyContainer['include']==np.float(include)
+                        ])]['acc']))
+            except:
+                pass
+        a.append(np.asarray(b))
+    bar(a,labels=list(includes),title=f'across include, filterType = {filterType}, within only V1.')
+    plt.figure()
+    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    _=plt.boxplot(e)
+
+    # compare between includes using evidence
+    # I want to construct a comparison between different includes by having includes
+    includes=[0.1,0.3,0.6,0.9,1]
+    filterType='noFilter'
+    a=[]
+    for include in includes:
+        b=[]
+        for sub in tqdm(subjects):
+            t=testEvidence[_and_([ #extract
+                testEvidence['roi']=='V1',
+                testEvidence['filterType']==filterType,
+                testEvidence['include']==np.float(include),
+                testEvidence['sub']==sub
+            ])]
+            t=preloadDfnumpy(t)
+            b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
+        a.append(np.asarray(b))
+    bar(a,labels=list(includes),title=f'across include, filterType = {filterType}, within only V1.')
+    plt.figure()
+    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    _=plt.boxplot(e)
