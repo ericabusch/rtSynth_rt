@@ -47,12 +47,14 @@ def other(target):
 def red_vox(n_vox, prop=0.1):
     return int(np.ceil(n_vox * prop))
 
+def logit(p):
+    return 1/(1+np.exp(-p))
+
 def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-    Evidence=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)]
-
-    
+    # Evidence=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)] # logit(X*clf.coef_+clf.intercept_)
+    Evidence=[np.sum(X[i,:]*clf.coef_+clf.intercept_) if j==1 else (1-np.sum(X[i,:]*clf.coef_+clf.intercept_)) for i,j in enumerate(targetID)] # X*clf.coef_+clf.intercept_ # np.sum((X*clf.coef_+clf.intercept_), axis=1) #logit(np.sum((X*clf.coef_[0]+clf.intercept_),axis=1)) is very close to clf.predict_proba(X), but not exactly equal
     return np.asarray(Evidence)
 
 def saveNpInDf(array):
@@ -332,7 +334,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
-tag="condition1"
+tag="condition2"
 
 include=np.float(sys.argv[1])
 roi=sys.argv[2]

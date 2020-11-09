@@ -1,3 +1,6 @@
+# change log
+* 0.1.0 change the evidence calculation method from `Evidence=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)]` which is close to `logit(X*clf.coef_+clf.intercept_)` to without logit: `Evidence=[np.sum(X[i,:]*clf.coef_+clf.intercept_) if j==1 else (1-np.sum(X[i,:]*clf.coef_+clf.intercept_)) for i,j in enumerate(targetID)]` aka `X*clf.coef_+clf.intercept_`
+
 # Realtime fMRI Cloud Framework
 This is a generic framework for building real-time fMRI processing pipelines in the cloud.
 
