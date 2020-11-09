@@ -196,9 +196,14 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns',tag=''):
                 # print('timeseries.shape=',timeseries.shape)
                 # print(f'filtering time passed={B-A} s for run {run} ')
 
-                # timeseries = np.load(f"/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/filtered_timeSeries/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
-                timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
-
+                
+                if tag=='':
+                    timeseries = np.load(f"/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/filtered_timeSeries/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+                elif tag=='condition1':
+                    timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy") #condition1
+                elif tag=='condition2':
+                    timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/do_not_filter_first_56s/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+                        
                 # use information in regressor/run_x folder to make hasImage vector
                 # associated TR is just the hasImage index, converted to a float
                 Onsets = [0]*240
@@ -245,7 +250,7 @@ print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
 subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
 subjects=glob(subject_dir+'*_neurosketch')
 subjects=[sub.split('/')[-1].split('_')[0] for sub in subjects if sub.split('/')[-1][0]!='_']
-tag='condition1'
+tag='condition2'
 
 for sub in tqdm(subjects):
     filterType='KalmanFilter_filter_analyze_voxel_by_voxel'
@@ -258,3 +263,4 @@ for sub in tqdm(subjects):
         pass
 
 
+# This script only need to be run sepearately, doesn't need any parent script to run. e.g. in the jupyter notebok in rtAtten environment
