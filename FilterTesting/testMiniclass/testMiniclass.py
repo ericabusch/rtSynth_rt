@@ -51,6 +51,8 @@ def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed',
     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
     Evidence=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)]
+
+    
     return np.asarray(Evidence)
 
 def saveNpInDf(array):

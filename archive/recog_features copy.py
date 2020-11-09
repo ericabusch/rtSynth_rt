@@ -142,7 +142,7 @@ def filtering(timeseries=None, filterType='highPassRealTime'):
     return filtered_timeseries
 
 
-def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
+def recog_features(subject='0110171',filterType = 'highPassBetweenRuns',tag=''):
 
     os.chdir('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten/')
     subject = subject.split('_')[0]
@@ -167,7 +167,7 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
     # /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/analysis/firstlevel/rois/V1_func_run_1.nii.gz 94*94*72 #note V1_func_run_{1~6}.nii.gz are the same
     # /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/data/nifti/0110171_neurosketch_recognition_run_1.nii.gz 94*94*72
 
-    out_dir = os.path.abspath(os.path.join(feature_dir, 'recognition','condition1')) 
+    out_dir = os.path.abspath(os.path.join(feature_dir, 'recognition',tag)) 
     call(f"mkdir -p {out_dir}",shell=True)
     # if not os.path.isdir(out_dir):
         # os.mkdir(out_dir)
@@ -245,6 +245,7 @@ print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
 subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
 subjects=glob(subject_dir+'*_neurosketch')
 subjects=[sub.split('/')[-1].split('_')[0] for sub in subjects if sub.split('/')[-1][0]!='_']
+tag='condition1'
 
 for sub in tqdm(subjects):
     filterType='KalmanFilter_filter_analyze_voxel_by_voxel'
@@ -252,7 +253,7 @@ for sub in tqdm(subjects):
     print('filterType=',filterType)
 
     try:
-        recog_features(subject=sub, filterType = filterType)
+        recog_features(subject=sub, filterType = filterType,tag=tag)
     except:
         pass
 
