@@ -182,7 +182,7 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
 
     return testEvidence
 
-def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model_folder=None): #include is the proportion of features selected
+def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model_folder=None,tag=''): #include is the proportion of features selected
     
     accuracyContainer = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','altobj','acc','filterType','roi'])
     testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','obj_evidence','otherObj_evidence','filterType','roi'])
@@ -191,7 +191,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     # os.chdir(working_dir)
 
     # data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
-    data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition_condition1/' # condition1: filter everything (including the first 56s) train and filter the Kalman at the same time.
+    data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/{tag}' # condition1: filter everything (including the first 56s) train and filter the Kalman at the same time.
 
     files = os.listdir(data_dir)
     feats = [i for i in files if 'metadata' not in i]
@@ -330,15 +330,16 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
+tag="condition1"
 
 include=np.float(sys.argv[1])
 roi=sys.argv[2]
 filterType=sys.argv[3]
 testRun=int(sys.argv[4])
-model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/'
+model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/{tag}/'
 print('model_folder=',model_folder)
 call(f"mkdir -p {model_folder}",shell=True)
-minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun,model_folder=model_folder)
+minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun,model_folder=model_folder,tag=tag)
 
 
 ## - to run in parallel
@@ -379,13 +380,14 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = test
 
 
 ## - load and plot data
-def loadPlot():
+def loadPlot(tag='condition1'):
 
     # modules and functions
     import pandas as pd
     import numpy as np
     from tqdm import tqdm
     import pdb
+    import matplotlib.pyplot as plt
 
     def loadNpInDf(fileName):
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/'
@@ -446,9 +448,15 @@ def loadPlot():
         for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
             for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
                 for testRun in [1,2,3,4,5,6]:
-                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
-                    accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
-                    testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
+                    if filterType=='KalmanFilter_filter_analyze_voxel_by_voxel':
+                        model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/{tag}/'
+                    else:
+                        model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
+                    try:
+                        accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
+                        testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
+                    except:
+                        pass
     accuracyContainer=pd.concat(accuracyContainer, ignore_index=True)
     testEvidence=pd.concat(testEvidence, ignore_index=True)
 
@@ -540,7 +548,7 @@ def loadPlot():
                 pass
         a.append(np.asarray(b))
     bar(a,labels=list(includes),title=f'across include, filterType = {filterType}, within only V1.')
-    plt.figure()
+    _=plt.figure()
     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
     _=plt.boxplot(e)
 
@@ -562,6 +570,6 @@ def loadPlot():
             b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
         a.append(np.asarray(b))
     bar(a,labels=list(includes),title=f'across include, filterType = {filterType}, within only V1.')
-    plt.figure()
+    _=plt.figure()
     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
     _=plt.boxplot(e)

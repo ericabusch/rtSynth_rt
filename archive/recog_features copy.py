@@ -167,9 +167,10 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
     # /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/analysis/firstlevel/rois/V1_func_run_1.nii.gz 94*94*72 #note V1_func_run_{1~6}.nii.gz are the same
     # /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/data/nifti/0110171_neurosketch_recognition_run_1.nii.gz 94*94*72
 
-    out_dir = os.path.abspath(os.path.join(feature_dir, 'recognition_condition1')) 
-    if not os.path.isdir(out_dir):
-        os.mkdir(out_dir)
+    out_dir = os.path.abspath(os.path.join(feature_dir, 'recognition','condition1')) 
+    call(f"mkdir -p {out_dir}",shell=True)
+    # if not os.path.isdir(out_dir):
+        # os.mkdir(out_dir)
 
     objects = ['bed', 'bench', 'chair', 'table']
     roi_list_masks = ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo'] #['V1', 'V2','LOC_FS','IT_FS','fusiform_FS','parahippo_FS','PRC_FS','ento_FS','hipp_FS','V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
