@@ -190,7 +190,9 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     # working_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
     # os.chdir(working_dir)
 
-    data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
+    # data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
+    data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition_condition1/' # condition1: filter everything (including the first 56s) train and filter the Kalman at the same time.
+
     files = os.listdir(data_dir)
     feats = [i for i in files if 'metadata' not in i]
     subjects = np.unique([i.split('_')[0] for i in feats if i.split('_')[0] not in ['1121161','0112174']]) # 1121161 has a grid spacing issue and 0112174 lacks one of regressor file

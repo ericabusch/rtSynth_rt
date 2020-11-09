@@ -21,6 +21,7 @@ import time
 # sys.path.append('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten')
 import ray
 from pykalman import KalmanFilter
+from tqdm import tqdm
 
 ray.init(ignore_reinit_error=True)
 @ray.remote(num_cpus = 0.5)
@@ -166,7 +167,7 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
     # /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/analysis/firstlevel/rois/V1_func_run_1.nii.gz 94*94*72 #note V1_func_run_{1~6}.nii.gz are the same
     # /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/data/nifti/0110171_neurosketch_recognition_run_1.nii.gz 94*94*72
 
-    out_dir = os.path.abspath(os.path.join(feature_dir, 'recognition')) 
+    out_dir = os.path.abspath(os.path.join(feature_dir, 'recognition_condition1')) 
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
 
@@ -193,7 +194,10 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
                 # B=time.time()
                 # print('timeseries.shape=',timeseries.shape)
                 # print(f'filtering time passed={B-A} s for run {run} ')
-                timeseries = np.load(f"/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/filtered_timeSeries/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+
+                # timeseries = np.load(f"/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/filtered_timeSeries/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+                timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+
                 # use information in regressor/run_x folder to make hasImage vector
                 # associated TR is just the hasImage index, converted to a float
                 Onsets = [0]*240
@@ -241,7 +245,7 @@ subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02
 subjects=glob(subject_dir+'*_neurosketch')
 subjects=[sub.split('/')[-1].split('_')[0] for sub in subjects if sub.split('/')[-1][0]!='_']
 
-for sub in subjects:
+for sub in tqdm(subjects):
     filterType='KalmanFilter_filter_analyze_voxel_by_voxel'
     print('sub=',sub)
     print('filterType=',filterType)
