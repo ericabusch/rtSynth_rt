@@ -203,7 +203,11 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns',tag=''):
                     timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy") #condition1
                 elif tag=='condition2':
                     timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/do_not_filter_first_56s/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
-                        
+                elif tag=='condition3':
+                    timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs_refit_filter/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+                elif tag=='condition4':
+                    timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/do_not_filter_first_56s_refit_filter_parallel/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+                                           
                 # use information in regressor/run_x folder to make hasImage vector
                 # associated TR is just the hasImage index, converted to a float
                 Onsets = [0]*240
@@ -250,7 +254,7 @@ print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
 subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
 subjects=glob(subject_dir+'*_neurosketch')
 subjects=[sub.split('/')[-1].split('_')[0] for sub in subjects if sub.split('/')[-1][0]!='_']
-tag='condition2'
+tag='condition4'
 
 for sub in tqdm(subjects):
     filterType='KalmanFilter_filter_analyze_voxel_by_voxel'
