@@ -21,6 +21,7 @@ import pickle
 import pdb
 import time
 from tqdm import tqdm
+from scipy import stats
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
@@ -53,8 +54,9 @@ def logit(p):
 def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-    # Evidence=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)] # logit(X*clf.coef_+clf.intercept_)
-    Evidence=[np.sum(X[i,:]*clf.coef_+clf.intercept_) if j==1 else (1-np.sum(X[i,:]*clf.coef_+clf.intercept_)) for i,j in enumerate(targetID)] # X*clf.coef_+clf.intercept_ # np.sum((X*clf.coef_+clf.intercept_), axis=1) #logit(np.sum((X*clf.coef_[0]+clf.intercept_),axis=1)) is very close to clf.predict_proba(X), but not exactly equal
+    # Evidence1=[clf.predict_proba(X[i,:].reshape(1,-1))[0][j] for i,j in enumerate(targetID)] # logit(X*clf.coef_+clf.intercept_)
+    # Evidence2=[(np.sum(X[i,:]*clf.coef_)+clf.intercept_) if j==1 else (1-(np.sum(X[i,:]*clf.coef_)+clf.intercept_)) for i,j in enumerate(targetID)] # X*clf.coef_+clf.intercept_ # np.sum((X*clf.coef_+clf.intercept_), axis=1) #logit(np.sum((X*clf.coef_[0]+clf.intercept_),axis=1)) is very close to clf.predict_proba(X), but not exactly equal
+    Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
     return np.asarray(Evidence)
 
 def saveNpInDf(array):
@@ -195,7 +197,12 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     # os.chdir(working_dir)
 
     # data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
-    data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/{tag}' # condition1: filter everything (including the first 56s) train and filter the Kalman at the same time.
+    if filterType=='KalmanFilter_filter_analyze_voxel_by_voxel':
+        data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/{tag}/' # condition1: filter everything (including the first 56s) train and filter the Kalman at the same time.
+    else:
+        data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
+
+    
 
     files = os.listdir(data_dir)
     feats = [i for i in files if 'metadata' not in i]
@@ -203,6 +210,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     # If you want to reduce the number of subjects used for testing purposes
     subs=len(subjects) # subs=1
     subjects = subjects[:subs]
+    subjects=['1206161', '0119173', '1201161', '1206163', '0120171', '0110171'] #['0110171', '1206161', '0120171', '1206161', '1206163'] #['1206161', '1201161', '1206163', '0110171'] #['0110171','1206161']
     print('subjects=',subjects)
 
     objects = ['bed', 'bench', 'chair', 'table']
@@ -334,7 +342,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
-tag="condition2"
+tag="condition4"
 
 include=np.float(sys.argv[1])
 roi=sys.argv[2]
@@ -351,7 +359,7 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = test
 
 # # testMiniclass_child.sh
 # #!/bin/bash
-# #SBATCH --partition=short,scavenge,interactive,long,verylong
+# #SBATCH --partition=short,scavenge,day
 # #SBATCH --nodes=1
 # #SBATCH --ntasks-per-node=1
 # #SBATCH --cpus-per-task=1
@@ -384,7 +392,7 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = test
 
 
 ## - load and plot data
-def loadPlot(tag='condition1'):
+def loadPlot(tag='condition4'):
 
     # modules and functions
     import pandas as pd
@@ -392,6 +400,8 @@ def loadPlot(tag='condition1'):
     from tqdm import tqdm
     import pdb
     import matplotlib.pyplot as plt
+    import itertools
+    from scipy import stats
 
     def loadNpInDf(fileName):
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/'
@@ -414,7 +424,7 @@ def loadPlot(tag='condition1'):
         L=np.asarray(L).reshape(-1)
         print('L.shape=',L.shape)
         sample_mean=[]
-        for iter in tqdm(range(10000)):
+        for iter in range(10000):
             resampleID=np.random.choice(L.shape[0], L.shape[0], replace=True)
             resample_acc=L[resampleID]
             sample_mean.append(np.nanmean(resample_acc))
@@ -443,7 +453,18 @@ def loadPlot(tag='condition1'):
         plt.show()
         return m,lower,upper
 
+    def assertKeys(t0,t1,keys=['testRun','targetAxis','obj','otherObj']):
+        # this function compare the given keys of the given two df and return true if they are exactly the same
+        for key in keys:
+            if not np.all(np.asarray(t1[key])==np.asarray(t0[key])):
+                return False
+        return True
 
+    def concatArrayArray(c): #[array[],array[]]
+        ct=[]
+        for i in range(len(c)):
+            ct=ct+[list(i) for i in c][i]
+        return ct
 
     # load saved results
     accuracyContainer=[]
@@ -452,10 +473,10 @@ def loadPlot(tag='condition1'):
         for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
             for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
                 for testRun in [1,2,3,4,5,6]:
-                    if filterType=='KalmanFilter_filter_analyze_voxel_by_voxel':
-                        model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/{tag}/'
-                    else:
-                        model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
+                    # if filterType=='KalmanFilter_filter_analyze_voxel_by_voxel':
+                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/{tag}/'
+                    # else:
+                    #     model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
                     try:
                         accuracyContainer.append(pd.read_csv(f"{model_folder}accuracy.csv"))
                         testEvidence.append(pd.read_csv(f'{model_folder}testEvidence.csv'))
@@ -465,115 +486,194 @@ def loadPlot(tag='condition1'):
     testEvidence=pd.concat(testEvidence, ignore_index=True)
 
 
-    # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    global filterTypes,subjects,ROIs
+    filterTypes=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
     subjects=np.unique(accuracyContainer['sub'])
-    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-
-    # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
-    # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
-    a=[]
-    labels=[]
-    for i in range(len(filterType)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
-        c=[]
-        d=[]
-
-        # to get one single number for A_evidence_forATrials for each subject. 
-        # you will need to extract the corresponding conditions and conbine the data together. 
-        for sub in subjects:
-            t=testEvidence[_and_([ #extract
-                testEvidence['roi']=='V1',
-                testEvidence['filterType']==filterType[i],
-                testEvidence['include']==1.,
-                testEvidence['sub']==sub
-            ])]
-            t=preloadDfnumpy(t)
-
-            c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials'])))) #conbine the data together
-            d.append(np.nanmean(np.asarray(list(t['A_evidence_forBTrials']))))
-
-        a.append(c)
-        a.append(d)
-        a.append([])
-        labels.append(filterType[i] + ' A_evidence_forATrials')
-        labels.append(filterType[i] + ' A_evidence_forBTrials')
-        labels.append('')
-    bar(a,labels=labels,title='across filterType, objEvidence and other Evidence, within only V1, include=1.')
-
-    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-    _=plt.boxplot(e)
+    ROIs=['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']
 
 
+    def evidenceAcrossFiltertypes(ROI="V1"):
+        # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
+        a=[]
+        labels=[]
+        for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
+            c=[]
+            d=[]
+
+            # to get one single number for A_evidence_forATrials for each subject. 
+            # you will need to extract the corresponding conditions and conbine the data together. 
+            for sub in subjects:
+                t=testEvidence[_and_([ #extract
+                    testEvidence['roi']==ROI,
+                    testEvidence['filterType']==filterTypes[i],
+                    testEvidence['include']==1.,
+                    testEvidence['sub']==sub
+                ])]
+                t=preloadDfnumpy(t)
+
+                c.append(np.asarray(list(t['A_evidence_forATrials'])).reshape(-1)) #conbine the data together
+                d.append(np.asarray(list(t['A_evidence_forBTrials'])).reshape(-1))
+
+            a.append(concatArrayArray(c))
+            a.append(concatArrayArray(d))
+            a.append([])
+            labels.append(filterTypes[i] + ' A_evidence_forATrials')
+            labels.append(filterTypes[i] + ' A_evidence_forBTrials')
+            labels.append('')
+        bar(a,labels=labels,title=f'evidence: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.')
+
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
+
+        # paired t-test
+        objects=np.arange(4)
+        allpairs = itertools.combinations(objects,2)
+        for pair in allpairs:
+            i=pair[0]
+            j=pair[1]
+            print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+            
+    for i in range(len(ROIs)):
+        evidenceAcrossFiltertypes(ROI=ROIs[i])
 
 
-    # accuracy: across filterType, take subject mean, within only V1, include=1.
-    subjects=np.unique(accuracyContainer['sub'])
-    filterType=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
-    # I want to construction a list whose 1st element is the accuracy for noFilter, 2nd for highpass and so on.
-    # each element is 32 numbers for 32 subjects. each number is the mean accuracy for that subject.
-    a=[]
-    for i in range(len(filterType)):
-        b=[]
-        for sub in tqdm(subjects):
-            try:
-                b.append(np.mean(accuracyContainer[
-                        _and_([
-                            accuracyContainer['roi']=='V1', 
-                            accuracyContainer['filterType']==filterType[i],
-                            accuracyContainer['sub']==sub,
-                            accuracyContainer['include']==1.
-                        ])]['acc']))
-            except:
-                pass
-        a.append(np.asarray(b))
-    bar(a,labels=list(filterType),title='across filterType, within only V1, include=1.')
-    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-    _=plt.boxplot(e)
+    def evidenceAcrossFiltertypes_meanForSub(ROI="V1"):
+        # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+        filterTypes=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+
+        # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
+        a=[]
+        labels=[]
+        for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
+            c=[]
+            d=[]
+
+            # to get one single number for A_evidence_forATrials for each subject. 
+            # you will need to extract the corresponding conditions and conbine the data together. 
+            for sub in subjects:
+                t=testEvidence[_and_([ #extract
+                    testEvidence['roi']==ROI,
+                    testEvidence['filterType']==filterTypes[i],
+                    testEvidence['include']==1.,
+                    testEvidence['sub']==sub
+                ])]
+                t=preloadDfnumpy(t)
+
+                c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials'])))) #conbine the data together
+                d.append(np.nanmean(np.asarray(list(t['A_evidence_forBTrials']))))
+
+            a.append(c)
+            a.append(d)
+            a.append([])
+            labels.append(filterTypes[i] + ' A_evidence_forATrials')
+            labels.append(filterTypes[i] + ' A_evidence_forBTrials')
+            labels.append('')
+        bar(a,labels=labels,title=f'evidence: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.')
+
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
+
+        # paired t-test
+        objects=np.arange(4)
+        allpairs = itertools.combinations(objects,2)
+        for pair in allpairs:
+            i=pair[0]
+            j=pair[1]
+            print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+
+    for i in range(len(ROIs)):
+        evidenceAcrossFiltertypes_meanForSub(ROI=ROIs[i])
+    
+
+    def accuracyAcrossFiltertype(ROI="V1"):
+        # accuracy: across filterType, take subject mean, within only V1, include=1.
+        
+        # I want to construction a list whose 1st element is the accuracy for noFilter, 2nd for highpass and so on.
+        # each element is 32 numbers for 32 subjects. each number is the mean accuracy for that subject.
+        a=[]
+        for i in range(len(filterTypes)):
+            b=[]
+            for sub in tqdm(subjects):
+                try:
+                    b.append(np.mean(accuracyContainer[
+                            _and_([
+                                accuracyContainer['roi']==ROI, 
+                                accuracyContainer['filterType']==filterTypes[i],
+                                accuracyContainer['sub']==int(sub),
+                                accuracyContainer['include']==1.
+                            ])]['acc']))
+                except:
+                    pass
+            a.append(np.asarray(b))
+        bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.')
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
+
+        # paired ttest
+        objects=np.arange(4)
+        allpairs = itertools.combinations(objects,2)
+        for pair in allpairs:
+            i=pair[0]
+            j=pair[1]
+            print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
+
+    for i in range(len(ROIs)):
+        accuracyAcrossFiltertype(ROI=ROIs[i])
 
 
+    def accuracyIncludes(ROI="V1"):
+        # compare between includes using accuracy
+        # I want to construct a comparison between different includes by having includes
+        includes=[0.1,0.3,0.6,0.9,1]
+        filterType='noFilter'
+        a=[]
+        for include in includes:
+            b=[]
+            for sub in tqdm(subjects):
+                try:
+                    b.append(np.mean(accuracyContainer[
+                            _and_([
+                                accuracyContainer['roi']==ROI, 
+                                accuracyContainer['filterType']==filterType,
+                                accuracyContainer['sub']==int(sub),
+                                accuracyContainer['include']==np.float(include)
+                            ])]['acc']))
+                except:
+                    pass
+            a.append(np.asarray(b))
+        bar(a,labels=list(includes),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
+        _=plt.figure()
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
+
+    for i in range(len(ROIs)):
+        accuracyIncludes(ROI=ROIs[i])
 
 
-    # compare between includes using accuracy
-    # I want to construct a comparison between different includes by having includes
-    includes=[0.1,0.3,0.6,0.9,1]
-    filterType='noFilter'
-    a=[]
-    for include in includes:
-        b=[]
-        for sub in tqdm(subjects):
-            try:
-                b.append(np.mean(accuracyContainer[
-                        _and_([
-                            accuracyContainer['roi']=='V1', 
-                            accuracyContainer['filterType']==filterType,
-                            accuracyContainer['sub']==sub,
-                            accuracyContainer['include']==np.float(include)
-                        ])]['acc']))
-            except:
-                pass
-        a.append(np.asarray(b))
-    bar(a,labels=list(includes),title=f'across include, filterType = {filterType}, within only V1.')
-    _=plt.figure()
-    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-    _=plt.boxplot(e)
+    def evidenceIncludes(ROI="V1"): # filtering the features would often increase the performance.
+        # compare between includes using evidence
+        # I want to construct a comparison between different includes by having includes
+        includes=[0.1,0.3,0.6,0.9,1]
+        filterType='noFilter'
+        a=[]
+        for include in includes:
+            b=[]
+            for sub in tqdm(subjects):
+                t=testEvidence[_and_([ #extract
+                    testEvidence['roi']==ROI,
+                    testEvidence['filterType']==filterType,
+                    testEvidence['include']==np.float(include),
+                    testEvidence['sub']==int(sub)
+                ])]
+                t=preloadDfnumpy(t)
+                b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
+            a.append(np.asarray(b))
+        bar(a,labels=list(includes),title=f'evidence across include, filterType = {filterType}, within only {ROI}.')
+        _=plt.figure()
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
 
-    # compare between includes using evidence
-    # I want to construct a comparison between different includes by having includes
-    includes=[0.1,0.3,0.6,0.9,1]
-    filterType='noFilter'
-    a=[]
-    for include in includes:
-        b=[]
-        for sub in tqdm(subjects):
-            t=testEvidence[_and_([ #extract
-                testEvidence['roi']=='V1',
-                testEvidence['filterType']==filterType,
-                testEvidence['include']==np.float(include),
-                testEvidence['sub']==sub
-            ])]
-            t=preloadDfnumpy(t)
-            b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
-        a.append(np.asarray(b))
-    bar(a,labels=list(includes),title=f'across include, filterType = {filterType}, within only V1.')
-    _=plt.figure()
-    e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-    _=plt.boxplot(e)
+    for i in range(len(ROIs)):
+        evidenceIncludes(ROI=ROIs[i])
