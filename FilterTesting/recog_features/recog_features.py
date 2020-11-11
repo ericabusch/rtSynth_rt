@@ -40,7 +40,7 @@ def kalman_filter_voxel(measurement):
     (filtered_state_means, filtered_state_covariances) = kf.filter(measurement)
     return filtered_state_means.reshape(-1)
     
-def filtering(timeseries=None, filterType='highPassRealTime'): 
+def filtering(timeseries=None, filterType='highPassRealTime'):
     '''
     filterType can be 
         highPassRealTime 
