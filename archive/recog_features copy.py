@@ -254,6 +254,8 @@ print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
 subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
 subjects=glob(subject_dir+'*_neurosketch')
 subjects=[sub.split('/')[-1].split('_')[0] for sub in subjects if sub.split('/')[-1][0]!='_']
+subjects=['1206161', '0119173', '1201161', '1206163', '0120171', '0110171'] #['1206161', '1201161', '1206163', '0110171'] #['0110171','1206161']
+
 tag='condition4'
 
 for sub in tqdm(subjects):
@@ -261,10 +263,10 @@ for sub in tqdm(subjects):
     print('sub=',sub)
     print('filterType=',filterType)
 
-    try:
-        recog_features(subject=sub, filterType = filterType,tag=tag)
-    except:
-        pass
+    # try:
+    recog_features(subject=sub, filterType = filterType,tag=tag)
+    # except:
+    #     pass
 
 
 # This script only need to be run sepearately, doesn't need any parent script to run. e.g. in the jupyter notebok in rtAtten environment
