@@ -143,16 +143,16 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
             obj_X=FEAT[objID] # A features
             otherObj_X=FEAT[otherObjID] # B features
 
-            print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
-            print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
-            AC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib') # AC classifier
-            AD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib') # AD classifier
+            print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}_{testRun}.joblib')
+            print(f'loading {model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}_{testRun}.joblib')
+            AC_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}_{testRun}.joblib') # AC classifier
+            AD_clf = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}_{testRun}.joblib') # AD classifier
 
             if include < 1:
                 # This is selected features by importance
-                selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.selectedFeatures') # AC classifier
+                selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}_selectedFeatures_{testRun}') # AC classifier
                 obj_X=obj_X[:,selectedFeatures]
-                selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.selectedFeatures') # AD classifier
+                selectedFeatures=load_obj(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}_selectedFeatures_{testRun}') # AD classifier
                 otherObj_X=otherObj_X[:,selectedFeatures]
 
             AC_A_evidence = classifierEvidence(AC_clf,obj_X,[obj] * obj_X.shape[0]) # AC classifier A evidence for A trials
@@ -296,14 +296,14 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                         testX = testX[:, obj_inds[-nvox:]]
                     
                     # Train your classifier
-                    model_path=model_folder + '{}_{}.joblib'.format(sub, naming)
+                    model_path=f'{model_folder}{sub}_{naming}_{testRun}.joblib'
                     if os.path.exists(model_path):
                        clf=joblib.load(model_path)
                     else:
                         clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
                                                 multi_class='multinomial').fit(trainX, trainY)
                         joblib.dump(clf, model_path)
-                        save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}.selectedFeatures')
+                        save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}_selectedFeatures_{testRun}')
 
                     # Monitor progress by printing accuracy (only useful if you're running a test set)
                     acc = clf.score(testX, testY)
