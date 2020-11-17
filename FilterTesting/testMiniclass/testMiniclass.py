@@ -108,7 +108,7 @@ def get_inds(X, Y, pair, testRun=None):
     # add to a dictionary for later use
     inds[clf.classes_[0]] = sortmult1X
     inds[clf.classes_[1]] = sortmult2X
-            
+    
     return inds
 
 def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6,model_folder=None):
@@ -123,7 +123,7 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
     allpairs = itertools.combinations(objects,2)
     for pair in allpairs: # e.g. pair=('bed', 'bench')
         # Find the control (remaining) objects for this pair
-        altpair = other(pair) #altpair=('chair', 'table')
+        altpair = other(pair) # altpair=('chair', 'table')
 
         # obj is A
         # otherObj is B
@@ -210,7 +210,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     # If you want to reduce the number of subjects used for testing purposes
     subs=len(subjects) # subs=1
     subjects = subjects[:subs]
-    subjects=['1206161', '0119173', '1201161', '1206163', '0120171', '0110171'] #['0110171', '1206161', '0120171', '1206161', '1206163'] #['1206161', '1201161', '1206163', '0110171'] #['0110171','1206161']
+    # subjects=['1206161', '0119173', '1201161', '1206163', '0120171', '0110171'] #['0110171', '1206161', '0120171', '1206161', '1206163'] #['1206161', '1201161', '1206163', '0110171'] #['0110171','1206161']
     print('subjects=',subjects)
 
     objects = ['bed', 'bench', 'chair', 'table']
@@ -241,7 +241,6 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
             subjects_new.append(sub)
         except:
             pass
-
 
     # Which run to use as test data (leave as None to not have test data)
     subjects=subjects_new
@@ -342,7 +341,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
-tag="condition4"
+tag="condition5"
 
 include=np.float(sys.argv[1])
 roi=sys.argv[2]
@@ -392,7 +391,7 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = test
 
 
 ## - load and plot data
-def loadPlot(tag='condition4'):
+def loadPlot(tag='condition5'):
 
     # modules and functions
     import pandas as pd
@@ -409,9 +408,12 @@ def loadPlot(tag='condition4'):
 
     def preloadDfnumpy(testEvidence,List=['AC_A_evidence','AD_A_evidence','AC_B_evidence','AD_B_evidence','A_evidence_forATrials','A_evidence_forBTrials']):
         # this function convert the dataframe cell numpy array into real numpy array, was a string pointing to a file
+        import warnings
+        warnings.filterwarnings("ignore")
         for i in range(len(testEvidence)):
             for L in List:
                 testEvidence[L].iloc[i]=loadNpInDf(testEvidence[L].iloc[i])
+        warnings.filterwarnings("default")
         return testEvidence
 
     def _and_(L):
@@ -422,7 +424,6 @@ def loadPlot(tag='condition4'):
 
     def resample(L):
         L=np.asarray(L).reshape(-1)
-        print('L.shape=',L.shape)
         sample_mean=[]
         for iter in range(10000):
             resampleID=np.random.choice(L.shape[0], L.shape[0], replace=True)
@@ -434,7 +435,71 @@ def loadPlot(tag='condition4'):
         lower=np.percentile(sample_mean, 2.5, axis=0)
         return m,m-lower,upper-m
 
-    def bar(LL,labels=None,title=None):
+    def barplot_annotate_brackets(num1, num2, data, center, height, ax=ax,yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None):
+        """ 
+        Annotate barplot with p-values.
+
+        :param num1: number of left bar to put bracket over
+        :param num2: number of right bar to put bracket over
+        :param data: string to write or number for generating asterixes
+        :param center: centers of all bars (like plt.bar() input)
+        :param height: heights of all bars (like plt.bar() input)
+        :param yerr: yerrs of all bars (like plt.bar() input)
+        :param dh: height offset over bar / bar + yerr in axes coordinates (0 to 1)
+        :param barh: bar height in axes coordinates (0 to 1)
+        :param fs: font size
+        :param maxasterix: maximum number of asterixes to write (for very small p-values)
+        """
+
+        if type(data) is str:
+            text = data
+        else:
+            # * is p < 0.05
+            # ** is p < 0.005
+            # *** is p < 0.0005
+            # etc.
+            text = ''
+            p = .05
+
+            while data < p:
+                if len(text)>=3:
+                    break
+                text += '*'
+                p /= 10.
+
+                if maxasterix and len(text) == maxasterix:
+                    break
+
+            if len(text) == 0:
+                text = 'n. s.'
+
+        lx, ly = center[num1], height[num1]
+        rx, ry = center[num2], height[num2]
+
+        if yerr:
+            ly += yerr[num1]
+            ry += yerr[num2]
+
+        ax_y0, ax_y1 = plt.gca().get_ylim()
+        dh *= (ax_y1 - ax_y0)
+        barh *= (ax_y1 - ax_y0)
+
+        y = max(ly, ry) + dh
+
+        barx = [lx, lx, rx, rx]
+        bary = [y, y+barh, y+barh, y]
+        mid = ((lx+rx)/2, y+barh)
+
+        plt.plot(barx, bary, c='black')
+
+        kwargs = dict(ha='center', va='bottom')
+        if fs is not None:
+            kwargs['fontsize'] = fs
+
+        plt.text(*mid, text, **kwargs)
+        return 
+        
+    def bar(LL,labels=None,title=None,pairs=None,pvalue=None):
         import matplotlib.pyplot as plt
         D=np.asarray([resample(L) for L in LL])
         m=D[:,0]
@@ -448,10 +513,13 @@ def loadPlot(tag='condition4'):
         ax.set_xticklabels(labels)
         ax.set_title(title)
         ax.yaxis.grid(True)
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.xticks(rotation=30,ha='right')
+        if pairs!=None:
+            for pair in pairs:
+                barplot_annotate_brackets(pair[0], pair[1], pvalue[pair], x_pos, m)
         plt.show()
-        return m,lower,upper
+        return m,lower,upper,ax
 
     def assertKeys(t0,t1,keys=['testRun','targetAxis','obj','otherObj']):
         # this function compare the given keys of the given two df and return true if they are exactly the same
@@ -462,8 +530,9 @@ def loadPlot(tag='condition4'):
 
     def concatArrayArray(c): #[array[],array[]]
         ct=[]
+        List=[list(j) for j in c] # transform [array[],array[]] to [list[],list[]]
         for i in range(len(c)):
-            ct=ct+[list(i) for i in c][i]
+            ct=ct+List[i] # concatenate List
         return ct
 
     # load saved results
@@ -493,8 +562,8 @@ def loadPlot(tag='condition4'):
 
 
     def evidenceAcrossFiltertypes(ROI="V1"):
-        # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
-        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
+        # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 1440*32 numbers (say we have 32 subjects), each number is raw value of the 'A_evidence_forATrials for noFilter' for that subject.
         a=[]
         labels=[]
         for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
@@ -521,24 +590,32 @@ def loadPlot(tag='condition4'):
             labels.append(filterTypes[i] + ' A_evidence_forATrials')
             labels.append(filterTypes[i] + ' A_evidence_forBTrials')
             labels.append('')
-        bar(a,labels=labels,title=f'evidence: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.')
-
-        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-        _=plt.boxplot(e)
-
+        print('len of a=',[len(i) for i in a])
         # paired t-test
         objects=np.arange(4)
         allpairs = itertools.combinations(objects,2)
+        pvalue={}
+        pairs=[]
         for pair in allpairs:
             i=pair[0]
             j=pair[1]
             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+            pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+            pairs.append((i*3,j*3))
+
+        bar(a,labels=labels,title=f'raw evidence for each trial: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
+
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
             
     for i in range(len(ROIs)):
         evidenceAcrossFiltertypes(ROI=ROIs[i])
 
 
     def evidenceAcrossFiltertypes_meanForSub(ROI="V1"):
+        # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is mean value of the 'A_evidence_forATrials for noFilter' for that subject.
+
         # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
         filterTypes=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
 
@@ -570,7 +647,7 @@ def loadPlot(tag='condition4'):
             labels.append(filterTypes[i] + ' A_evidence_forATrials')
             labels.append(filterTypes[i] + ' A_evidence_forBTrials')
             labels.append('')
-        bar(a,labels=labels,title=f'evidence: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.')
+        print('len of a = ',[len(i) for i in a])
 
         e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
         _=plt.boxplot(e)
@@ -578,10 +655,16 @@ def loadPlot(tag='condition4'):
         # paired t-test
         objects=np.arange(4)
         allpairs = itertools.combinations(objects,2)
+        pvalue={}
+        pairs=[]
         for pair in allpairs:
             i=pair[0]
             j=pair[1]
             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+            pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+            pairs.append((i*3,j*3))
+
+        bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
 
     for i in range(len(ROIs)):
         evidenceAcrossFiltertypes_meanForSub(ROI=ROIs[i])
@@ -607,73 +690,88 @@ def loadPlot(tag='condition4'):
                 except:
                     pass
             a.append(np.asarray(b))
-        bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.')
+        # bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.')
         e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
         _=plt.boxplot(e)
 
-        # paired ttest
+        # # paired ttest
+        # objects=np.arange(4)
+        # allpairs = itertools.combinations(objects,2)
+        # for pair in allpairs:
+        #     i=pair[0]
+        #     j=pair[1]
+        #     print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
+
+
+        # paired t-test
         objects=np.arange(4)
         allpairs = itertools.combinations(objects,2)
+        pvalue={}
+        pairs=[]
         for pair in allpairs:
             i=pair[0]
             j=pair[1]
             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
+            pvalue[(i,j)]=stats.ttest_rel(a[i],a[j])[1]
+            pairs.append((i,j))
+        bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
+        # bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
 
     for i in range(len(ROIs)):
         accuracyAcrossFiltertype(ROI=ROIs[i])
 
 
-    def accuracyIncludes(ROI="V1"):
-        # compare between includes using accuracy
-        # I want to construct a comparison between different includes by having includes
-        includes=[0.1,0.3,0.6,0.9,1]
-        filterType='noFilter'
-        a=[]
-        for include in includes:
-            b=[]
-            for sub in tqdm(subjects):
-                try:
-                    b.append(np.mean(accuracyContainer[
-                            _and_([
-                                accuracyContainer['roi']==ROI, 
-                                accuracyContainer['filterType']==filterType,
-                                accuracyContainer['sub']==int(sub),
-                                accuracyContainer['include']==np.float(include)
-                            ])]['acc']))
-                except:
-                    pass
-            a.append(np.asarray(b))
-        bar(a,labels=list(includes),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
-        _=plt.figure()
-        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-        _=plt.boxplot(e)
+    # def accuracyIncludes(ROI="V1"):
+    #     # compare between includes using accuracy
+    #     # I want to construct a comparison between different includes by having includes
+    #     includes=[0.1,0.3,0.6,0.9,1]
+    #     filterType='noFilter'
+    #     a=[]
+    #     for include in includes:
+    #         b=[]
+    #         for sub in tqdm(subjects):
+    #             try:
+    #                 b.append(np.mean(accuracyContainer[
+    #                         _and_([
+    #                             accuracyContainer['roi']==ROI, 
+    #                             accuracyContainer['filterType']==filterType,
+    #                             accuracyContainer['sub']==int(sub),
+    #                             accuracyContainer['include']==np.float(include)
+    #                         ])]['acc']))
+    #             except:
+    #                 pass
+    #         a.append(np.asarray(b))
+    #     bar(a,labels=list(includes),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
+    #     _=plt.figure()
+    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    #     _=plt.boxplot(e)
 
-    for i in range(len(ROIs)):
-        accuracyIncludes(ROI=ROIs[i])
+    # for i in range(len(ROIs)):
+    #     accuracyIncludes(ROI=ROIs[i])
 
 
-    def evidenceIncludes(ROI="V1"): # filtering the features would often increase the performance.
-        # compare between includes using evidence
-        # I want to construct a comparison between different includes by having includes
-        includes=[0.1,0.3,0.6,0.9,1]
-        filterType='noFilter'
-        a=[]
-        for include in includes:
-            b=[]
-            for sub in tqdm(subjects):
-                t=testEvidence[_and_([ #extract
-                    testEvidence['roi']==ROI,
-                    testEvidence['filterType']==filterType,
-                    testEvidence['include']==np.float(include),
-                    testEvidence['sub']==int(sub)
-                ])]
-                t=preloadDfnumpy(t)
-                b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
-            a.append(np.asarray(b))
-        bar(a,labels=list(includes),title=f'evidence across include, filterType = {filterType}, within only {ROI}.')
-        _=plt.figure()
-        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-        _=plt.boxplot(e)
+    # def evidenceIncludes(ROI="V1"): # filtering the features would often increase the performance.
+    #     # compare between includes using evidence
+    #     # I want to construct a comparison between different includes by having includes
+    #     includes=[0.1,0.3,0.6,0.9,1]
+    #     filterType='noFilter'
+    #     a=[]
+    #     for include in includes:
+    #         b=[]
+    #         for sub in tqdm(subjects):
+    #             t=testEvidence[_and_([ #extract
+    #                 testEvidence['roi']==ROI,
+    #                 testEvidence['filterType']==filterType,
+    #                 testEvidence['include']==np.float(include),
+    #                 testEvidence['sub']==int(sub)
+    #             ])]
+    #             t=preloadDfnumpy(t)
+    #             b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
+    #         a.append(np.asarray(b))
+    #     bar(a,labels=list(includes),title=f'evidence across include, filterType = {filterType}, within only {ROI}.')
+    #     _=plt.figure()
+    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    #     _=plt.boxplot(e)
 
-    for i in range(len(ROIs)):
-        evidenceIncludes(ROI=ROIs[i])
+    # for i in range(len(ROIs)):
+    #     evidenceIncludes(ROI=ROIs[i])
