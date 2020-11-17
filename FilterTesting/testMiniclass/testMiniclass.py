@@ -120,7 +120,9 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
     
     objects=['bed', 'bench', 'chair', 'table']
 
-    allpairs = itertools.combinations(objects,2)
+    # allpairs = itertools.combinations(objects,2)
+    allpairs = [('bed', 'chair')  , ('bench', 'table')]
+
     for pair in allpairs: # e.g. pair=('bed', 'bench')
         # Find the control (remaining) objects for this pair
         altpair = other(pair) # altpair=('chair', 'table')
@@ -168,8 +170,10 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
                 'sub':sub,
                 'testRun':testRun,
                 'targetAxis':pair,
-                'obj':obj,
-                'otherObj':otherObj,
+                'A':obj, # A
+                'B':otherObj, # B
+                'C':altpair[0], # C
+                'D':altpair[1], # D
                 
                 'AC_A_evidence':saveNpInDf(AC_A_evidence), # AC classifier A evidence for A
                 'AD_A_evidence':saveNpInDf(AD_A_evidence), # AD classifier A evidence for A
@@ -190,8 +194,8 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
 
 def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model_folder=None,tag=''): #include is the proportion of features selected
     
-    accuracyContainer = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','altobj','acc','filterType','roi'])
-    testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','obj_evidence','otherObj_evidence','filterType','roi'])
+    accuracyContainer = pd.DataFrame(columns=['sub','testRun','targetAxis','acc','filterType','roi']) # 'obj','altobj',
+    testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','filterType','roi']) # 'obj','obj_evidence','otherObj_evidence',
 
     # working_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
     # os.chdir(working_dir)
@@ -270,7 +274,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                     # establish a naming convention where it is $TARGET_$CLASSIFICATION
                     # Target is the NF pair (e.g. bed/bench)
                     # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
-                    naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
+                    naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj) # can be AB_AC AB_AD AB_BC AB_BD
                     
                     # Pull the relevant inds from your previously established dictionary 
                     obj_inds = inds[obj]
@@ -296,13 +300,13 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                     
                     # Train your classifier
                     model_path=f'{model_folder}{sub}_{naming}_{testRun}.joblib'
-                    if os.path.exists(model_path):
-                       clf=joblib.load(model_path)
-                    else:
-                        clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                                multi_class='multinomial').fit(trainX, trainY)
-                        joblib.dump(clf, model_path)
-                        save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}_selectedFeatures_{testRun}')
+                    # if os.path.exists(model_path):
+                    #     clf=joblib.load(model_path)
+                    # else:
+                    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                            multi_class='multinomial').fit(trainX, trainY)
+                    joblib.dump(clf, model_path)
+                    save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}_selectedFeatures_{testRun}')
 
                     # Monitor progress by printing accuracy (only useful if you're running a test set)
                     acc = clf.score(testX, testY)
@@ -341,7 +345,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
-tag="condition5"
+tag="condition4"
 
 include=np.float(sys.argv[1])
 roi=sys.argv[2]
@@ -435,7 +439,7 @@ def loadPlot(tag='condition5'):
         lower=np.percentile(sample_mean, 2.5, axis=0)
         return m,m-lower,upper-m
 
-    def barplot_annotate_brackets(num1, num2, data, center, height, ax=ax,yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None):
+    def barplot_annotate_brackets(num1, num2, data, center, height,yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None):
         """ 
         Annotate barplot with p-values.
 
@@ -457,7 +461,6 @@ def loadPlot(tag='condition5'):
             # * is p < 0.05
             # ** is p < 0.005
             # *** is p < 0.0005
-            # etc.
             text = ''
             p = .05
 
@@ -518,6 +521,8 @@ def loadPlot(tag='condition5'):
         if pairs!=None:
             for pair in pairs:
                 barplot_annotate_brackets(pair[0], pair[1], pvalue[pair], x_pos, m)
+                m[pair[0]]+=0.1
+                m[pair[1]]+=0.1
         plt.show()
         return m,lower,upper,ax
 
@@ -538,7 +543,7 @@ def loadPlot(tag='condition5'):
     # load saved results
     accuracyContainer=[]
     testEvidence=[]
-    for include in tqdm([0.1,0.3,0.6,0.9,1]):
+    for include in [1]: # tqdm([0.1,0.3,0.6,0.9,1]):
         for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
             for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
                 for testRun in [1,2,3,4,5,6]:
@@ -561,9 +566,9 @@ def loadPlot(tag='condition5'):
     ROIs=['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']
 
 
-    def evidenceAcrossFiltertypes(ROI="V1"):
+    def evidenceAcrossFiltertypes(ROI="V1",paired_ttest=False):
         # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
-        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 1440*32 numbers (say we have 32 subjects), each number is raw value of the 'A_evidence_forATrials for noFilter' for that subject.
+        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 1440*32=46080 numbers (say we have 32 subjects), each number is raw value of the 'A_evidence_forATrials for noFilter' for that subject.
         a=[]
         labels=[]
         for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
@@ -599,11 +604,16 @@ def loadPlot(tag='condition5'):
         for pair in allpairs:
             i=pair[0]
             j=pair[1]
-            print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
-            pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+            if paired_ttest==True:
+                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+                pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+            else:
+                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i*3],a[j*3])[1]}")
+                pvalue[(i*3,j*3)]=stats.ttest_ind(a[i*3],a[j*3])[1]
+
             pairs.append((i*3,j*3))
 
-        bar(a,labels=labels,title=f'raw evidence for each trial: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
+        bar(a,labels=labels,title=f'raw evidence for each trial: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1. paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
 
         e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
         _=plt.boxplot(e)
@@ -612,7 +622,7 @@ def loadPlot(tag='condition5'):
         evidenceAcrossFiltertypes(ROI=ROIs[i])
 
 
-    def evidenceAcrossFiltertypes_meanForSub(ROI="V1"):
+    def evidenceAcrossFiltertypes_meanForSub(ROI="V1",paired_ttest=True):
         # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
         # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is mean value of the 'A_evidence_forATrials for noFilter' for that subject.
 
@@ -660,17 +670,22 @@ def loadPlot(tag='condition5'):
         for pair in allpairs:
             i=pair[0]
             j=pair[1]
-            print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
-            pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+            if paired_ttest==True:
+                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+                pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+            else:
+                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i*3],a[j*3])[1]}")
+                pvalue[(i*3,j*3)]=stats.ttest_ind(a[i*3],a[j*3])[1]
+
             pairs.append((i*3,j*3))
 
-        bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
+        bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1. paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
 
     for i in range(len(ROIs)):
         evidenceAcrossFiltertypes_meanForSub(ROI=ROIs[i])
     
 
-    def accuracyAcrossFiltertype(ROI="V1"):
+    def accuracyAcrossFiltertype(ROI="V1",paired_ttest=False):
         # accuracy: across filterType, take subject mean, within only V1, include=1.
         
         # I want to construction a list whose 1st element is the accuracy for noFilter, 2nd for highpass and so on.
@@ -694,15 +709,6 @@ def loadPlot(tag='condition5'):
         e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
         _=plt.boxplot(e)
 
-        # # paired ttest
-        # objects=np.arange(4)
-        # allpairs = itertools.combinations(objects,2)
-        # for pair in allpairs:
-        #     i=pair[0]
-        #     j=pair[1]
-        #     print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
-
-
         # paired t-test
         objects=np.arange(4)
         allpairs = itertools.combinations(objects,2)
@@ -711,11 +717,15 @@ def loadPlot(tag='condition5'):
         for pair in allpairs:
             i=pair[0]
             j=pair[1]
-            print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
-            pvalue[(i,j)]=stats.ttest_rel(a[i],a[j])[1]
+            if paired_ttest==True:
+                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
+                pvalue[(i,j)]=stats.ttest_rel(a[i],a[j])[1]
+            else:
+                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i],a[j])[1]}")
+                pvalue[(i,j)]=stats.ttest_ind(a[i],a[j])[1]
+
             pairs.append((i,j))
-        bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
-        # bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1.',pairs=pairs,pvalue=pvalue)
+        bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.  paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
 
     for i in range(len(ROIs)):
         accuracyAcrossFiltertype(ROI=ROIs[i])
