@@ -207,6 +207,8 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns',tag=''):
                     timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs_refit_filter/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
                 elif tag=='condition4':
                     timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/do_not_filter_first_56s_refit_filter_parallel/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
+                elif tag=='condition5': # Alex's new method not fitting the parameters but directly use the filter, result looks like smoothing.
+                    timeseries = np.load(f"/gpfs/milgram/scratch60/turk-browne/an633/filter_all_TRs_no_EM/{roi}/{roi}_Kalman_filter_{sub}_{run}_featurematrix.npy")
                                            
                 # use information in regressor/run_x folder to make hasImage vector
                 # associated TR is just the hasImage index, converted to a float
@@ -254,19 +256,19 @@ print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
 subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
 subjects=glob(subject_dir+'*_neurosketch')
 subjects=[sub.split('/')[-1].split('_')[0] for sub in subjects if sub.split('/')[-1][0]!='_']
-subjects=['1206161', '0119173', '1201161', '1206163', '0120171', '0110171'] #['1206161', '1201161', '1206163', '0110171'] #['0110171','1206161']
+# subjects=['1206161', '0119173', '1201161', '1206163', '0120171', '0110171'] #['1206161', '1201161', '1206163', '0110171'] #['0110171','1206161']
 
-tag='condition4'
+tag='condition5'
 
 for sub in tqdm(subjects):
     filterType='KalmanFilter_filter_analyze_voxel_by_voxel'
     print('sub=',sub)
     print('filterType=',filterType)
 
-    # try:
-    recog_features(subject=sub, filterType = filterType,tag=tag)
-    # except:
-    #     pass
+    try:
+        recog_features(subject=sub, filterType = filterType,tag=tag)
+    except:
+        pass
 
 
 # This script only need to be run sepearately, doesn't need any parent script to run. e.g. in the jupyter notebok in rtAtten environment
