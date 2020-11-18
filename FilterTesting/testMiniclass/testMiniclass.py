@@ -345,7 +345,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
 
-tag="condition4"
+tag="condition5"
 
 include=np.float(sys.argv[1])
 roi=sys.argv[2]
@@ -543,7 +543,7 @@ def loadPlot(tag='condition5'):
     # load saved results
     accuracyContainer=[]
     testEvidence=[]
-    for include in [1]: # tqdm([0.1,0.3,0.6,0.9,1]):
+    for include in tqdm([0.1,0.3,0.6,0.9,1]):
         for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
             for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
                 for testRun in [1,2,3,4,5,6]:

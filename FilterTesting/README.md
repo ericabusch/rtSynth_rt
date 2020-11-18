@@ -1,4 +1,4 @@
-change log
+# change log
 
 * 1.0.0 bug fix: small error bar bug:
 
@@ -29,4 +29,7 @@ chair bench bed          chair table bed
 bench bed   table        bench chair table
 table bed   bench        table chair bench
 ```
+
+# action log
+* in order to know the effect of include parameter in testMiniclass.py, I will change the testMiniclass_parent.py to do all include parameters for condition5.
 
