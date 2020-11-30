@@ -82,7 +82,9 @@ def get_inds(X, Y, pair, testRun=None):
     trainY = Y.iloc[trainIX].label
     
     # Main classifier on 5 runs, testing on 6th
-    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+    # clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+    #                         multi_class='multinomial').fit(trainX, trainY)
+    clf = LogisticRegression(C=1, solver='lbfgs', max_iter=1000, 
                             multi_class='multinomial').fit(trainX, trainY)
     B = clf.coef_[0]  # pull betas
 
@@ -205,8 +207,6 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
         data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/{tag}/' # condition1: filter everything (including the first 56s) train and filter the Kalman at the same time.
     else:
         data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
-
-    
 
     files = os.listdir(data_dir)
     feats = [i for i in files if 'metadata' not in i]
@@ -344,7 +344,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     print('testEvidence=',testEvidence)
     accuracyContainer.to_csv(f"{model_folder}accuracy.csv")
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
-
+    
+# condition5: Alex's new method not fitting the parameters but directly use the filter, result looks like smoothing.
 tag="condition5"
 
 include=np.float(sys.argv[1])
