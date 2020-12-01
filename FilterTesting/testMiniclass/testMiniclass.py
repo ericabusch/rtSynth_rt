@@ -84,7 +84,7 @@ def get_inds(X, Y, pair, testRun=None):
     # Main classifier on 5 runs, testing on 6th
     # clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
     #                         multi_class='multinomial').fit(trainX, trainY)
-    clf = LogisticRegression(C=1, solver='lbfgs', max_iter=1000, 
+    clf = LogisticRegression(penalty='none',solver='lbfgs', max_iter=1000, 
                             multi_class='multinomial').fit(trainX, trainY)
     B = clf.coef_[0]  # pull betas
 
@@ -95,6 +95,7 @@ def get_inds(X, Y, pair, testRun=None):
     else:
         obj1IX = Y.index[(Y['label'] == pair[0])]
         obj2IX = Y.index[(Y['label'] == pair[1])]
+        
     # Get the average of the first object, then the second object
     obj1X = np.mean(X[obj1IX], 0)
     obj2X = np.mean(X[obj2IX], 0)
@@ -312,7 +313,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                     # else:
                     print('regularization_tag=',regularization_tag)
                     if regularization_tag[0:16]=='FeatureSelection':
-                        clf = LogisticRegression(solver='lbfgs', max_iter=1000, 
+                        print(f"penalty='none'")
+                        clf = LogisticRegression(penalty='none',solver='lbfgs', max_iter=1000, 
                             multi_class='multinomial').fit(trainX, trainY)
                     else:
                         options=regularization_tag.split('_')
@@ -371,10 +373,11 @@ regularization_tags=[
     'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
     'l2_10_noFeatureSelection',
     'l2_100_noFeatureSelection',
+
     'l1_1_noFeatureSelection',
     'l1_10_noFeatureSelection',
     'l1_100_noFeatureSelection',
-    'l1_1_noFeatureSelection',
+
     'FeatureSelection0.1', #inclue=0.1 and no L1 or L2 regularization
     'FeatureSelection0.3', #inclue=0.1 and no L1 or L2 regularization
     'FeatureSelection0.6', #inclue=0.1 and no L1 or L2 regularization
@@ -588,9 +591,11 @@ def loadPlot(tag='condition5'):
         'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
         'l2_10_noFeatureSelection',
         'l2_100_noFeatureSelection',
+
         'l1_1_noFeatureSelection',
         'l1_10_noFeatureSelection',
         'l1_100_noFeatureSelection',
+
         'FeatureSelection0.1', #inclue=0.1 and no L1 or L2 regularization
         'FeatureSelection0.3', #inclue=0.1 and no L1 or L2 regularization
         'FeatureSelection0.6', #inclue=0.1 and no L1 or L2 regularization
@@ -798,15 +803,10 @@ def loadPlot(tag='condition5'):
     def accuracyIncludes(ROI="V1"):
         # compare between includes using accuracy
         # I want to construct a comparison between different includes by having includes
-        includes=[0.1,0.3,0.6,0.9,1]
         filterType='noFilter'
         a=[]
         for regularization_tag_id in range(11):
             regularization_tag=regularization_tags[regularization_tag_id]
-            if regularization_tag[0:16]=='FeatureSelection':
-                include=np.float(regularization_tag[-3:])
-            else:
-                include=np.float('1')
             b=[]
             for sub in tqdm(subjects):
                 try:
@@ -832,16 +832,10 @@ def loadPlot(tag='condition5'):
     def evidenceIncludes(ROI="V1"): # filtering the features would often increase the performance.
         # compare between includes using evidence
         # I want to construct a comparison between different includes by having includes
-        includes=[0.1,0.3,0.6,0.9,1]
         filterType='noFilter'
         a=[]
         for regularization_tag_id in range(11):
             regularization_tag=regularization_tags[regularization_tag_id]
-            if regularization_tag[0:16]=='FeatureSelection':
-                include=np.float(regularization_tag[-3:])
-            else:
-                include=np.float('1')
-
             b=[]
             for sub in tqdm(subjects):
                 t=testEvidence[_and_([ #extract
