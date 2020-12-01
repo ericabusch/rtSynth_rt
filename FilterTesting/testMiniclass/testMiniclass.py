@@ -113,7 +113,7 @@ def get_inds(X, Y, pair, testRun=None):
     
     return inds
 
-def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6,model_folder=None):
+def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi="V1",include=1,testRun=6,model_folder=None,regularization_tag=''):
     # each testRun, each subject, each target axis, each target obj would generate one.
     META = METADICT[sub]
     print('META.shape=',META.shape)
@@ -177,24 +177,25 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None,roi
                 'C':altpair[0], # C
                 'D':altpair[1], # D
                 
-                'AC_A_evidence':saveNpInDf(AC_A_evidence), # AC classifier A evidence for A
-                'AD_A_evidence':saveNpInDf(AD_A_evidence), # AD classifier A evidence for A
-                'AC_B_evidence':saveNpInDf(AC_B_evidence), # AC classifier A evidence for B
-                'AD_B_evidence':saveNpInDf(AD_B_evidence), # AD classifier A evidence for B
+                # 'AC_A_evidence':saveNpInDf(AC_A_evidence), # AC classifier A evidence for A
+                # 'AD_A_evidence':saveNpInDf(AD_A_evidence), # AD classifier A evidence for A
+                # 'AC_B_evidence':saveNpInDf(AC_B_evidence), # AC classifier A evidence for B
+                # 'AD_B_evidence':saveNpInDf(AD_B_evidence), # AD classifier A evidence for B
 
                 'A_evidence_forATrials':saveNpInDf(A_evidence_forATrials),
                 'A_evidence_forBTrials':saveNpInDf(A_evidence_forBTrials),
-                'A_evidence_forBTrials_minus_A_evidence_forBTrials':np.mean(A_evidence_forATrials) - np.mean(A_evidence_forBTrials),
+                # 'A_evidence_forBTrials_minus_A_evidence_forBTrials':np.mean(A_evidence_forATrials) - np.mean(A_evidence_forBTrials),
 
                 'filterType':filterType,
                 'include':include,
+                'regularization_tag':regularization_tag,
                 'roi':roi
                 },
                 ignore_index=True)
 
     return testEvidence
 
-def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model_folder=None,tag=''): #include is the proportion of features selected
+def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model_folder=None,tag='',regularization_tag=''): #include is the proportion of features selected
     
     accuracyContainer = pd.DataFrame(columns=['sub','testRun','targetAxis','acc','filterType','roi']) # 'obj','altobj',
     testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','filterType','roi']) # 'obj','obj_evidence','otherObj_evidence',
@@ -300,11 +301,29 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                     
                     # Train your classifier
                     model_path=f'{model_folder}{sub}_{naming}_{testRun}.joblib'
+                
+
+
+
+
+
                     # if os.path.exists(model_path):
                     #     clf=joblib.load(model_path)
                     # else:
-                    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                            multi_class='multinomial').fit(trainX, trainY)
+                    print('regularization_tag=',regularization_tag)
+                    if regularization_tag[0:16]=='FeatureSelection':
+                        clf = LogisticRegression(solver='lbfgs', max_iter=1000, 
+                            multi_class='multinomial').fit(trainX, trainY)
+                    else:
+                        options=regularization_tag.split('_')
+                        print(f"penalty={options[0]},C={int(options[1])},")
+                        clf = LogisticRegression(penalty=options[0],C=int(options[1]), solver='lbfgs', max_iter=1000, 
+                            multi_class='multinomial').fit(trainX, trainY)
+
+
+
+
+
                     joblib.dump(clf, model_path)
                     save_obj(obj_inds[-nvox:],f'{model_folder}{sub}_{naming}_selectedFeatures_{testRun}')
 
@@ -321,7 +340,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                         'acc':acc,
                         'filterType':filterType,
                         'include':include,
-                        'roi':roi
+                        'roi':roi,
+                        'regularization_tag':regularization_tag
                         },
                         ignore_index=True)
         # except:
@@ -335,6 +355,7 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
         filterType=filterType,
         roi=roi,
         include=include,
+        regularization_tag=regularization_tag,
         testRun=testRun,
         model_folder=model_folder
         )
@@ -346,16 +367,40 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     testEvidence.to_csv(f'{model_folder}testEvidence.csv')
     
 # condition5: Alex's new method not fitting the parameters but directly use the filter, result looks like smoothing.
+regularization_tags=[
+    'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
+    'l2_10_noFeatureSelection',
+    'l2_100_noFeatureSelection',
+    'l1_1_noFeatureSelection',
+    'l1_10_noFeatureSelection',
+    'l1_100_noFeatureSelection',
+    'l1_1_noFeatureSelection',
+    'FeatureSelection0.1', #inclue=0.1 and no L1 or L2 regularization
+    'FeatureSelection0.3', #inclue=0.1 and no L1 or L2 regularization
+    'FeatureSelection0.6', #inclue=0.1 and no L1 or L2 regularization
+    'FeatureSelection0.9', #inclue=0.1 and no L1 or L2 regularization
+    'FeatureSelection1.0', #inclue=0.1 and no L1 or L2 regularization
+]
+
 tag="condition5"
 
-include=np.float(sys.argv[1])
+regularization_tag_id=int(sys.argv[1])    
 roi=sys.argv[2]
 filterType=sys.argv[3]
 testRun=int(sys.argv[4])
-model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/{tag}/'
+
+regularization_tag=regularization_tags[regularization_tag_id]
+if regularization_tag[0:16]=='FeatureSelection':
+    include=np.float(regularization_tag[-3:])
+else:
+    include=np.float('1')
+
+model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/{tag}/{regularization_tag}/'
 print('model_folder=',model_folder)
 call(f"mkdir -p {model_folder}",shell=True)
-minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun,model_folder=model_folder,tag=tag)
+minimalClass(include = include, roi=roi, filterType = filterType, testRun = testRun,model_folder=model_folder,tag=tag,regularization_tag=regularization_tag)
+
+
 
 
 ## - to run in parallel
@@ -363,34 +408,31 @@ minimalClass(include = include, roi=roi, filterType = filterType, testRun = test
 
 # # testMiniclass_child.sh
 # #!/bin/bash
-# #SBATCH --partition=short,scavenge,day
-# #SBATCH --nodes=1
-# #SBATCH --ntasks-per-node=1
-# #SBATCH --cpus-per-task=1
-# #SBATCH --time=3:00:00
+# #SBATCH --partition=short,scavenge,day,long,verylong
+# #SBATCH --time=2:00:00
 # #SBATCH --job-name=miniClass
 # #SBATCH --output=logs/miniClass-%j.out
-# #SBATCH --mem-per-cpu=10G
+# #SBATCH --mem-per-cpu=1G
 # #SBATCH --mail-type=FAIL
 # mkdir -p logs/
 # module load miniconda
 # source activate /gpfs/milgram/project/turk-browne/kp578/conda_envs/rtAtten
-# include=$1
+# regularization_tag_id=$1
 # roi=$2
 # filterType=$3
 # testRun=$4
-# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/testMiniclass.py $include $roi $filterType $testRun
+# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/testMiniclass.py $regularization_tag_id $roi $filterType $testRun
 
 
 # # testMiniclass_parent.py
 # from glob import glob
 # import os
 # from subprocess import call
-# for include in [0.1,0.3,0.6,0.9,1]:
-#     for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
-#         for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
+# for regularization_tag_id in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+#     for roi in ['V1']: #, 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
+#         for filterType in ['noFilter']: #,'highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
 #             for testRun in [1,2,3,4,5,6]:
-#                 command=f'sbatch testMiniclass_child.sh {include} {roi} {filterType} {testRun}'
+#                 command=f'sbatch testMiniclass_child.sh {regularization_tag_id} {roi} {filterType} {testRun}'
 #                 print(command)
 #             # call(command, shell=True)        
 
@@ -411,7 +453,7 @@ def loadPlot(tag='condition5'):
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/'
         return np.load(main_dir+fileName+'.npy')
 
-    def preloadDfnumpy(testEvidence,List=['AC_A_evidence','AD_A_evidence','AC_B_evidence','AD_B_evidence','A_evidence_forATrials','A_evidence_forBTrials']):
+    def preloadDfnumpy(testEvidence,List=['A_evidence_forATrials','A_evidence_forBTrials']): #'AC_A_evidence','AD_A_evidence','AC_B_evidence','AD_B_evidence',
         # this function convert the dataframe cell numpy array into real numpy array, was a string pointing to a file
         import warnings
         warnings.filterwarnings("ignore")
@@ -541,15 +583,36 @@ def loadPlot(tag='condition5'):
             ct=ct+List[i] # concatenate List
         return ct
 
+
+    regularization_tags=[
+        'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
+        'l2_10_noFeatureSelection',
+        'l2_100_noFeatureSelection',
+        'l1_1_noFeatureSelection',
+        'l1_10_noFeatureSelection',
+        'l1_100_noFeatureSelection',
+        'FeatureSelection0.1', #inclue=0.1 and no L1 or L2 regularization
+        'FeatureSelection0.3', #inclue=0.1 and no L1 or L2 regularization
+        'FeatureSelection0.6', #inclue=0.1 and no L1 or L2 regularization
+        'FeatureSelection0.9', #inclue=0.1 and no L1 or L2 regularization
+        'FeatureSelection1.0', #inclue=0.1 and no L1 or L2 regularization
+    ]
+
+
     # load saved results
     accuracyContainer=[]
     testEvidence=[]
-    for include in tqdm([0.1,0.3,0.6,0.9,1]):
+    for regularization_tag_id in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+        regularization_tag=regularization_tags[regularization_tag_id]
+        if regularization_tag[0:16]=='FeatureSelection':
+            include=np.float(regularization_tag[-3:])
+        else:
+            include=np.float('1')
         for roi in ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']:
             for filterType in ['noFilter','highPassRealTime','highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']:
                 for testRun in [1,2,3,4,5,6]:
                     # if filterType=='KalmanFilter_filter_analyze_voxel_by_voxel':
-                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/{tag}/'
+                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{include}/{roi}/{filterType}/{testRun}/{tag}/{regularization_tag}/'
                     # else:
                     #     model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{np.float(include)}/{roi}/{filterType}/{testRun}/'
                     try:
@@ -732,57 +795,68 @@ def loadPlot(tag='condition5'):
         accuracyAcrossFiltertype(ROI=ROIs[i])
 
 
-    # def accuracyIncludes(ROI="V1"):
-    #     # compare between includes using accuracy
-    #     # I want to construct a comparison between different includes by having includes
-    #     includes=[0.1,0.3,0.6,0.9,1]
-    #     filterType='noFilter'
-    #     a=[]
-    #     for include in includes:
-    #         b=[]
-    #         for sub in tqdm(subjects):
-    #             try:
-    #                 b.append(np.mean(accuracyContainer[
-    #                         _and_([
-    #                             accuracyContainer['roi']==ROI, 
-    #                             accuracyContainer['filterType']==filterType,
-    #                             accuracyContainer['sub']==int(sub),
-    #                             accuracyContainer['include']==np.float(include)
-    #                         ])]['acc']))
-    #             except:
-    #                 pass
-    #         a.append(np.asarray(b))
-    #     bar(a,labels=list(includes),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
-    #     _=plt.figure()
-    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-    #     _=plt.boxplot(e)
+    def accuracyIncludes(ROI="V1"):
+        # compare between includes using accuracy
+        # I want to construct a comparison between different includes by having includes
+        includes=[0.1,0.3,0.6,0.9,1]
+        filterType='noFilter'
+        a=[]
+        for regularization_tag_id in range(11):
+            regularization_tag=regularization_tags[regularization_tag_id]
+            if regularization_tag[0:16]=='FeatureSelection':
+                include=np.float(regularization_tag[-3:])
+            else:
+                include=np.float('1')
+            b=[]
+            for sub in tqdm(subjects):
+                try:
+                    b.append(np.mean(accuracyContainer[
+                            _and_([
+                                accuracyContainer['roi']==ROI, 
+                                accuracyContainer['filterType']==filterType,
+                                accuracyContainer['sub']==int(sub),
+                                accuracyContainer['regularization_tag']==regularization_tag
+                            ])]['acc']))
+                except:
+                    pass
+            a.append(np.asarray(b))
+        bar(a,labels=list(includes),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
+        _=plt.figure()
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
 
-    # for i in range(len(ROIs)):
-    #     accuracyIncludes(ROI=ROIs[i])
+    for i in range(len(ROIs)):
+        accuracyIncludes(ROI=ROIs[i])
 
 
-    # def evidenceIncludes(ROI="V1"): # filtering the features would often increase the performance.
-    #     # compare between includes using evidence
-    #     # I want to construct a comparison between different includes by having includes
-    #     includes=[0.1,0.3,0.6,0.9,1]
-    #     filterType='noFilter'
-    #     a=[]
-    #     for include in includes:
-    #         b=[]
-    #         for sub in tqdm(subjects):
-    #             t=testEvidence[_and_([ #extract
-    #                 testEvidence['roi']==ROI,
-    #                 testEvidence['filterType']==filterType,
-    #                 testEvidence['include']==np.float(include),
-    #                 testEvidence['sub']==int(sub)
-    #             ])]
-    #             t=preloadDfnumpy(t)
-    #             b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
-    #         a.append(np.asarray(b))
-    #     bar(a,labels=list(includes),title=f'evidence across include, filterType = {filterType}, within only {ROI}.')
-    #     _=plt.figure()
-    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-    #     _=plt.boxplot(e)
+    def evidenceIncludes(ROI="V1"): # filtering the features would often increase the performance.
+        # compare between includes using evidence
+        # I want to construct a comparison between different includes by having includes
+        includes=[0.1,0.3,0.6,0.9,1]
+        filterType='noFilter'
+        a=[]
+        for regularization_tag_id in range(11):
+            regularization_tag=regularization_tags[regularization_tag_id]
+            if regularization_tag[0:16]=='FeatureSelection':
+                include=np.float(regularization_tag[-3:])
+            else:
+                include=np.float('1')
 
-    # for i in range(len(ROIs)):
-    #     evidenceIncludes(ROI=ROIs[i])
+            b=[]
+            for sub in tqdm(subjects):
+                t=testEvidence[_and_([ #extract
+                    testEvidence['roi']==ROI,
+                    testEvidence['filterType']==filterType,
+                    testEvidence['regularization_tag']==regularization_tag,
+                    testEvidence['sub']==int(sub)
+                ])]
+                t=preloadDfnumpy(t)
+                b.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials']))))
+            a.append(np.asarray(b))
+        bar(a,labels=list(regularization_tags),title=f'evidence across include, filterType = {filterType}, within only {ROI}.')
+        _=plt.figure()
+        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+        _=plt.boxplot(e)
+
+    for i in range(len(ROIs)):
+        evidenceIncludes(ROI=ROIs[i])
