@@ -318,8 +318,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
                             multi_class='multinomial').fit(trainX, trainY)
                     else:
                         options=regularization_tag.split('_')
-                        print(f"penalty={options[0]},C={int(options[1])},")
-                        clf = LogisticRegression(penalty=options[0],C=int(options[1]), solver='lbfgs', max_iter=1000, 
+                        print(f"penalty={options[0]},C={np.float(options[1])},")
+                        clf = LogisticRegression(penalty=options[0],C=np.float(options[1]), solver='lbfgs', max_iter=1000, 
                             multi_class='multinomial').fit(trainX, trainY)
 
 
@@ -370,6 +370,8 @@ def minimalClass(filterType = 'noFilter',testRun = 6, roi="V1",include = 1,model
     
 # condition5: Alex's new method not fitting the parameters but directly use the filter, result looks like smoothing.
 regularization_tags=[
+    'l2_0.001_noFeatureSelection',
+    'l2_0.01_noFeatureSelection',
     'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
     'l2_10_noFeatureSelection',
     'l2_100_noFeatureSelection',
@@ -451,6 +453,7 @@ def loadPlot(tag='condition5'):
     import matplotlib.pyplot as plt
     import itertools
     from scipy import stats
+    import warnings
 
     def loadNpInDf(fileName):
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/FilterTesting/testMiniclass/'
@@ -458,7 +461,6 @@ def loadPlot(tag='condition5'):
 
     def preloadDfnumpy(testEvidence,List=['A_evidence_forATrials','A_evidence_forBTrials']): #'AC_A_evidence','AD_A_evidence','AC_B_evidence','AD_B_evidence',
         # this function convert the dataframe cell numpy array into real numpy array, was a string pointing to a file
-        import warnings
         warnings.filterwarnings("ignore")
         for i in range(len(testEvidence)):
             for L in List:
@@ -587,7 +589,25 @@ def loadPlot(tag='condition5'):
         return ct
 
 
+    # regularization_tags=[
+    #     'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
+    #     'l2_10_noFeatureSelection',
+    #     'l2_100_noFeatureSelection',
+
+    #     'l1_1_noFeatureSelection',
+    #     'l1_10_noFeatureSelection',
+    #     'l1_100_noFeatureSelection',
+
+    #     'FeatureSelection0.1', #inclue=0.1 and no L1 or L2 regularization
+    #     'FeatureSelection0.3', #inclue=0.1 and no L1 or L2 regularization
+    #     'FeatureSelection0.6', #inclue=0.1 and no L1 or L2 regularization
+    #     'FeatureSelection0.9', #inclue=0.1 and no L1 or L2 regularization
+    #     'FeatureSelection1.0', #inclue=0.1 and no L1 or L2 regularization
+    # ]
+
     regularization_tags=[
+        'l2_0.001_noFeatureSelection',
+        'l2_0.01_noFeatureSelection',
         'l2_1_noFeatureSelection', #inclde=1 and L2 and C=1
         'l2_10_noFeatureSelection',
         'l2_100_noFeatureSelection',
@@ -602,12 +622,11 @@ def loadPlot(tag='condition5'):
         'FeatureSelection0.9', #inclue=0.1 and no L1 or L2 regularization
         'FeatureSelection1.0', #inclue=0.1 and no L1 or L2 regularization
     ]
-
-
+    
     # load saved results
     accuracyContainer=[]
     testEvidence=[]
-    for regularization_tag_id in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+    for regularization_tag_id in range(len(regularization_tags)):
         regularization_tag=regularization_tags[regularization_tag_id]
         if regularization_tag[0:16]=='FeatureSelection':
             include=np.float(regularization_tag[-3:])
@@ -635,169 +654,169 @@ def loadPlot(tag='condition5'):
     ROIs=['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo']
 
 
-    def evidenceAcrossFiltertypes(ROI="V1",paired_ttest=False):
-        # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
-        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 1440*32=46080 numbers (say we have 32 subjects), each number is raw value of the 'A_evidence_forATrials for noFilter' for that subject.
-        a=[]
-        labels=[]
-        for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
-            c=[]
-            d=[]
+    # def evidenceAcrossFiltertypes(ROI="V1",paired_ttest=False):
+    #     # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+    #     # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 1440*32=46080 numbers (say we have 32 subjects), each number is raw value of the 'A_evidence_forATrials for noFilter' for that subject.
+    #     a=[]
+    #     labels=[]
+    #     for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
+    #         c=[]
+    #         d=[]
 
-            # to get one single number for A_evidence_forATrials for each subject. 
-            # you will need to extract the corresponding conditions and conbine the data together. 
-            for sub in subjects:
-                t=testEvidence[_and_([ #extract
-                    testEvidence['roi']==ROI,
-                    testEvidence['filterType']==filterTypes[i],
-                    testEvidence['include']==1.,
-                    testEvidence['sub']==sub
-                ])]
-                t=preloadDfnumpy(t)
+    #         # to get one single number for A_evidence_forATrials for each subject. 
+    #         # you will need to extract the corresponding conditions and conbine the data together. 
+    #         for sub in subjects:
+    #             t=testEvidence[_and_([ #extract
+    #                 testEvidence['roi']==ROI,
+    #                 testEvidence['filterType']==filterTypes[i],
+    #                 testEvidence['include']==1.,
+    #                 testEvidence['sub']==sub
+    #             ])]
+    #             t=preloadDfnumpy(t)
 
-                c.append(np.asarray(list(t['A_evidence_forATrials'])).reshape(-1)) #conbine the data together
-                d.append(np.asarray(list(t['A_evidence_forBTrials'])).reshape(-1))
+    #             c.append(np.asarray(list(t['A_evidence_forATrials'])).reshape(-1)) #conbine the data together
+    #             d.append(np.asarray(list(t['A_evidence_forBTrials'])).reshape(-1))
 
-            a.append(concatArrayArray(c))
-            a.append(concatArrayArray(d))
-            a.append([])
-            labels.append(filterTypes[i] + ' A_evidence_forATrials')
-            labels.append(filterTypes[i] + ' A_evidence_forBTrials')
-            labels.append('')
-        print('len of a=',[len(i) for i in a])
-        # paired t-test
-        objects=np.arange(4)
-        allpairs = itertools.combinations(objects,2)
-        pvalue={}
-        pairs=[]
-        for pair in allpairs:
-            i=pair[0]
-            j=pair[1]
-            if paired_ttest==True:
-                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
-                pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
-            else:
-                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i*3],a[j*3])[1]}")
-                pvalue[(i*3,j*3)]=stats.ttest_ind(a[i*3],a[j*3])[1]
+    #         a.append(concatArrayArray(c))
+    #         a.append(concatArrayArray(d))
+    #         a.append([])
+    #         labels.append(filterTypes[i] + ' A_evidence_forATrials')
+    #         labels.append(filterTypes[i] + ' A_evidence_forBTrials')
+    #         labels.append('')
+    #     print('len of a=',[len(i) for i in a])
+    #     # paired t-test
+    #     objects=np.arange(4)
+    #     allpairs = itertools.combinations(objects,2)
+    #     pvalue={}
+    #     pairs=[]
+    #     for pair in allpairs:
+    #         i=pair[0]
+    #         j=pair[1]
+    #         if paired_ttest==True:
+    #             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+    #             pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+    #         else:
+    #             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i*3],a[j*3])[1]}")
+    #             pvalue[(i*3,j*3)]=stats.ttest_ind(a[i*3],a[j*3])[1]
 
-            pairs.append((i*3,j*3))
+    #         pairs.append((i*3,j*3))
 
-        bar(a,labels=labels,title=f'raw evidence for each trial: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1. paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
+    #     bar(a,labels=labels,title=f'raw evidence for each trial: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1. paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
 
-        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-        _=plt.boxplot(e)
+    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    #     _=plt.boxplot(e)
             
-    for i in range(len(ROIs)):
-        evidenceAcrossFiltertypes(ROI=ROIs[i])
+    # for i in range(len(ROIs)):
+    #     evidenceAcrossFiltertypes(ROI=ROIs[i])
 
 
-    def evidenceAcrossFiltertypes_meanForSub(ROI="V1",paired_ttest=True):
-        # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
-        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is mean value of the 'A_evidence_forATrials for noFilter' for that subject.
+    # def evidenceAcrossFiltertypes_meanForSub(ROI="V1",paired_ttest=True):
+    #     # construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+    #     # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is mean value of the 'A_evidence_forATrials for noFilter' for that subject.
 
-        # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
-        filterTypes=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
+    #     # across filterType, take the difference between objEvidence and other Evidence, within only V1, include=1.
+    #     filterTypes=['noFilter', 'highPassRealTime', 'highPassBetweenRuns','KalmanFilter_filter_analyze_voxel_by_voxel']
 
-        # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
-        # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
-        a=[]
-        labels=[]
-        for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
-            c=[]
-            d=[]
+    #     # I want to construct a list where the first one is 'A_evidence_forATrials for noFilter', second is 'A_evidence_forBTrials for noFilter', third is empty, 4th is 'A_evidence_forATrials for highpass' and so on
+    #     # for each element of the list, take 'A_evidence_forATrials for noFilter' for example. This is 32 numbers (say we have 32 subjects), each number is the mean value of the 'A_evidence_forATrials for noFilter' for that subject.
+    #     a=[]
+    #     labels=[]
+    #     for i in range(len(filterTypes)): # for each filterType, each subject has one value for A_evidence_forATrials and another value for A_evidence_forBTrials
+    #         c=[]
+    #         d=[]
 
-            # to get one single number for A_evidence_forATrials for each subject. 
-            # you will need to extract the corresponding conditions and conbine the data together. 
-            for sub in subjects:
-                t=testEvidence[_and_([ #extract
-                    testEvidence['roi']==ROI,
-                    testEvidence['filterType']==filterTypes[i],
-                    testEvidence['include']==1.,
-                    testEvidence['sub']==sub
-                ])]
-                t=preloadDfnumpy(t)
+    #         # to get one single number for A_evidence_forATrials for each subject. 
+    #         # you will need to extract the corresponding conditions and conbine the data together. 
+    #         for sub in subjects:
+    #             t=testEvidence[_and_([ #extract
+    #                 testEvidence['roi']==ROI,
+    #                 testEvidence['filterType']==filterTypes[i],
+    #                 testEvidence['include']==1.,
+    #                 testEvidence['sub']==sub
+    #             ])]
+    #             t=preloadDfnumpy(t)
 
-                c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials'])))) #conbine the data together
-                d.append(np.nanmean(np.asarray(list(t['A_evidence_forBTrials']))))
+    #             c.append(np.nanmean(np.asarray(list(t['A_evidence_forATrials'])))) #conbine the data together
+    #             d.append(np.nanmean(np.asarray(list(t['A_evidence_forBTrials']))))
 
-            a.append(c)
-            a.append(d)
-            a.append([])
-            labels.append(filterTypes[i] + ' A_evidence_forATrials')
-            labels.append(filterTypes[i] + ' A_evidence_forBTrials')
-            labels.append('')
-        print('len of a = ',[len(i) for i in a])
+    #         a.append(c)
+    #         a.append(d)
+    #         a.append([])
+    #         labels.append(filterTypes[i] + ' A_evidence_forATrials')
+    #         labels.append(filterTypes[i] + ' A_evidence_forBTrials')
+    #         labels.append('')
+    #     print('len of a = ',[len(i) for i in a])
 
-        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-        _=plt.boxplot(e)
+    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    #     _=plt.boxplot(e)
 
-        # paired t-test
-        objects=np.arange(4)
-        allpairs = itertools.combinations(objects,2)
-        pvalue={}
-        pairs=[]
-        for pair in allpairs:
-            i=pair[0]
-            j=pair[1]
-            if paired_ttest==True:
-                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
-                pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
-            else:
-                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i*3],a[j*3])[1]}")
-                pvalue[(i*3,j*3)]=stats.ttest_ind(a[i*3],a[j*3])[1]
+    #     # paired t-test
+    #     objects=np.arange(4)
+    #     allpairs = itertools.combinations(objects,2)
+    #     pvalue={}
+    #     pairs=[]
+    #     for pair in allpairs:
+    #         i=pair[0]
+    #         j=pair[1]
+    #         if paired_ttest==True:
+    #             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i*3],a[j*3])[1]}")
+    #             pvalue[(i*3,j*3)]=stats.ttest_rel(a[i*3],a[j*3])[1]
+    #         else:
+    #             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i*3],a[j*3])[1]}")
+    #             pvalue[(i*3,j*3)]=stats.ttest_ind(a[i*3],a[j*3])[1]
 
-            pairs.append((i*3,j*3))
+    #         pairs.append((i*3,j*3))
 
-        bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1. paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
+    #     bar(a,labels=labels,title=f'mean evidence for each subject: across filterTypes, objEvidence and other Evidence, within only {ROI}, include=1. paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
 
-    for i in range(len(ROIs)):
-        evidenceAcrossFiltertypes_meanForSub(ROI=ROIs[i])
+    # for i in range(len(ROIs)):
+    #     evidenceAcrossFiltertypes_meanForSub(ROI=ROIs[i])
     
 
-    def accuracyAcrossFiltertype(ROI="V1",paired_ttest=False):
-        # accuracy: across filterType, take subject mean, within only V1, include=1.
+    # def accuracyAcrossFiltertype(ROI="V1",paired_ttest=False):
+    #     # accuracy: across filterType, take subject mean, within only V1, include=1.
         
-        # I want to construction a list whose 1st element is the accuracy for noFilter, 2nd for highpass and so on.
-        # each element is 32 numbers for 32 subjects. each number is the mean accuracy for that subject.
-        a=[]
-        for i in range(len(filterTypes)):
-            b=[]
-            for sub in tqdm(subjects):
-                try:
-                    b.append(np.mean(accuracyContainer[
-                            _and_([
-                                accuracyContainer['roi']==ROI, 
-                                accuracyContainer['filterType']==filterTypes[i],
-                                accuracyContainer['sub']==int(sub),
-                                accuracyContainer['include']==1.
-                            ])]['acc']))
-                except:
-                    pass
-            a.append(np.asarray(b))
-        # bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.')
-        e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
-        _=plt.boxplot(e)
+    #     # I want to construction a list whose 1st element is the accuracy for noFilter, 2nd for highpass and so on.
+    #     # each element is 32 numbers for 32 subjects. each number is the mean accuracy for that subject.
+    #     a=[]
+    #     for i in range(len(filterTypes)):
+    #         b=[]
+    #         for sub in tqdm(subjects):
+    #             try:
+    #                 b.append(np.mean(accuracyContainer[
+    #                         _and_([
+    #                             accuracyContainer['roi']==ROI, 
+    #                             accuracyContainer['filterType']==filterTypes[i],
+    #                             accuracyContainer['sub']==int(sub),
+    #                             accuracyContainer['include']==1.
+    #                         ])]['acc']))
+    #             except:
+    #                 pass
+    #         a.append(np.asarray(b))
+    #     # bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.')
+    #     e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
+    #     _=plt.boxplot(e)
 
-        # paired t-test
-        objects=np.arange(4)
-        allpairs = itertools.combinations(objects,2)
-        pvalue={}
-        pairs=[]
-        for pair in allpairs:
-            i=pair[0]
-            j=pair[1]
-            if paired_ttest==True:
-                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
-                pvalue[(i,j)]=stats.ttest_rel(a[i],a[j])[1]
-            else:
-                print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i],a[j])[1]}")
-                pvalue[(i,j)]=stats.ttest_ind(a[i],a[j])[1]
+    #     # paired t-test
+    #     objects=np.arange(4)
+    #     allpairs = itertools.combinations(objects,2)
+    #     pvalue={}
+    #     pairs=[]
+    #     for pair in allpairs:
+    #         i=pair[0]
+    #         j=pair[1]
+    #         if paired_ttest==True:
+    #             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_rel(a[i],a[j])[1]}")
+    #             pvalue[(i,j)]=stats.ttest_rel(a[i],a[j])[1]
+    #         else:
+    #             print(f"{filterTypes[i]} {filterTypes[j]} p={stats.ttest_ind(a[i],a[j])[1]}")
+    #             pvalue[(i,j)]=stats.ttest_ind(a[i],a[j])[1]
 
-            pairs.append((i,j))
-        bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.  paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
+    #         pairs.append((i,j))
+    #     bar(a,labels=list(filterTypes),title=f'accuracy: across filterTypes, within only {ROI}, include=1.  paired_ttest={paired_ttest}',pairs=pairs,pvalue=pvalue)
 
-    for i in range(len(ROIs)):
-        accuracyAcrossFiltertype(ROI=ROIs[i])
+    # for i in range(len(ROIs)):
+    #     accuracyAcrossFiltertype(ROI=ROIs[i])
 
 
     def accuracyIncludes(ROI="V1"):
@@ -805,7 +824,7 @@ def loadPlot(tag='condition5'):
         # I want to construct a comparison between different includes by having includes
         filterType='noFilter'
         a=[]
-        for regularization_tag_id in range(11):
+        for regularization_tag_id in range(len(regularization_tags)):
             regularization_tag=regularization_tags[regularization_tag_id]
             b=[]
             for sub in tqdm(subjects):
@@ -820,7 +839,7 @@ def loadPlot(tag='condition5'):
                 except:
                     pass
             a.append(np.asarray(b))
-        bar(a,labels=list(includes),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
+        bar(a,labels=list(regularization_tags),title=f'accuracy: across include, filterType = {filterType}, within only {ROI}.')
         _=plt.figure()
         e=[np.asarray(a[i])[~np.isnan(np.asarray(a[i]))] for i in range(len(a))]
         _=plt.boxplot(e)
@@ -834,7 +853,7 @@ def loadPlot(tag='condition5'):
         # I want to construct a comparison between different includes by having includes
         filterType='noFilter'
         a=[]
-        for regularization_tag_id in range(11):
+        for regularization_tag_id in range(len(regularization_tags)):
             regularization_tag=regularization_tags[regularization_tag_id]
             b=[]
             for sub in tqdm(subjects):
