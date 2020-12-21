@@ -74,6 +74,7 @@ subjectFolder=f"{Top_directory}/{YYYYMMDD}.{LASTNAME}.{PATIENTID}/" #20190820.RT
 
 # tmp_folder='/tmp/kp578/'
 tmp_folder=f'/gpfs/milgram/scratch60/turk-browne/kp578/{YYYYMMDD}.{LASTNAME}.{PATIENTID}/'
+
 # if os.path.isdir(tmp_folder):
 # 	shutil.rmtree(tmp_folder)
 if not os.path.isdir(tmp_folder):
@@ -136,16 +137,17 @@ for this_TR in np.arange(num_total_TRs):
 	clf1 = joblib.load(model_dir+'pilot_sub001_benchtable_tablebed.joblib') 
 	clf2 = joblib.load(model_dir+'pilot_sub001_benchtable_tablechair.joblib') 
 
+
+	def gaussian(x, mu, sig):
+		# mu and sig is determined before each neurofeedback session using 2 recognition runs.
+		return round(20*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))))
+
 	# then do this for each TR
 	s1 = clf1.score(newTR, ['table'])
 	s2 = clf2.score(newTR, ['table'])
-	NFparam = s1 + s2 # or an average or whatever
+	NFparam = gaussian((s1 + s2)/2) # or an average or whatever
 	print(NFparam)
 	parameter = NFparam
 	
 	## - send the output of the model to web.
 	projUtils.sendResultToWeb(projectComm, runNum, int(this_TR), parameter)
-
-
-
-
