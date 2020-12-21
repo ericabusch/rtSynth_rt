@@ -4,6 +4,33 @@
 # volume and save that in day2 in day1 space.
 
 
+# This script also process the two day 2 recognition run and get the metric floor and ceil (in practice calculate the sigma and mu of the metric transformation function)
+# The relationship between floor, ceil  and mu, sigma is 
+
+########################################################
+########################################################
+
+# floor=1
+# ceil=-1
+
+# mu = (floor+ceil)/2
+# sig = (floor-ceil)/2.3548
+
+# x=np.arange(-3,3,0.01)
+# y=gaussian(x, mu, sig)
+
+# plt.plot(x,y)
+
+########################################################
+########################################################
+
+# The way to calculate floor and ceil is 
+# Floor is C evidence for CD classifier (can also be D evidence for CD classifier, they are effectively the same)
+# Ceil is A evidence in AC and AD classifier.
+
+########################################################
+########################################################
+
 import os
 import sys
 import argparse
@@ -44,7 +71,7 @@ def dicom2nii(templateVolume, filename,templateFunctionalVolume):
     return fullNiftiFilename
 
 
-
+# fetch the data 
 # YYYYMMDD= '20201009' #'20201009' '20201015'
 YYYYMMDD= '20201019' #'20201009' '20201015'
 LASTNAME='rtSynth_pilot001'
