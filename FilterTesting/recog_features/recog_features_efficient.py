@@ -79,7 +79,7 @@ def kalman_filter_voxel_filter_no_EM(measurement, curr_voxel, transition_covaria
                       initial_state_covariance = np.eye(measurement.shape[1]),
                       transition_matrices = np.eye(measurement.shape[1]),
                       transition_offsets =   np.zeros(measurement.shape[1]),
-                       # transition_covariance = (transition_covariance_param) * np.diag(measurement[0]),
+                       # transition_covariance = (transition_covariance_param) * np.diag(measurement[0]), # could be this line when you want to scale the parameter based on the first measurement
                       transition_covariance = float(transition_covariance_param) * np.eye(measurement.shape[1]),
                        observation_covariance = 600 * np.eye(measurement.shape[1])
                           )
