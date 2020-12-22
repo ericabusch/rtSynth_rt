@@ -7,6 +7,9 @@ import numpy as np
 from subprocess import call
 from nilearn.image import new_img_like
 from nilearn.input_data import NiftiLabelsMasker
+import argparse
+import rtCommon.utils as utils
+from rtCommon.utils import loadConfigFile
 
 ## - function defintiion and environment setting up
 def dicom2nii(filename):
@@ -59,6 +62,14 @@ def getDicomFileName(cfg, scanNum, fileNum):
     fullFileName = os.path.join(cfg.dicomDir, fileName)
 
     return fullFileName
+
+# load conf toml file
+# tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/tProject.toml"
+tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/rtSynth_rt.pilot_sub001.toml"
+argParser = argparse.ArgumentParser()
+argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='experiment file (.json or .toml)')
+args = argParser.parse_args()
+cfg = utils.loadConfigFile(args.config)
 
 
 Top_directory = '/gpfs/milgram/project/realtime/DICOM'
@@ -133,9 +144,11 @@ for this_TR in np.arange(num_total_TRs):
 	print(newTR.shape)
 	
 	## - load the saved model and apply it on the new coming dicom file.
-	model_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/clf/'
-	clf1 = joblib.load(model_dir+'pilot_sub001_benchtable_tablebed.joblib') 
-	clf2 = joblib.load(model_dir+'pilot_sub001_benchtable_tablechair.joblib') 
+	# model_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/clf/'
+
+	model_path=f"{cfg.model_dir}/{cfg.subjectName}/{cfg.session}_recognition/clf"
+	clf1 = joblib.load(model_path+'pilot_sub001_benchtable_tablebed.joblib') 
+	clf2 = joblib.load(model_path+'pilot_sub001_benchtable_tablechair.joblib') 
 
 
 	def gaussian(x, mu, sig):
