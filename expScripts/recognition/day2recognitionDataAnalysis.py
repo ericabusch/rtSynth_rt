@@ -71,14 +71,20 @@ def dicom2nii(templateVolume, filename,templateFunctionalVolume):
     return fullNiftiFilename
 
 
-# fetch the data 
+# fetch the data folder
+tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/tProject.toml"
+argParser = argparse.ArgumentParser()
+argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='experiment file (.json or .toml)')
+args = argParser.parse_args()
+cfg = utils.loadConfigFile(args.config)
+
 # YYYYMMDD= '20201009' #'20201009' '20201015'
-YYYYMMDD= '20201019' #'20201009' '20201015'
-LASTNAME='rtSynth_pilot001'
-PATIENTID='rtSynth_pilot001'
-# YYYYMMDD= cfg.YYYYMMDD #'20201009' '20201015'
-# LASTNAME=cfg.realtimeFolder_subjectName
-# PATIENTID=cfg.realtimeFolder_subjectName
+# YYYYMMDD= '20201019' #'20201009' '20201015'
+# LASTNAME='rtSynth_pilot001'
+# PATIENTID='rtSynth_pilot001'
+YYYYMMDD= cfg.YYYYMMDD #'20201009' '20201015'
+LASTNAME=cfg.realtimeFolder_subjectName
+PATIENTID=cfg.realtimeFolder_subjectName
 Top_directory = '/gpfs/milgram/project/realtime/DICOM/'
 sub='pilot_sub001'
 
@@ -94,14 +100,10 @@ tmp_folder=f'/gpfs/milgram/scratch60/turk-browne/kp578/{YYYYMMDD}.{LASTNAME}.{PA
 if not os.path.isdir(tmp_folder):
     os.mkdir(tmp_folder)
 
-tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/tProject.toml"
-argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default=tomlFIle, type=str,
-                           help='experiment file (.json or .toml)')
-args = argParser.parse_args()
-cfg = utils.loadConfigFile(args.config)
+
 
 subjectFolder=f"{Top_directory}{YYYYMMDD}.{LASTNAME}.{PATIENTID}/" #20190820.RTtest001.RTtest001: the folder for current subject # For each patient, a new folder will be generated:
+
 
 dicomFiles=glob(f"{subjectFolder}*")
 day2templateVolume_dicom=dicomFiles[int(len(dicomFiles)/2)]
@@ -121,3 +123,49 @@ command = f'flirt -in {day2functionalTemplate} \
 
 print(command)
 call(command,shell=True)
+
+
+########################################################
+########################################################
+
+# floor=1
+# ceil=-1
+
+# mu = (floor+ceil)/2
+# sig = (floor-ceil)/2.3548
+
+# x=np.arange(-3,3,0.01)
+# y=gaussian(x, mu, sig)
+
+# plt.plot(x,y)
+
+########################################################
+########################################################
+
+# The way to calculate floor and ceil is 
+# Floor is C evidence for CD classifier (can also be D evidence for CD classifier, they are effectively the same)
+# Ceil is A evidence in AC and AD classifier.
+
+
+## - load the saved model and apply it on the new coming dicom file.
+model_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/clf/'
+clf1 = joblib.load(model_dir+'pilot_sub001_benchtable_tablebed.joblib') 
+clf2 = joblib.load(model_dir+'pilot_sub001_benchtable_tablechair.joblib') 
+
+
+def gaussian(x, mu, sig):
+    # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+    return round(20*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))))
+
+
+
+A = "bed"
+B = "chair"
+C = "bench"
+D = "table"
+
+# then do this for each TR
+s1 = clf1.score(newTR, ['table'])
+s2 = clf2.score(newTR, ['table'])
+
+
