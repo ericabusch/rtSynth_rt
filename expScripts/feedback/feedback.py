@@ -70,8 +70,11 @@ trial_list.append({'Trial':None,
                     'state':None,
                     'newWobble':None},
                     ignore_index=True)
+
 for currTrial in range(1,1+TrialNumber):
-    for i in range(1): # should be 6TR=12s
+
+    # ITI
+    for i in range(6): # should be 6TR=12s
         trial_list=trial_list.append({'Trial':currTrial,
                                     'time':curTime,
                                     'TR':curTR,
@@ -80,7 +83,9 @@ for currTrial in range(1,1+TrialNumber):
                                     ignore_index=True)
         curTime=curTime+TR
         curTR=curTR+1
-    for i in range(1): # should be 3TR=6s
+
+    # waiting for metric calculation
+    for i in range(3): # should be 3TR=6s
         trial_list=trial_list.append({'Trial':currTrial,
                                     'time':curTime,
                                     'TR':curTR,
@@ -89,6 +94,8 @@ for currTrial in range(1,1+TrialNumber):
                                     ignore_index=True)
         curTime=curTime+TR
         curTR=curTR+1
+    
+    # feedback trial: try minimize the whobbling
     for i in range(5): #5TR=10s
         trial_list=trial_list.append({'Trial':currTrial,
                                     'time':curTime,
@@ -98,7 +105,9 @@ for currTrial in range(1,1+TrialNumber):
                                     ignore_index=True)
         curTime=curTime+TR
         curTR=curTR+1
-for i in range(1): # should be 6TR=12s
+
+# ITI
+for i in range(6): # should be 6TR=12s
     trial_list=trial_list.append({'Trial':currTrial,
                                 'time':curTime,
                                 'TR':curTR,
@@ -107,8 +116,44 @@ for i in range(1): # should be 6TR=12s
                                 ignore_index=True)
     curTime=curTime+TR
     curTR=curTR+1
-    
-trial_list
+
+# for currTrial in range(1,1+TrialNumber):
+#     for i in range(1): # should be 6TR=12s
+#         trial_list=trial_list.append({'Trial':currTrial,
+#                                     'time':curTime,
+#                                     'TR':curTR,
+#                                     'state':'ITI',
+#                                     'newWobble':0},
+#                                     ignore_index=True)
+#         curTime=curTime+TR
+#         curTR=curTR+1
+#     for i in range(1): # should be 3TR=6s
+#         trial_list=trial_list.append({'Trial':currTrial,
+#                                     'time':curTime,
+#                                     'TR':curTR,
+#                                     'state':'waiting',
+#                                     'newWobble':0},
+#                                     ignore_index=True)
+#         curTime=curTime+TR
+#         curTR=curTR+1
+#     for i in range(5): #5TR=10s
+#         trial_list=trial_list.append({'Trial':currTrial,
+#                                     'time':curTime,
+#                                     'TR':curTR,
+#                                     'state':'feedback',
+#                                     'newWobble':1},
+#                                     ignore_index=True)
+#         curTime=curTime+TR
+#         curTR=curTR+1
+# for i in range(1): # should be 6TR=12s
+#     trial_list=trial_list.append({'Trial':currTrial,
+#                                 'time':curTime,
+#                                 'TR':curTR,
+#                                 'state':'ITI',
+#                                 'newWobble':0},
+#                                 ignore_index=True)
+#     curTime=curTime+TR
+#     curTR=curTR+1
 
 
 
