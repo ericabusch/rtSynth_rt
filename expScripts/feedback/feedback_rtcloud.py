@@ -65,11 +65,17 @@ def getDicomFileName(cfg, scanNum, fileNum):
 
 # load conf toml file
 # tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/tProject.toml"
-tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/rtSynth_rt.pilot_sub001.toml"
-argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='experiment file (.json or .toml)')
-args = argParser.parse_args()
-cfg = utils.loadConfigFile(args.config)
+# tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/rtSynth_rt.pilot_sub001.toml"
+# argParser = argparse.ArgumentParser()
+# argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='experiment file (.json or .toml)')
+# args = argParser.parse_args()
+# cfg = utils.loadConfigFile(args.config)
+
+toml="pilot_sub001.ses1.toml"
+
+from rtCommon.cfg_loading import cfg_loading
+cfg=cfg_loading(toml)
+# cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
 
 
 Top_directory = '/gpfs/milgram/project/realtime/DICOM'
@@ -77,9 +83,13 @@ Top_directory = '/gpfs/milgram/project/realtime/DICOM'
 
 ## - realtime feedback code
 # subject folder
-YYYYMMDD='20201009'
-LASTNAME='rtSynth_pilot001'
-PATIENTID='rtSynth_pilot001'
+# YYYYMMDD='20201009'
+# LASTNAME='rtSynth_pilot001'
+# PATIENTID='rtSynth_pilot001'
+YYYYMMDD=cfg.YYYYMMDD
+LASTNAME=cfg.LASTNAME
+PATIENTID=cfg.LASTNAME
+
 subjectFolder=f"{Top_directory}/{YYYYMMDD}.{LASTNAME}.{PATIENTID}/" #20190820.RTtest001.RTtest001: the folder for current subject # For each patient, a new folder will be generated:
 # cfg.dicomDir=subjectFolder
 
@@ -146,7 +156,7 @@ for this_TR in np.arange(num_total_TRs):
 	## - load the saved model and apply it on the new coming dicom file.
 	# model_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/clf/'
 
-	model_path=f"{cfg.model_dir}/{cfg.subjectName}/{cfg.session}_recognition/clf"
+	model_path=f"{cfg.subjects_dir}/{cfg.subjectName}/{cfg.session}_recognition/clf/" #/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/pilot_sub001/ses1_recognition/clf
 	clf1 = joblib.load(model_path+'pilot_sub001_benchtable_tablebed.joblib') 
 	clf2 = joblib.load(model_path+'pilot_sub001_benchtable_tablechair.joblib') 
 
