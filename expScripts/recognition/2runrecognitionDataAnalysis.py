@@ -1,4 +1,6 @@
-# This script is run in day 2 recognition run, pick up a dicom in realtime folder
+# the purpose of this script is to use 2 recognition runs in the current day and the saved model trained earlier to get the functionalTemplateTR to align the feedback dicom to and to generate the metric Gaussian curve
+# 
+# # This script is run in day 2 recognition run, pick up a dicom in realtime folder
 # in Milgram. And choose that as the day2 functional template volume. 
 # register this day2 functional template volume with day1 functional template 
 # volume and save that in day2 in day1 space.
