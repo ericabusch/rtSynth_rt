@@ -19,6 +19,7 @@ def cfg_loading(toml=''):
 
     # prepare folder structure
     for curr_ses in range(1,6):
+        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/catPer/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/anat/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
