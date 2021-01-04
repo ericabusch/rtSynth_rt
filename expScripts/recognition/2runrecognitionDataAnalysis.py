@@ -78,34 +78,32 @@ tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/proje
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='experiment file (.json or .toml)')
 args = argParser.parse_args()
-cfg = utils.loadConfigFile(args.config)
+from rtCommon.cfg_loading import mkdir,cfg_loading
+# cfg = utils.loadConfigFile(args.config)
+cfg = cfg_loading(args.config)
+
 
 # YYYYMMDD= '20201009' #'20201009' '20201015'
 # YYYYMMDD= '20201019' #'20201009' '20201015'
 # LASTNAME='rtSynth_pilot001'
 # PATIENTID='rtSynth_pilot001'
-YYYYMMDD= cfg.YYYYMMDD #'20201009' '20201015'
-LASTNAME=cfg.realtimeFolder_subjectName
-PATIENTID=cfg.realtimeFolder_subjectName
-Top_directory = '/gpfs/milgram/project/realtime/DICOM/'
-sub='pilot_sub001'
 
+# Top_directory = '/gpfs/milgram/project/realtime/DICOM/'
+# sub='pilot_sub001'
 
 realtime_ornt=nib.orientations.axcodes2ornt(('I', 'P', 'L'))
 ref_ornt=nib.orientations.axcodes2ornt(('P', 'S', 'L'))
 global ornt_transform
 ornt_transform = nib.orientations.ornt_transform(realtime_ornt,ref_ornt)
 
+
+YYYYMMDD= cfg.YYYYMMDD #'20201009' '20201015'
+LASTNAME=cfg.realtimeFolder_subjectName
+PATIENTID=cfg.realtimeFolder_subjectName
 tmp_folder=f'/gpfs/milgram/scratch60/turk-browne/kp578/{YYYYMMDD}.{LASTNAME}.{PATIENTID}/'
-# if os.path.isdir(tmp_folder):
-#   shutil.rmtree(tmp_folder)
-if not os.path.isdir(tmp_folder):
-    os.mkdir(tmp_folder)
+mkdir(tmp_folder)
 
-
-
-subjectFolder=f"{Top_directory}{YYYYMMDD}.{LASTNAME}.{PATIENTID}/" #20190820.RTtest001.RTtest001: the folder for current subject # For each patient, a new folder will be generated:
-
+subjectFolder = cfg.dicom_dir #: the folder for current subject # For each patient, a new folder will be generated:
 
 dicomFiles=glob(f"{subjectFolder}*")
 day2templateVolume_dicom=dicomFiles[int(len(dicomFiles)/2)]
@@ -151,8 +149,17 @@ call(command,shell=True)
 
 ## - load the saved model and apply it on the new coming dicom file.
 model_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/clf/'
-clf1 = joblib.load(model_dir+'pilot_sub001_benchtable_tablebed.joblib') 
-clf2 = joblib.load(model_dir+'pilot_sub001_benchtable_tablechair.joblib') 
+
+# A : bed
+# B : chair
+# C : bench
+# D : table
+
+# AC_clf = joblib.load(model_dir+'pilot_sub001_benchtable_tablebed.joblib') 
+# AD_clf = joblib.load(model_dir+'pilot_sub001_benchtable_tablechair.joblib')
+AC_clf 
+AD_clf
+CD_clf
 
 
 def gaussian(x, mu, sig):
@@ -167,7 +174,16 @@ C = "bench"
 D = "table"
 
 # then do this for each TR
-s1 = clf1.score(newTR, ['table'])
-s2 = clf2.score(newTR, ['table'])
+# s1 = clf1.score(newTR, ['table'])
+# s2 = clf2.score(newTR, ['table'])
 
+# In the case of 2 recognition runs, does the floor definition still makes sense? C evidence for CD classifier when A is presented. 1). this is not set to be small, can at times be large. 2). this is not using all data available in these two recognition runs.
+floor=CD_clf.score()
+ceil=-1
+
+mu = (floor+ceil)/2
+sig = (floor-ceil)/2.3548
+
+x=np.arange(-3,3,0.01)
+y=gaussian(x, mu, sig)
 
