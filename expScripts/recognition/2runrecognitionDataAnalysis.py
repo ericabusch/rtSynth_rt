@@ -80,7 +80,7 @@ argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='exper
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
 # cfg = utils.loadConfigFile(args.config)
-cfg = cfg_loading(args.config)
+cfg = cfg_loading(args.config) #cfg = cfg_loading(args.config)
 
 
 # YYYYMMDD= '20201009' #'20201009' '20201015'

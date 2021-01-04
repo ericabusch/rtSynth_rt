@@ -7,7 +7,9 @@ def mkdir(folder):
 
 def cfg_loading(toml=''):
     # toml="pilot_sub001.ses1.toml"
-    cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
+    # cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
+    cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
+    
 
     cfg.dicom_dir         = f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}.{cfg.LASTNAME}/"
     cfg.recognition_dir   = f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/"
