@@ -35,6 +35,6 @@ num_total_TRs=150 # number of total TRs in feedback session
 subjects_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/'
 dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
 
-maxTR= # recognition maximum TR
-TrialNumber= # feedback trial number for neuro feedback run. 1 hr feedback session, each feedback trial is  
+maxTR= 1 # recognition maximum TR
+TrialNumber= 1 # feedback trial number for neuro feedback run. 1 hr feedback session, each feedback trial is  
 
