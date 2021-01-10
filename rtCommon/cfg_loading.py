@@ -18,13 +18,20 @@ def cfg_loading(toml=''):
     cfg.trainingModel_dir = f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/clf/"
 
     # prepare folder structure
-    for curr_ses in range(1,6):
+    for curr_ses in [1,5]:
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/catPer/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/anat/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
+    
+
+    for curr_ses in [2,3,4]:
+        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/")
+        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
+        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
         mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/feedback/")
+
 
     return cfg
 
