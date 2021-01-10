@@ -4,6 +4,12 @@
 input: 
     cfg
     curr_run
+
+output:
+    maxTR=xxx
+
+usage example:
+    python expScripts/recognition/preRecognition.py -c pilot_sub001.ses1.toml -r 3
 '''
 
 import os
