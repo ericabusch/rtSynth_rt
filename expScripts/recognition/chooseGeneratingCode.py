@@ -13,22 +13,9 @@ import os
 import sys
 import argparse
 import numpy as np
-import nibabel as nib
-import scipy.io as sio
-from subprocess import call
-from nibabel.nicom import dicomreaders
-import pydicom as dicom  # type: ignore
-import time
-from glob import glob
-import shutil
-from nilearn.image import new_img_like
-import joblib
-sys.path.append('/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/')
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
-from rtCommon.fileClient import FileInterface
-import rtCommon.projectUtils as projUtils
-from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='pilot_sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
