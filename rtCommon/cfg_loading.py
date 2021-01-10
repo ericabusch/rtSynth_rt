@@ -11,8 +11,10 @@ def cfg_loading(toml=''):
     cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
     
     # what is never changed
+    cfg.orderFolder='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/orders/'
     cfg.subjects_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/'
     cfg.dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
+    cfg.TR=2
 
     cfg.dicom_dir         = f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}.{cfg.LASTNAME}/"  #e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
     cfg.recognition_dir   = f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/"
