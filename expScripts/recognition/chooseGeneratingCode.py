@@ -30,7 +30,7 @@ chooseNumbers=[8, 4, 4, 4, 8]
 for curr_sess in range(1,6):
     np.save(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{curr_sess}/recognition/choose.npy", 
     choose[
-        sum(chooseNumbers[:curr_sess-1]),
+        sum(chooseNumbers[:curr_sess-1]):
         sum(chooseNumbers[:curr_sess])
         ])
         # this part generate 8 4 4 4 8 numbers for ses1 2 3 4 5
