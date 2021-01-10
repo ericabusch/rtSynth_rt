@@ -1,3 +1,14 @@
+# This code is the recognition display code and behavior data(button box) recording code. 
+# This code read from the image orders designed by the code expScripts/recognition/recognitionTrialOrder.py 
+# and show corresponding images
+
+# The recognition trial design right now is like this: 
+# 1000ms stimuli presentation and 900ms 2AFC(alternative forced choice task) and 
+# 2000x0.4+4000x0.4+6000x0.2=3600ms SOA(stimulus onset asynchrony)
+# There are 48 trials in each order.csv file. So each 
+
+
+
 from __future__ import print_function, division
 import os
 
@@ -20,11 +31,22 @@ import pylink
 # D: bench
 
 alpha = string.ascii_uppercase
-TR=2
+
 # startup parameters
 # maxTR = int((3*0.4+4.5*0.4+6*0.2)*12*4/1.5+60)  # mean 134.4 maximum 192
-sub = sys.argv[1]  # 'test' 'pilot' "pilot_sub002"
-run = int(sys.argv[2])  # 1
+# sub = sys.argv[1]  # 'test' 'pilot' "pilot_sub002"
+
+from rtCommon.cfg_loading import mkdir,cfg_loading
+argParser = argparse.ArgumentParser()
+argParser.add_argument('--config', '-c', default='pilot_sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
+args = argParser.parse_args()
+
+cfg = cfg_loading(args.config)
+sub = cfg.subjectName
+run = int(arg.run)  # 1
+TR=cfg.TR
+
 scanmode = 'Test'  # 'Scan' or 'Test' or None
 screenmode = True  # fullscr True or False
 gui = True if screenmode == False else False
@@ -61,11 +83,11 @@ saveDir="../"
 
 # This sets the order of stimulus presentation for all of the subjects' runs
 # If it is the first run, randomly select and save out six orders, otherwise read in that file
-if run == 1:
-    choose = np.random.choice(np.arange(1, 49), 8, replace=False)
-    np.save(f"{main_dir}subjects/{sub}/ses1_recognition/run{run}/{sub}_orders.npy", choose)
-else:
-    choose = np.load(f"{main_dir}subjects/{sub}/ses1_recognition/run{run}/{sub}_orders.npy")
+# if run == 1:
+#     choose = np.random.choice(np.arange(1, 49), 8, replace=False)
+#     np.save(f"{main_dir}subjects/{sub}/ses1_recognition/run{run}/{sub}_orders.npy", choose)
+# else:
+choose = np.load(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/choose.npy")
 
 # read the saved order 
 order = './orders/recognitionOrders_{}.csv'.format(choose[run - 1])
