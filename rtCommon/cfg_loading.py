@@ -14,6 +14,7 @@ def cfg_loading(toml=''):
     cfg.orderFolder='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/orders/'
     cfg.subjects_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/'
     cfg.dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
+    cfg.projectDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/"
     cfg.TR=2
 
     cfg.dicom_dir         = f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}.{cfg.LASTNAME}/"  #e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
@@ -24,18 +25,18 @@ def cfg_loading(toml=''):
 
     # prepare folder structure
     for curr_ses in [1,5]:
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/catPer/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/anat/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/catPer/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/anat/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
     
 
     for curr_ses in [2,3,4]:
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
-        mkdir(f"subjects/{cfg.subjectName}/ses{curr_ses}/feedback/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/recognition/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
+        mkdir(f"{cfg.projectDir}subjects/{cfg.subjectName}/ses{curr_ses}/feedback/")
 
 
     return cfg
