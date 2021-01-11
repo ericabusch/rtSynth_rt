@@ -6,18 +6,34 @@ def mkdir(folder):
         os.mkdir(folder)
 
 def cfg_loading(toml=''):
+    def findDir(path):
+        from glob import glob
+        return glob(path)[0]+'/'
+        
     # toml="pilot_sub001.ses1.toml"
     # cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
     cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
     
-    # what is never changed
-    cfg.orderFolder='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/orders/'
-    cfg.subjects_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/'
+    if 'watts' in os.getcwd():
+        cfg.projectDir="/home/watts/Desktop/ntblab/kailong/rtcloud_rt/"
+    elif 'kailong' in os.getcwd():
+        cfg.projectDir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
+    elif 'milgram' in os.getcwd():
+        cfg.projectDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/"
+    else: 
+        raise "path error"
+        raise Exception('path error')
+
+    
+
+    cfg.orderFolder=f'{cfg.projectDir}expScripts/recognition/orders/'
+    cfg.subjects_dir=f'{cfg.projectDir}subjects/'
     cfg.dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
-    cfg.projectDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/"
+
     cfg.TR=2
 
-    cfg.dicom_dir         = f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}.{cfg.LASTNAME}/"  #e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
+    cfg.preDay_dicom_dir  = findDir(f"{cfg.dicom_folder}{cfg.preDay_YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  #e.g. /gpfs/milgram/project/realtime/DICOM/20201009.rtSynth_pilot001.rtSynth_pilot001/  # cfg.preDay_YYYYMMDD is "0" when there is no previous day
+    cfg.dicom_dir         = findDir(f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  #e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
     cfg.recognition_dir   = f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/"
     cfg.feedback_dir      = f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/feedback/"
     cfg.usingModel_dir    = f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session-1}/recognition/clf/"
