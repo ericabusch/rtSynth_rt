@@ -29,6 +29,7 @@ LASTNAME="rtSynth_pilot001"
 
 
 realtimeFolder_subjectName="rtSynth_pilot001" # part of the folder name in /gpfs/milgram/project/realtime/DICOM
+preDay_YYYYMMDD="20201009" # can be "0" if there is no previous day for this session
 YYYYMMDD="20201019" # part of the folder name in /gpfs/milgram/project/realtime/DICOM
 num_total_TRs=150 # number of total TRs in feedback session
 
