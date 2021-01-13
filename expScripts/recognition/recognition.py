@@ -2,16 +2,14 @@
 # This code read from the image orders designed by the code expScripts/recognition/recognitionTrialOrder.py 
 # and show corresponding images
 
-# The recognition trial design right now is like this: 
+# The recognition trial design is like this: 
 # 1000ms stimuli presentation and 900ms 2AFC(alternative forced choice task) and 
-# 2000x0.4+4000x0.4+6000x0.2=3600ms SOA(stimulus onset asynchrony)
-# There are 48 trials in each order.csv file. So each 
-
+# 4000x0.4+6000x0.4+8000x0.2=5600ms SOA(stimulus onset asynchrony)
+# There are 48 trials in each order.csv file. So each run is 268.8s=4.48min
 
 
 from __future__ import print_function, division
 import os
-
 # os.chdir("/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtSynth_repo/kp_scratch/expcode")
 from psychopy import visual, event, core, logging, gui, data, monitors
 from psychopy.hardware.emulator import launchScan, SyncGenerator
@@ -21,22 +19,20 @@ import fmrisim as sim
 import numpy as np
 import pandas as pd
 import sys
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 import os
 import pylink
+import argparse
+from rtCommon.cfg_loading import mkdir,cfg_loading
 
 # imcode:
 # A: bed
 # B: Chair
 # C: table
 # D: bench
-
 alpha = string.ascii_uppercase
 
-# startup parameters
-# maxTR = int((3*0.4+4.5*0.4+6*0.2)*12*4/1.5+60)  # mean 134.4 maximum 192
-# sub = sys.argv[1]  # 'test' 'pilot' "pilot_sub002"
 
-from rtCommon.cfg_loading import mkdir,cfg_loading
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='pilot_sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
@@ -44,7 +40,7 @@ args = argParser.parse_args()
 
 cfg = cfg_loading(args.config)
 sub = cfg.subjectName
-run = int(arg.run)  # 1
+run = int(args.run)  # 1
 TR=cfg.TR
 
 scanmode = 'Test'  # 'Scan' or 'Test' or None
@@ -73,13 +69,9 @@ mywin = visual.Window(
     units='height')
 
 if 'watts' in os.getcwd():
-    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_rt/" # main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
 else:
-    main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
-
-# # Open data file for eye tracking
-# datadir = "./data/recognition/"
-saveDir="../"
+    main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
 
 # This sets the order of stimulus presentation for all of the subjects' runs
 # If it is the first run, randomly select and save out six orders, otherwise read in that file
@@ -93,20 +85,18 @@ choose = np.load(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recogni
 order = './orders/recognitionOrders_{}.csv'.format(choose[run - 1])
 trial_list = pd.read_csv(order)
 
-maxTR = int(trial_list['time'].iloc[-1] / 2 + 3) 
+maxTR = int(trial_list['time'].iloc[-1] / 2 + 5) 
+print(f"maxTR={maxTR}")
 
 # Settings for MRI sequence
-MR_settings = {'TR': 2.000, 'volumes': maxTR, 'sync': 5, 'skip': 0, 'sound': True}
+MR_settings = {'TR': np.float(cfg.TR), 'volumes': maxTR, 'sync': 5, 'skip': 0, 'sound': True}
 
 # check if there is a data directory and if there isn't, make one.
-if not os.path.exists('./data'):
-    os.mkdir('./data')
+mkdir('./data')
 
 # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
 
-newfile = f"{main_dir}subjects/{sub}/ses1_recognition/{sub}_{run}.csv"
-# log = "./Data/{}_{}.txt".format(str(sub), str(run))
-# logfile = open(log, "w")
+newfile = f"{main_dir}subjects/{sub}/ses{cfg.session}/recognition/{sub}_{run}.csv"
 assert not os.path.isfile(newfile), f"FILE {newfile} ALREADY EXISTS - check subject and run number"
 
 # create empty dataframe to accumulate data
@@ -203,14 +193,14 @@ button_left_ = visual.TextStim(win=mywin, name='button_left_',
     pos=(-0.27, -0.44), height=0.06, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     languageStyle='LTR',
-    depth=-2.0);
+    depth=-2.0)
 button_right_ = visual.TextStim(win=mywin, name='button_right_',
     text='default text',
     font='Arial',
     pos=(0.27, -0.44), height=0.06, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     languageStyle='LTR',
-    depth=-3.0);
+    depth=-3.0)
 image = visual.ImageStim(
     win=mywin,
     name='image',
@@ -254,6 +244,7 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
                                 'RT': resp_time, 'image_on': image_on, 'button_on': button_on,
                                 'button_off': button_off},
                                ignore_index=True)
+            data.to_csv(newfile) 
             # pop out all first items, and reset responses, because they correspond to the trial that already happened
             trials.pop(0)  # ['', '', '', '', 'A', '', 'D', '', 'C',...]
             onsets.pop(0)  # ['blank', 'blank', 'blank', 'blank', 'stim', 'blank', 'stim', 'blank', 'stim', 'blank', 'blank', 'stim', 'blank', 'stim', 'blank',...]
