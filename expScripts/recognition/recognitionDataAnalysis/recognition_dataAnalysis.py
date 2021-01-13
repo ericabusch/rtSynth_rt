@@ -21,9 +21,17 @@ import glob
 import shutil
 
 def recognition_dataAnalysis_brain(sub='pilot_sub001',run=1,ses=1): # normally sub should be sub001
+	'''
+	steps:
+		copy the functional data to tmp folder
+		split functional data to multiple volumes
+		select the middle volume as the template functional volume
+		align every other functional volume with templateFunctionalVolume
+		save all the functional data in day1 anatomical space, as M x N matrix. M TR, N voxels
+	'''
 	# This script is in the environment of '/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/expScripts/recognition/' 
 	# and activate_rt
-	# The purpose of this script is to analyze the data from recognition run
+	# The purpose of this script is to analyze the brain data from recognition run
 
 	homeDir="/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/" 
 	dataDir=f"{homeDir}subjects/{sub}/ses{ses}_recognition/run{run}/nifti/"
@@ -110,6 +118,18 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run=1,ses=1): # normally s
 
 
 def recognition_dataAnalysis(sub='pilot_sub001',run=1,ses=1): # normally sub should be sub001
+	'''
+	purpose:
+		process the brain and behavior data and save them for later use ()
+
+	steps:
+		extract the labels which is selected by the subject and coresponding TR and time
+		check if the subject's response is correct. When Item is A,bed, response should be 1, or it is wrong
+		brain data analysis using recognition_dataAnalysis_brain
+		brain data is first aligned by pushed back 2TR(4s)
+		select volumes of brain_data by counting which TR is left in behav_data
+		create the META file
+	'''
 	# loading packages and general paths
 	import pandas as pd
 	import numpy as np

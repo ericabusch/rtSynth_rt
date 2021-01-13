@@ -1,6 +1,16 @@
 # This script trains a model using the data from recognition session
 # This code is done writing but not tested, I should test it and save the models
 def minimalClass(sub='pilot_sub001',ses=1):
+    '''
+    purpose: 
+    train offline models
+
+    steps:
+        load preprocessed and aligned behavior and brain data 
+        select data with the wanted pattern like AB AC AD BC BD CD 
+        train correspondng classifier and save the classifier performance and the classifiers themselves.
+
+    '''
     import os
     import numpy as np
     import pandas as pd
