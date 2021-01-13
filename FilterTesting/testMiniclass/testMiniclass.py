@@ -1,3 +1,9 @@
+# summarization of this code:
+'''
+steps:
+    
+'''
+
 # (in the case of target axis AB) 
 # Calculate only the A evidence for A (input A for classifier AC and AD) compared 
 # with A evidence for B (input B for classifier AC and AD) ; 

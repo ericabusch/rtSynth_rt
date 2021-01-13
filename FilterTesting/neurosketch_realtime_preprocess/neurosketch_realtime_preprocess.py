@@ -1,3 +1,15 @@
+# summarize this code process:
+# This code preprocess the brain data (function recognition_dataAnalysis_brain):
+'''
+copy the functional data (nii.gz) to tmp folder 
+split functional data to multiple volumes (fslsplit)
+select the middle volume as the template functional volume
+align every other functional volume with templateFunctionalVolume (3dvolreg)
+merge the aligned data to the PreprocessedData, finish preprocessing (fslmerge)
+generate transformation matrix from functional template space to anatomical space (bet flirt)
+
+'''
+
 # preprocess code for neurosketch data for testing different filters
 # There are six run for each subject recognition task
 # I use 5 runs to train the model and 1 run to test the model and that testing accuracy 
