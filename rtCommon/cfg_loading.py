@@ -8,7 +8,11 @@ def mkdir(folder):
 def cfg_loading(toml=''):
     def findDir(path):
         from glob import glob
-        return glob(path)[0]+'/'
+        _path = glob(path)[0]+'/'
+        if len(_path)==0: # if the dir is not found. get rid of the "*" and return
+            _path=path.split("*")
+            _path=''.join(_path)
+        return _path
 
     # toml="pilot_sub001.ses1.toml"
     # cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
