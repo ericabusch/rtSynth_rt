@@ -22,8 +22,8 @@ def cfg_loading(toml=''):
     
     
     if 'watts' in os.getcwd():
-        cfg = utils.loadConfigFile(f"/home/watts/Desktop/ntblab/kailong/rtcloud_rt/projects/rtSynth_rt/conf/{toml}")
-        cfg.projectDir="/home/watts/Desktop/ntblab/kailong/rtcloud_rt/"
+        cfg = utils.loadConfigFile(f"/home/watts/Desktop/ntblab/kailong/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
+        cfg.projectDir="/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
     elif 'kailong' in os.getcwd():
         cfg = utils.loadConfigFile(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
         cfg.projectDir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"

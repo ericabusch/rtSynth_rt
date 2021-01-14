@@ -20,7 +20,7 @@ import pandas as pd
 import sys
 
 if 'watts' in os.getcwd():
-    sys.path.append("/home/watts/Desktop/ntblab/kailong/rtcloud_rt/")
+    sys.path.append("/home/watts/Desktop/ntblab/kailong/rtSynth_rt/")
 elif 'kailong' in os.getcwd():
     sys.path.append("/Users/kailong/Desktop/rtEnv/rtSynth_rt/")
 elif 'milgram' in os.getcwd():
@@ -82,7 +82,7 @@ mywin = visual.Window(
     units='height')
 
 if 'watts' in os.getcwd():
-    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_rt/" # main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/" # main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
 else:
     main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
 
