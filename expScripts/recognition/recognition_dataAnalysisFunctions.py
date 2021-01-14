@@ -100,7 +100,7 @@ def recognition_preprocess(cfg):
         call(command, shell=True)
 
     # remove the tmp folder
-    # shutil.rmtree(tmp_dir)
+    shutil.rmtree(tmp_dir)
 
     # load and apply mask
             
