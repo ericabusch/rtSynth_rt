@@ -15,14 +15,21 @@ from psychopy import visual, event, core, logging, gui, data, monitors
 from psychopy.hardware.emulator import launchScan, SyncGenerator
 from PIL import Image
 import string
-import fmrisim as sim
 import numpy as np
 import pandas as pd
 import sys
-sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
+
+if 'watts' in os.getcwd():
+    sys.path.append("/home/watts/Desktop/ntblab/kailong/rtcloud_rt/")
+elif 'kailong' in os.getcwd():
+    sys.path.append("/Users/kailong/Desktop/rtEnv/rtSynth_rt/")
+elif 'milgram' in os.getcwd():
+    sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
+
 import os
 import pylink
 import argparse
+import rtCommon.fmrisim as sim
 from rtCommon.cfg_loading import mkdir,cfg_loading
 
 # imcode:
@@ -34,7 +41,7 @@ alpha = string.ascii_uppercase
 
 
 argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default='pilot_sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
 args = argParser.parse_args()
 
@@ -44,7 +51,7 @@ run = int(args.run)  # 1
 TR=cfg.TR
 
 scanmode = 'Test'  # 'Scan' or 'Test' or None
-screenmode = True  # fullscr True or False
+screenmode = False  # fullscr True or False
 gui = True if screenmode == False else False
 monitor_name = "testMonitor" #"scanner" "testMonitor"
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
@@ -82,7 +89,7 @@ else:
 choose = np.load(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/choose.npy")
 
 # read the saved order 
-order = './orders/recognitionOrders_{}.csv'.format(choose[run - 1])
+order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_{choose[run - 1]}.csv'
 trial_list = pd.read_csv(order)
 
 maxTR = int(trial_list['time'].iloc[-1] / 2 + 5) 
@@ -146,7 +153,8 @@ for i in list(range(maxTR)):
 # verify distinct time courses, write out regressor files
 stimfunc = []
 for letter in alpha[:4]:
-    file = open("./data/regressor/{}_{}_{}.txt".format(sub, run, letter), 'w')
+    mkdir(f"{cfg.recognition_dir}regressor/")
+    file = open(f"{cfg.recognition_dir}regressor/{run}_{letter}.txt", 'w')
     thiscode = trial_list[trial_list['imcode'] == letter]
     blanks = np.zeros((maxTR, 1))
     TRons = np.array((thiscode['time'] / TR).astype(int))
@@ -182,7 +190,7 @@ vol = launchScan(mywin, MR_settings, globalClock=globalClock, simResponses=None,
 background = visual.ImageStim(
     win=mywin,
     name='background',
-    image='./carchair_exp/background.png', mask=None,
+    image=f'{cfg.recognition_expScripts_dir}carchair_exp/background.png', mask=None,
     ori=0, pos=(0, 0), size=(1, 1),
     color=[1,1,1], colorSpace='rgb', opacity=0.5,
     flipHoriz=False, flipVert=False,
@@ -267,7 +275,7 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
                 image_on_persist = globalTime  # the purpose of this variable is to make the latest image_on global time available for response time caculation
                 time1s = 1
                 time19s = 1
-                imgPath = imgPaths[0]
+                imgPath = f"{cfg.recognition_expScripts_dir}{imgPaths[0]}"
                 button_left = button_lefts[0]
                 button_right = button_rights[0]
                 imgPaths.pop(0)
