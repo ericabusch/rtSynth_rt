@@ -49,6 +49,7 @@ def cfg_loading(toml=''):
     cfg.dicomNamePattern  = "001_0000{}_000{}.dcm"
 
     # prepare folder structure
+    mkdir(f"{cfg.subjects_dir}") # mkdir subject folder
     for curr_ses in [1,5]:
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/catPer/")
