@@ -111,7 +111,7 @@ data = pd.DataFrame(columns=['Sub', 'Run', 'TR', 'Onset', 'Item', 'Change', 'Cor
                              'Resp', 'RT', 'Acc', 'image_on', 'button_on', 'button_off'])
 
 # Create the fixation dot, and initialize as white fill.
-fix = visual.Circle(mywin, units='deg', radius=0.05, pos=(0, 0), fillColor='white',
+fix = visual.Circle(mywin, units='deg', radius=0.05, pos=(0, 5), fillColor='white',
                     lineColor='black', lineWidth=0.5, opacity=0.5, edges=128)
 
 # Grab all onsets from the 'order' file. They are in seconds, so convert to TR units
@@ -191,21 +191,21 @@ background = visual.ImageStim(
     win=mywin,
     name='background',
     image=f'{cfg.recognition_expScripts_dir}carchair_exp/background.png', mask=None,
-    ori=0, pos=(0, 0), size=(1, 1),
+    ori=0, pos=(0, 0+0.15), size=(1*0.6, 1*0.6),
     color=[1,1,1], colorSpace='rgb', opacity=0.5,
     flipHoriz=False, flipVert=False,
     texRes=128, interpolate=True, depth=0.0)
 button_left_ = visual.TextStim(win=mywin, name='button_left_',
     text='default text',
     font='Arial',
-    pos=(-0.27, -0.44), height=0.06, wrapWidth=None, ori=0,
+    pos=(-0.27*0.6, -0.44*0.6+0.15), height=0.06*0.6, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     languageStyle='LTR',
     depth=-2.0)
 button_right_ = visual.TextStim(win=mywin, name='button_right_',
     text='default text',
     font='Arial',
-    pos=(0.27, -0.44), height=0.06, wrapWidth=None, ori=0,
+    pos=(0.27*0.6, -0.44*0.6+0.15), height=0.06*0.6, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     languageStyle='LTR',
     depth=-3.0)
@@ -213,7 +213,7 @@ image = visual.ImageStim(
     win=mywin,
     name='image',
     image='sin', mask=None,
-    ori=0, pos=(0, 0.1), size=(0.5, 0.5),
+    ori=0, pos=(0, 0.1+0.15), size=(0.5*0.6, 0.5*0.6),
     color=[1,1,1], colorSpace='rgb', opacity=1,
     flipHoriz=False, flipVert=False,
     texRes=128, interpolate=True, depth=-4.0)
