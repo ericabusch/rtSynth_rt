@@ -38,6 +38,8 @@ def cfg_loading(toml=''):
     cfg.feedback_dir      = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/feedback/"
     cfg.usingModel_dir    = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/clf/"
     cfg.trainingModel_dir = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/clf/"
+    cfg.templateFunctionalVolume = f"{cfg.recognition_dir}/templateFunctionalVolume.nii" 
+    cfg.dicomNamePattern  = "001_0000{}_000{}.dcm"
 
     # prepare folder structure
     for curr_ses in [1,5]:
