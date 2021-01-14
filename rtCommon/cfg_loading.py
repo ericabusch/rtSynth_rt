@@ -19,13 +19,16 @@ def cfg_loading(toml=''):
 
     # toml="pilot_sub001.ses1.toml"
     # cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
-    cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
+    
     
     if 'watts' in os.getcwd():
+        cfg = utils.loadConfigFile(f"/home/watts/Desktop/ntblab/kailong/rtcloud_rt/projects/rtSynth_rt/conf/{toml}")
         cfg.projectDir="/home/watts/Desktop/ntblab/kailong/rtcloud_rt/"
     elif 'kailong' in os.getcwd():
+        cfg = utils.loadConfigFile(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
         cfg.projectDir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
     elif 'milgram' in os.getcwd():
+        cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
         cfg.projectDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/"
     else: 
         raise "path error"
@@ -36,6 +39,7 @@ def cfg_loading(toml=''):
     cfg.orderFolder=f'{cfg.projectDir}expScripts/recognition/orders/'
     cfg.subjects_dir=f'{cfg.projectDir}subjects/'
     cfg.dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
+    cfg.recognition_expScripts_dir = f"{cfg.projectDir}expScripts/recognition/"
 
     cfg.TR=2
 
