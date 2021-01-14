@@ -111,7 +111,7 @@ data = pd.DataFrame(columns=['Sub', 'Run', 'TR', 'Onset', 'Item', 'Change', 'Cor
                              'Resp', 'RT', 'Acc', 'image_on', 'button_on', 'button_off'])
 
 # Create the fixation dot, and initialize as white fill.
-fix = visual.Circle(mywin, units='deg', radius=0.05, pos=(0, 5), fillColor='white',
+fix = visual.Circle(mywin, units='deg', radius=0.05, pos=(0, 0+5), fillColor='white',
                     lineColor='black', lineWidth=0.5, opacity=0.5, edges=128)
 
 # Grab all onsets from the 'order' file. They are in seconds, so convert to TR units
