@@ -50,10 +50,16 @@ sub = cfg.subjectName
 run = int(args.run)  # 1
 TR=cfg.TR
 
-scanmode = 'Test'  # 'Scan' or 'Test' or None
-screenmode = False  # fullscr True or False
+if True:
+    scanmode = 'Scan'  # 'Scan' or 'Test' or None
+    screenmode = True  # fullscr True or False
+    monitor_name = "scanner" #"scanner" "testMonitor"
+else:
+    scanmode = 'Test'  # 'Scan' or 'Test' or None
+    screenmode = False  # fullscr True or False
+    monitor_name = "testMonitor" #"scanner" "testMonitor"
+
 gui = True if screenmode == False else False
-monitor_name = "testMonitor" #"scanner" "testMonitor"
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
 
