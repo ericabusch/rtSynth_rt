@@ -49,13 +49,13 @@ fi
 for ROI in $ROIS; do
     for HEMI in lh rh; do
         INPUT=$ROIpath/perc_VTPM_vol_${ROI}_${HEMI}.nii.gz # wang2014 standard space
-        OUTPUT=${mask_dir}/${ROI}_${HEMI}.nii.gz #individual T1 space ROI outputs
-        flirt -ref $TEMPLATE -in $INPUT -out $OUTPUT -applyxfm -init $WANG2FUNC 
+        OUTPUT=${mask_dir}/wang_${ROI}_${HEMI}.nii.gz #individual T1 space ROI outputs
+        flirt -ref $TEMPLATE_bet -in $INPUT -out $OUTPUT -applyxfm -init $WANG2FUNC 
     done
 
     # merge the mask from two hemisphere for selected ROI
-    left=${mask_dir}/${ROI}_lh.nii.gz
-    right=${mask_dir}/${ROI}_rh.nii.gz
+    left=${mask_dir}/wang_${ROI}_lh.nii.gz
+    right=${mask_dir}/wang_${ROI}_rh.nii.gz
     # output=./${sub}_${ROI}_combined.nii.gz
     # fslmaths $left -add $right $output 
     fslmaths $left -thr $THR -bin $left #take threshhold and then bin the data
