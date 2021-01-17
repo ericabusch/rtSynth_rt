@@ -1,3 +1,10 @@
+#!/bin/bash
+#SBATCH --partition=short   
+#SBATCH --job-name=sMasks
+#SBATCH --time=40:00
+#SBATCH --output=wangMask-%j.out
+#SBATCH --mem=2g
+
 '''
 This script is adapted from /Users/kailong/Desktop/rtTest/schaefer2018/make-schaefer-rois.sh
 
@@ -9,17 +16,11 @@ steps:
     
 '''
 
-#!/bin/bash
-#SBATCH --partition=short   
-#SBATCH --job-name=sMasks
-#SBATCH --time=40:00
-#SBATCH --output=wangMask-%j.out
-#SBATCH --mem=2g
 
 set -e #stop immediately encountering error
 
-sub=sub001 #$1 #sub001
-recognition_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition/ #$2
+sub=$1 #sub001
+recognition_dir=$2 #/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition/
 mask_dir=${recognition_dir}mask/
 mkdir ${mask_dir} # save the output files in the current folder
 
