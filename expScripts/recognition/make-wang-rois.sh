@@ -22,7 +22,7 @@ mkdir -p ./logs/
 sub=$1 #sub001
 recognition_dir=$2 #/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition/
 mask_dir=${recognition_dir}mask/
-mkdir ${mask_dir} # save the output files in the current folder
+mkdir -p ${mask_dir} # save the output files in the current folder
 
 
 STAND=/gpfs/milgram/apps/hpc.rhel7/software/FSL/5.0.10-centos7_64/data/standard/MNI152_T1_1mm_brain.nii.gz
