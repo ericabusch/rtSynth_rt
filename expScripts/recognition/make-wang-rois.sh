@@ -54,8 +54,8 @@ for ROI in $ROIS; do
     done
 
     # merge the mask from two hemisphere for selected ROI
-    left=./${sub}/${ROI}_lh.nii.gz
-    right=./${sub}/${ROI}_rh.nii.gz
+    left=${mask_dir}/${ROI}_lh.nii.gz
+    right=${mask_dir}/${ROI}_rh.nii.gz
     # output=./${sub}_${ROI}_combined.nii.gz
     # fslmaths $left -add $right $output 
     fslmaths $left -thr $THR -bin $left #take threshhold and then bin the data
