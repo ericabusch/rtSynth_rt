@@ -19,8 +19,7 @@ def cfg_loading(toml=''):
 
     # toml="pilot_sub001.ses1.toml"
     # cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
-    
-    
+        
     if 'watts' in os.getcwd():
         cfg = utils.loadConfigFile(f"/home/watts/Desktop/ntblab/kailong/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
         cfg.projectDir="/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
@@ -31,9 +30,7 @@ def cfg_loading(toml=''):
         cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
         cfg.projectDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/"
     else: 
-        raise "path error"
         raise Exception('path error')
-
     
     cfg.tmp_folder="/gpfs/milgram/scratch60/turk-browne/kp578/rtcloud_rt/"
     cfg.orderFolder=f'{cfg.projectDir}expScripts/recognition/orders/'
@@ -44,7 +41,7 @@ def cfg_loading(toml=''):
     cfg.TR=2
 
     cfg.preDay_dicom_dir  = findDir(f"{cfg.dicom_folder}{cfg.preDay_YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  #e.g. /gpfs/milgram/project/realtime/DICOM/20201009.rtSynth_pilot001.rtSynth_pilot001/  # cfg.preDay_YYYYMMDD is "0" when there is no previous day
-    cfg.dicom_dir         = findDir(f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  #e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
+    cfg.dicom_dir         = findDir(f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  # YYYYMMDD.$LASTNAME.$PATIENTID  e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
     cfg.recognition_dir   = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/"
     cfg.feedback_dir      = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/feedback/"
     cfg.usingModel_dir    = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/clf/"
@@ -61,13 +58,11 @@ def cfg_loading(toml=''):
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
     
-
     for curr_ses in [2,3,4]:
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/feedback/")
-
 
     return cfg
 
