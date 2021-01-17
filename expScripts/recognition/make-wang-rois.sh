@@ -2,7 +2,7 @@
 #SBATCH --partition=short   
 #SBATCH --job-name=sMasks
 #SBATCH --time=40:00
-#SBATCH --output=wangMask-%j.out
+#SBATCH --output=./logs/wangMask-%j.out
 #SBATCH --mem=2g
 
 '''
@@ -18,7 +18,7 @@ steps:
 
 
 set -e #stop immediately encountering error
-
+mkdir -p ./logs/
 sub=$1 #sub001
 recognition_dir=$2 #/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition/
 mask_dir=${recognition_dir}mask/
