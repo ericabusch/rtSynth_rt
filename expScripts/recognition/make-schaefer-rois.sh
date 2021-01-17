@@ -34,7 +34,12 @@ ROIpath=/gpfs/milgram/scratch/turk-browne/tsy6/CBIG/stable_projects/brain_parcel
 WANG2FUNC=${recognition_dir}wang2func.mat
 TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
 TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
-bet ${TEMPLATE} ${TEMPLATE_bet}
+if [ -f "$TEMPLATE_bet" ]; then
+    echo "TEMPLATE_bet mat exists"
+else 
+    echo "TEMPLATE_bet mat does not exist"
+    bet ${TEMPLATE} ${TEMPLATE_bet}
+fi
 WANGINFUNC=${recognition_dir}wanginfunc.nii.gz
 if [ -f "$WANG2FUNC" ]; then
     echo "xfm mat exists"
@@ -48,7 +53,7 @@ atlas=Schaefer2018_300Parcels_7Networks_order_FSLMNI152_1mm.nii.gz
 # using saved transformation matrix, convert schaefer ROIs from wang2014 standard space to individual T1 space
 for ROI in {1..300}; do
   INPUT=$ROIpath/$atlas # schaefer2018 standard space
-  OUTPUT=${mask_dir}/${ROI}.nii.gz #individual T1 space ROI outputs
+  OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz #individual T1 space ROI outputs
   fslmaths $INPUT -thr $ROI -uthr $ROI -bin $OUTPUT
   flirt -ref $TEMPLATE_bet -in $OUTPUT -out $OUTPUT -applyxfm -init $WANG2FUNC
   fslmaths $OUTPUT -thr 0.5 -bin $OUTPUT
