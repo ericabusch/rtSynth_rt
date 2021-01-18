@@ -320,6 +320,11 @@ def minimalClass(cfg):
                 trainY = META.iloc[trainIX].label
                 testY = META.iloc[testIX].label
                 
+                print(f"obj={obj},altobj={altobj}")
+                print(f"unique(trainY)={np.unique(trainY)}")
+                print(f"unique(testY)={np.unique(testY)}")
+                assert len(np.unique(trainY))==2
+
                 # # If you're selecting high-importance features, this bit handles that
                 # if include < 1:
                 #     trainX = trainX[:, obj_inds[-nvox:]]
