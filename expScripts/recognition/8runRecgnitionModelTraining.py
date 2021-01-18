@@ -24,7 +24,6 @@ from glob import glob
 import shutil
 from nilearn.image import new_img_like
 import joblib
-# sys.path.append('/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/')
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
 from rtCommon.fileClient import FileInterface
@@ -33,7 +32,7 @@ from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFile
 
 
 argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default='pilot_sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
 cfg = cfg_loading(args.config)
@@ -49,7 +48,25 @@ align every other functional volume with templateFunctionalVolume (3dvolreg)
 '''
 recognition_preprocess(cfg)
 
+'''
+run the mask selection
+    make ROIs
+        make-wang-rois.sh
+        make-schaefer-rois.sh
+    train classifiers on each ROI
+    summarize classification accuracy and select best mask
+'''
+# make ROIs
+    # make-wang-rois.sh
+call(f"sbatch {cfg.recognition_expScripts_dir}make-wang-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
+    # make-schaefer-rois.sh
+call(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
 
+# train classifiers on each ROI
+call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {args.config}")
+
+# summarize classification accuracy and select best mask
+call(f"sbatch {cfg.recognition_expScripts_dir}aggregate.sh {cfg.subjectName} {cfg.recognition_dir}")
 '''
 load preprocessed and aligned behavior and brain data 
 select data with the wanted pattern like AB AC AD BC BD CD 

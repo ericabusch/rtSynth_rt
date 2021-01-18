@@ -48,7 +48,7 @@ def cfg_loading(toml=''):
     cfg.trainingModel_dir = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/clf/"
     cfg.templateFunctionalVolume = f"{cfg.recognition_dir}/templateFunctionalVolume.nii" 
     cfg.dicomNamePattern  = "001_0000{}_000{}.dcm"
-
+    cfg.mask_dir          = f"{cfg.recognition_dir}mask/"
     # prepare folder structure
     mkdir(f"{cfg.subjects_dir}{cfg.subjectName}") # mkdir subject folder
     for curr_ses in [1,5]:
