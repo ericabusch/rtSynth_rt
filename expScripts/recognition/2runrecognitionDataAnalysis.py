@@ -1,8 +1,65 @@
-# the purpose of this script is to use 2 recognition runs in the current day and the saved model trained earlier to get the functionalTemplateTR to align the feedback dicom to and to generate the metric Gaussian curve
+'''
+purpose 
+    to use 2 recognition runs in the current day and the saved model trained earlier 
+        to get the functionalTemplateTR to align the feedback dicom to
+        to align the selected functionalTemplateTR 
+        register this day2 functional template volume with day1 functional template 
+    to generate the metric Gaussian parameter and curve
+'''
+
+import os
+import sys
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
+import argparse
+import numpy as np
+import nibabel as nib
+import scipy.io as sio
+from subprocess import call
+from nibabel.nicom import dicomreaders
+import pydicom as dicom  # type: ignore
+import time
+from glob import glob
+import shutil
+from nilearn.image import new_img_like
+import joblib
+import rtCommon.utils as utils
+from rtCommon.utils import loadConfigFile
+from rtCommon.fileClient import FileInterface
+import rtCommon.projectUtils as projUtils
+from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
+
+argParser = argparse.ArgumentParser()
+argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
+args = argParser.parse_args()
+from rtCommon.cfg_loading import mkdir,cfg_loading
+cfg = cfg_loading(args.config)
+
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
+from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading
+
+
+'''
+convert all dicom files into nii files in the temp dir. 
+find the middle volume of the run1 as the template volume
+align every other functional volume with templateFunctionalVolume (3dvolreg)
+load behavior data and align with brain data
+'''
+recognition_preprocess(cfg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 
-# # This script is run in day 2 recognition run, pick up a dicom in realtime folder
-# in Milgram. And choose that as the day2 functional template volume. 
-# register this day2 functional template volume with day1 functional template 
 # volume and save that in day2 in day1 space.
 
 
@@ -47,49 +104,18 @@ from glob import glob
 import shutil
 from nilearn.image import new_img_like
 import joblib
-# os.chdir('/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/')
 sys.path.append('/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/')
-# import project modules from rt-cloud
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
 from rtCommon.fileClient import FileInterface
 import rtCommon.projectUtils as projUtils
 from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
-
-def dicom2nii(templateVolume, filename,templateFunctionalVolume):
-    dicomObject = dicom.read_file(templateVolume)
-    niftiObject = dicomreaders.mosaic_to_nii(dicomObject)
-    # print(nib.aff2axcodes(niftiObject.affine))
-    temp_data = niftiObject.get_data()
-    output_image_correct = nib.orientations.apply_orientation(temp_data, ornt_transform)
-    correct_object = new_img_like(templateFunctionalVolume, output_image_correct, copy_header=True)
-    print(nib.aff2axcodes(correct_object.affine))
-    splitList=filename.split('/')
-    # fullNiftiFilename="/".join(splitList[0:-1])+'/'+splitList[-1].split('.')[0]+'.nii.gz'
-    fullNiftiFilename=os.path.join(tmp_folder, splitList[-1].split('.')[0]+'.nii.gz')
-    print('fullNiftiFilename=',fullNiftiFilename)
-    correct_object.to_filename(fullNiftiFilename)
-    return fullNiftiFilename
-
-
-# fetch the data folder
-tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/tProject.toml"
 argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default=tomlFIle, type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--config', '-c', default='pilot_sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
-# cfg = utils.loadConfigFile(args.config)
-cfg = cfg_loading(args.config) #cfg = cfg_loading(args.config)
-
-
-# YYYYMMDD= '20201009' #'20201009' '20201015'
-# YYYYMMDD= '20201019' #'20201009' '20201015'
-# LASTNAME='rtSynth_pilot001'
-# PATIENTID='rtSynth_pilot001'
-
-# Top_directory = '/gpfs/milgram/project/realtime/DICOM/'
-# sub='pilot_sub001'
+cfg = utils.loadConfigFile(args.config)
 
 realtime_ornt=nib.orientations.axcodes2ornt(('I', 'P', 'L'))
 ref_ornt=nib.orientations.axcodes2ornt(('P', 'S', 'L'))
@@ -187,3 +213,42 @@ sig = (floor-ceil)/2.3548
 x=np.arange(-3,3,0.01)
 y=gaussian(x, mu, sig)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def dicom2nii(templateVolume, filename,templateFunctionalVolume):
+#     dicomObject = dicom.read_file(templateVolume)
+#     niftiObject = dicomreaders.mosaic_to_nii(dicomObject)
+#     # print(nib.aff2axcodes(niftiObject.affine))
+#     temp_data = niftiObject.get_data()
+#     output_image_correct = nib.orientations.apply_orientation(temp_data, ornt_transform)
+#     correct_object = new_img_like(templateFunctionalVolume, output_image_correct, copy_header=True)
+#     print(nib.aff2axcodes(correct_object.affine))
+#     splitList=filename.split('/')
+#     # fullNiftiFilename="/".join(splitList[0:-1])+'/'+splitList[-1].split('.')[0]+'.nii.gz'
+#     fullNiftiFilename=os.path.join(tmp_folder, splitList[-1].split('.')[0]+'.nii.gz')
+#     print('fullNiftiFilename=',fullNiftiFilename)
+#     correct_object.to_filename(fullNiftiFilename)
+#     return fullNiftiFilename
+
+
+# fetch the data folder
+# tomlFIle=f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/tProject/conf/tProject.toml"
+
+# YYYYMMDD= '20201009' #'20201009' '20201015'
+# YYYYMMDD= '20201019' #'20201009' '20201015'
+# LASTNAME='rtSynth_pilot001'
+# PATIENTID='rtSynth_pilot001'
+
+# Top_directory = '/gpfs/milgram/project/realtime/DICOM/'
+# sub='pilot_sub001'

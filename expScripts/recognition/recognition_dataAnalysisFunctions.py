@@ -307,19 +307,35 @@ def minimalClass(cfg):
                 # obj_inds = inds[obj]
                 
                 # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
-                if testRun:
-                    trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(testRun))]
-                    testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(testRun))]
-                else:
-                    trainIX = META.index[(META['label'].isin([obj, altobj]))]
-                    testIX = META.index[(META['label'].isin([obj, altobj]))]
+                # if testRun:
+                #     trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(testRun))]
+                #     testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(testRun))]
+                # else:
+                #     trainIX = META.index[(META['label'].isin([obj, altobj]))]
+                #     testIX = META.index[(META['label'].isin([obj, altobj]))]
+                # # pull training and test data
+                # trainX = FEAT[trainIX]
+                # testX = FEAT[testIX]
+                # trainY = META.iloc[trainIX].label
+                # testY = META.iloc[testIX].label
+                
+                # print(f"obj={obj},altobj={altobj}")
+                # print(f"unique(trainY)={np.unique(trainY)}")
+                # print(f"unique(testY)={np.unique(testY)}")
+                # assert len(np.unique(trainY))==2
 
+                if testRun:
+                    trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
+                    testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
+                else:
+                    trainIX = ((META['label']==obj) + (META['label']==altobj))
+                    testIX = ((META['label']==obj) + (META['label']==altobj))
                 # pull training and test data
                 trainX = FEAT[trainIX]
                 testX = FEAT[testIX]
-                trainY = META.iloc[trainIX].label
-                testY = META.iloc[testIX].label
-                
+                trainY = META.iloc[np.asarray(trainIX)].label
+                testY = META.iloc[np.asarray(testIX)].label
+
                 print(f"obj={obj},altobj={altobj}")
                 print(f"unique(trainY)={np.unique(trainY)}")
                 print(f"unique(testY)={np.unique(testY)}")
@@ -378,3 +394,90 @@ def behaviorDataLoading(cfg,curr_run):
     behav_data=behav_data[behav_data['isCorrect']] # discard the trials where the subject made wrong selection
     return behav_data
 
+
+
+
+def recognition_preprocess_2run(cfg): 
+    '''
+    purpose: 
+        prepare data for the model training code.
+    steps:
+        convert all dicom files into nii files in the temp dir. 
+        find the middle volume of the run1 as the template volume, convert this to the previous template volume space and save the converted file as today's functional template (templateFunctionalVolume)
+        align every other functional volume with templateFunctionalVolume (3dvolreg)
+    '''
+
+    # convert all dicom files into nii files in the temp dir. 
+    tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
+    dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
+    for curr_dicom in dicomFiles:
+        dicomImg = readDicomFromFile(curr_dicom) # read dicom file
+        convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}/{curr_dicom.split('/')[-1]}") #convert dicom to nii    
+        # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
+
+    # find the middle volume of the run1 as the template volume
+    # here you are assuming that the first run is a good run
+    tmp=glob(f"{tmp_dir}/001_000002*.nii") ; tmp.sort()
+    call(f"cp {tmp[int(len(tmp)/2)]} {cfg.templateFunctionalVolume}", shell=True)
+
+    # convert cfg.templateFunctionalVolume to the previous template volume space 
+    call(f"flirt -ref {cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/templateFunctionalVolume.nii \
+        -in {cfg.templateFunctionalVolume} \
+        -out {cfg.recognition_dir}/templateFunctionalVolume_converted.nii",shell=True)
+
+    # save the converted file as today's functional template (templateFunctionalVolume) 
+    call(f"mv {cfg.recognition_dir}/templateFunctionalVolume_converted.nii \
+        {cfg.templateFunctionalVolume}",shell=True)
+        
+    # align every other functional volume with templateFunctionalVolume (3dvolreg)
+    allTRs=glob(f"{tmp_dir}/001_*.nii") ; allTRs.sort()
+
+    # select a list of run IDs based on the runRecording.csv, actualRuns would be [1,2] is the 1st and the 3rd runs are recognition runs.
+    runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
+    actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
+    for curr_run in actualRuns:
+        outputFileNames=[]
+        runTRs=glob(f"{tmp_dir}/001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
+        for curr_TR in runTRs:
+            command = f"3dvolreg \
+                -base {cfg.templateFunctionalVolume} \
+                -prefix  {curr_TR[0:-4]}_aligned.nii \
+                {curr_TR}"
+            call(command,shell=True)
+            outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
+        files=''
+        for f in outputFileNames:
+            files=files+' '+f
+        command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
+        print('running',command)
+        call(command, shell=True)
+
+    # remove the tmp folder
+    shutil.rmtree(tmp_dir)
+            
+    '''
+    for each run, 
+        load behavior data 
+        push the behavior data back for 2 TRs
+        save the brain TRs with images
+        save the behavior data
+    '''
+
+    for curr_run_behav,curr_run in enumerate(actualRuns):
+        # load behavior data
+        behav_data = behaviorDataLoading(cfg,curr_run_behav+1)
+
+        # brain data is first aligned by pushed back 2TR(4s)
+        brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))
+        Brain_TR=np.arange(brain_data.shape[0])
+        Brain_TR = Brain_TR+2
+
+        # select volumes of brain_data by counting which TR is left in behav_data
+        Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
+        if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
+            Brain_TR = Brain_TR[:-1]
+            behav_data = behav_data.drop([behav_data.iloc[-1].TR])
+        brain_data=brain_data[Brain_TR]
+        np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
+        # save the behavior data
+        behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
