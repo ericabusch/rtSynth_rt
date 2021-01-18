@@ -67,9 +67,14 @@ call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {args.config}")
 
 # summarize classification accuracy and select best mask
 call(f"sbatch {cfg.recognition_expScripts_dir}aggregate.sh {cfg.subjectName} {cfg.recognition_dir}")
+
+# select the mask with the best performance as chosenMask.nii.gz
+
 '''
 load preprocessed and aligned behavior and brain data 
 select data with the wanted pattern like AB AC AD BC BD CD 
 train correspondng classifier and save the classifier performance and the classifiers themselves.
 '''
 minimalClass(cfg)
+
+

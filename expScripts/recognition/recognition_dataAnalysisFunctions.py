@@ -239,6 +239,8 @@ def minimalClass(cfg):
 
     for ii,run in enumerate(actualRuns): # load behavior and brain data for current session
         t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
+        mask = nib.load(f"{cfg.recognition_dir}chosenMask.nii.gz").get_data()
+        t = t[:,mask==1]
         brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
@@ -246,6 +248,8 @@ def minimalClass(cfg):
 
     for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for previous session
         t = np.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/brain_run{run}.npy")
+        mask = nib.load(f"{cfg.recognition_dir}chosenMask.nii.gz").get_data()
+        t = t[:,mask==1]
         brain_data = np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/behav_run{run}.csv")
