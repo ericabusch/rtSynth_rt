@@ -44,7 +44,7 @@ from rtCommon.fileClient import FileInterface
 import rtCommon.projectUtils as projUtils
 from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
-toml=$1
+toml=sys.argv[1]
 from rtCommon.cfg_loading import mkdir,cfg_loading
 cfg = cfg_loading(toml)
 
