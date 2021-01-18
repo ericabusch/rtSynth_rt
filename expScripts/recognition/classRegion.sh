@@ -11,11 +11,11 @@
 # Set up the environment
 cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/
 module load FSL/5.0.9
-module load Python/Anaconda3
-module load FreeSurfer/6.0.0
-module load BXH_XCEDE_TOOLS
-module load brainiak
-module load nilearn
+# module load Python/Anaconda3
+# module load FreeSurfer/6.0.0
+# module load BXH_XCEDE_TOOLS
+# module load brainiak
+# module load nilearn
 module load miniconda
 
 source activate  /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
