@@ -13,7 +13,6 @@ done
 
 
 roiloc=schaefer
-
 for num in {1..300};do
     sbatch classRegion.sh $toml realtime $roiloc $num
     echo $toml realtime $roiloc $num
