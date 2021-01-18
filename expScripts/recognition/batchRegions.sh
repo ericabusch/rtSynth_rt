@@ -7,15 +7,15 @@ roiloc=wang
 for hemi in $hemis;do
     for num in {1..25};do
         sbatch classRegion.sh $toml realtime $roiloc $num $hemi
-        echo $sub neurosketch $roiloc $num $hemi
+        echo $toml realtime $roiloc $num $hemi
     done
 done
 
 
 roiloc=schaefer
-for sub in $subjects;do
-    for num in {1..300};do
-        sbatch classRegion.sh $toml realtime $roiloc $num
-        echo $sub neurosketch $roiloc $num
-    done
+
+for num in {1..300};do
+    sbatch classRegion.sh $toml realtime $roiloc $num
+    echo $toml realtime $roiloc $num
 done
+
