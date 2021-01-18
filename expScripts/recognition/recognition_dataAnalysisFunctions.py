@@ -84,7 +84,7 @@ def recognition_preprocess(cfg):
     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
     for curr_run in actualRuns:
         outputFileNames=[]
-        runTRs=glob(f"{tmp_dir}/001_00000{curr_run}_*.nii") ; runTRs.sort()
+        runTRs=glob(f"{tmp_dir}/001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
         for curr_TR in runTRs:
             command = f"3dvolreg \
                 -base {cfg.templateFunctionalVolume} \
@@ -112,9 +112,9 @@ def recognition_preprocess(cfg):
         save the behavior data
     '''
 
-    for curr_run in actualRuns:
+    for curr_run_behav,curr_run in enumerate(actualRuns):
         # load behavior data
-        behav_data = behaviorDataLoading(cfg,curr_run)
+        behav_data = behaviorDataLoading(cfg,curr_run_behav+1)
 
         # brain data is first aligned by pushed back 2TR(4s)
         brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))

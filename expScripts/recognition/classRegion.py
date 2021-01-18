@@ -78,7 +78,7 @@ except:
     dataSource = 'neurosketch'
 
 try:
-    roinum = str(sys.argv[4]) if roiloc == "schaefer2018" else "roi{}".format(str(sys.argv[4])) 
+    roinum = str(sys.argv[4]) if roiloc == "schaefer" else "roi{}".format(str(sys.argv[4])) 
     print("running for roi #{} in {}".format(str(sys.argv[4]), roiloc))
 except:
     print("NO ROI SPECIFIED: Using roi number 1")
