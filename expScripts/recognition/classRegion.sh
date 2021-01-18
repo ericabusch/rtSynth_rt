@@ -4,7 +4,7 @@
 #SBATCH --output=logs/maskmaker-%j.out
 #SBATCH --job-name searchlight
 #SBATCH --partition=short,scavenge,verylong
-#SBATCH --time= 1:00:00
+#SBATCH --time=1:00:00
 #SBATCH --mem=100000
 #SBATCH -n 25
 
@@ -18,7 +18,7 @@ module load brainiak
 module load nilearn
 module load miniconda
 
-source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
+source activate  /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 toml=$1
 dataloc=$2
 roiloc=$3
