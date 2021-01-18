@@ -68,7 +68,8 @@ call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {args.config}")
 # summarize classification accuracy and select best mask
 call(f"sbatch {cfg.recognition_expScripts_dir}aggregate.sh {cfg.subjectName} {cfg.recognition_dir}")
 
-# select the mask with the best performance as chosenMask.nii.gz
+# select the mask with the best performance as cfg.chosenMask = {cfg.recognition_dir}chosenMask.nii.gz
+# and also save this mask in all 
 
 '''
 load preprocessed and aligned behavior and brain data 

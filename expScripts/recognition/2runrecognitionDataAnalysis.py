@@ -35,7 +35,7 @@ from rtCommon.cfg_loading import mkdir,cfg_loading
 cfg = cfg_loading(args.config)
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading
+from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,recognition_preprocess_2run,morphingTarget
 
 
 '''
@@ -44,9 +44,30 @@ find the middle volume of the run1 as the template volume
 align every other functional volume with templateFunctionalVolume (3dvolreg)
 load behavior data and align with brain data
 '''
-recognition_preprocess(cfg)
+recognition_preprocess_2run(cfg)
 
+'''
+purpose:
+    get the morphing target function
+steps:
+    load train clf
+    load brain data and behavior data
+    get the morphing target function
+        evidence_floor is C evidence for CD classifier(can also be D evidence for CD classifier)
+        evidence_ceil  is A evidence in AC and AD classifier
+'''
+floor, ceil = morphingTarget(cfg)
 
+def gaussian(x, mu, sig):
+    # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+    return round(20*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))))
+
+mu = (floor+ceil)/2
+sig = (floor-ceil)/2.3548
+
+x=np.arange(-4,3,0.01)
+y=gaussian(x, mu, sig)
+plt.plot(x,y)
 
 
 

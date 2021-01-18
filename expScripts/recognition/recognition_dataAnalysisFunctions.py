@@ -481,3 +481,155 @@ def recognition_preprocess_2run(cfg):
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
+
+
+
+
+def morphingTarget(cfg):
+    '''
+    purpose:
+        get the morphing target function
+    steps:
+        load train clf
+        load brain data and behavior data
+        get the morphing target function
+            evidence_floor is C evidence for CD classifier(can also be D evidence for CD classifier)
+            evidence_ceil  is A evidence in AC and AD classifier
+    '''
+
+    import os
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import sklearn
+    import joblib
+    import nibabel as nib
+    import itertools
+    from sklearn.linear_model import LogisticRegression
+    from tqdm import tqdm
+
+
+    if 'milgram' in os.getcwd():
+        main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/'
+    else:
+        main_dir='/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/'
+
+    working_dir=main_dir
+    os.chdir(working_dir)
+
+    '''
+    if you read runRecording for current session and found that there are only 4 runs in the current session, 
+    you read the runRecording for previous session and fetch the last 4 recognition runs from previous session
+    '''
+    runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
+    actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])]) # can be [1,2,3,4,5,6,7,8] or [1,2,4,5]
+
+    objects = ['bed', 'bench', 'chair', 'table']
+
+    for ii,run in enumerate(actualRuns): # load behavior and brain data for current session
+        t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
+        mask = nib.load(f"{cfg.chosenMask}").get_data()
+        t = t[:,mask==1]
+        brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
+
+        t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
+        behav_data=t if ii==0 else pd.concat([behav_data,t])
+
+    FEAT=brain_data.reshape(brain_data.shape[0],-1)
+    META=behav_data
+
+    # convert item colume to label colume
+    imcodeDict={
+    'A': 'bed',
+    'B': 'chair',
+    'C': 'table',
+    'D': 'bench'}
+    label=[]
+    for curr_trial in range(META.shape[0]):
+        label.append(imcodeDict[META['Item'].iloc[curr_trial]])
+    META['label']=label # merge the label column with the data dataframe
+
+    # evidence_floor is C evidence for AC_CD BC_CD CD_CD classifier(can also be D evidence for CD classifier)
+    
+
+    def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
+        # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+        targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+        Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
+        return np.asarray(Evidence)
+
+    A_ID = (META['label']=='bed')
+    X = FEAT[A_ID]
+
+    Y = ['table'] * X.shape[0]
+    CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    CD_C_evidence = classifierEvidence(CD_clf,X,Y)
+    evidence_floor = np.mean(CD_C_evidence)
+    print(f"evidence_floor={evidence_floor}")
+
+    # evidence_ceil  is A evidence in AC and AD classifier
+    Y = ['bed'] * X.shape[0]
+    AC_clf=joblib.load(cfg.usingModel_dir +'bedbench_bedtable.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
+    AC_A_evidence = classifierEvidence(AC_clf,X,Y)
+    evidence_ceil1 = AC_A_evidence
+
+    Y = ['bed'] * X.shape[0]
+    AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+    AD_A_evidence = classifierEvidence(AD_clf,X,Y)
+    evidence_ceil2 = AD_A_evidence
+
+    evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
+    print(f"evidence_ceil={evidence_ceil}")
+
+    return evidence_floor, evidence_ceil
+
+    # allpairs = itertools.combinations(objects,2)
+
+    # # Iterate over all the possible target pairs of objects
+    # for pair in allpairs:
+    #     # Find the control (remaining) objects for this pair
+    #     altpair = other(pair)
+       
+    #     for obj in pair:
+    #         # foil = [i for i in pair if i != obj][0]
+    #         for altobj in altpair:
+                
+    #             # establish a naming convention where it is $TARGET_$CLASSIFICATION
+    #             # Target is the NF pair (e.g. bed/bench)
+    #             # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
+    #             naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
+              
+
+    #             if testRun:
+    #                 trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
+    #                 testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
+    #             else:
+    #                 trainIX = ((META['label']==obj) + (META['label']==altobj))
+    #                 testIX = ((META['label']==obj) + (META['label']==altobj))
+    #             # pull training and test data
+    #             trainX = FEAT[trainIX]
+    #             testX = FEAT[testIX]
+    #             trainY = META.iloc[np.asarray(trainIX)].label
+    #             testY = META.iloc[np.asarray(testIX)].label
+
+    #             print(f"obj={obj},altobj={altobj}")
+    #             print(f"unique(trainY)={np.unique(trainY)}")
+    #             print(f"unique(testY)={np.unique(testY)}")
+    #             assert len(np.unique(trainY))==2
+
+    #             # # If you're selecting high-importance features, this bit handles that
+    #             # if include < 1:
+    #             #     trainX = trainX[:, obj_inds[-nvox:]]
+    #             #     testX = testX[:, obj_inds[-nvox:]]
+                
+    #             # Train your classifier
+    #             clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+    #                                      multi_class='multinomial').fit(trainX, trainY)
+                
+    #             model_folder = cfg.trainingModel_dir
+    #             # Save it for later use
+    #             joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
+                
+    #             # Monitor progress by printing accuracy (only useful if you're running a test set)
+    #             acc = clf.score(testX, testY)
+    #             print(naming, acc)
