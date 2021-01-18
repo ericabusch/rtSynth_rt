@@ -141,7 +141,7 @@ def Class(data, bcvar):
 phasedict = dict(zip([1,2,3,4,5,6,7,8],[cfg.actualRuns]))
 imcodeDict={"A": "bed", "B": "Chair", "C": "table", "D": "bench"}
 
-mask = nib.load(f"{cfg.mask_dir}{roiloc}_roi{roinum}{roihemi}.nii.gz").get_data()
+mask = nib.load(f"{cfg.mask_dir}{roiloc}_{roinum}{roihemi}.nii.gz").get_data()
 mask = mask.astype(int)
 # say some things about the mask.
 print('mask dimensions: {}'. format(mask.shape))
