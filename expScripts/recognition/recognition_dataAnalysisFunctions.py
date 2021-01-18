@@ -123,6 +123,9 @@ def recognition_preprocess(cfg):
 
         # select volumes of brain_data by counting which TR is left in behav_data
         Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
+        if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
+            Brain_TR = Brain_TR[:-1]
+            behav_data = behav_data.drop([behav_data.iloc[-1].TR])
         brain_data=brain_data[Brain_TR]
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
@@ -149,6 +152,7 @@ def minimalClass(cfg):
     import nibabel as nib
     import itertools
     from sklearn.linear_model import LogisticRegression
+    from tqdm import tqdm
 
 
     def normalize(X):
@@ -270,7 +274,7 @@ def minimalClass(cfg):
     META['label']=label # merge the label column with the data dataframe
 
     # Which run to use as test data (leave as None to not have test data)
-    testRun = None # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
+    testRun = 2 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
 
     # Decide on the proportion of crescent data to use for classification
     include = 1
@@ -285,10 +289,10 @@ def minimalClass(cfg):
         altpair = other(pair)
         
         # pull sorted indices for each of the critical objects, in order of importance (low to high)
-        inds = get_inds(FEAT, META, pair, testRun=testRun)
+        # inds = get_inds(FEAT, META, pair, testRun=testRun)
         
         # Find the number of voxels that will be left given your inclusion parameter above
-        nvox = red_vox(FEAT.shape[1], include)
+        # nvox = red_vox(FEAT.shape[1], include)
         
         for obj in pair:
             # foil = [i for i in pair if i != obj][0]
@@ -300,7 +304,7 @@ def minimalClass(cfg):
                 naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
                 
                 # Pull the relevant inds from your previously established dictionary 
-                obj_inds = inds[obj]
+                # obj_inds = inds[obj]
                 
                 # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
                 if testRun:
@@ -316,10 +320,10 @@ def minimalClass(cfg):
                 trainY = META.iloc[trainIX].label
                 testY = META.iloc[testIX].label
                 
-                # If you're selecting high-importance features, this bit handles that
-                if include < 1:
-                    trainX = trainX[:, obj_inds[-nvox:]]
-                    testX = testX[:, obj_inds[-nvox:]]
+                # # If you're selecting high-importance features, this bit handles that
+                # if include < 1:
+                #     trainX = trainX[:, obj_inds[-nvox:]]
+                #     testX = testX[:, obj_inds[-nvox:]]
                 
                 # Train your classifier
                 clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
