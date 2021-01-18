@@ -204,6 +204,6 @@ tot = time.time() - starttime
 print('total time: {}, searchlight time: {}'.format(tot, SL))
 
 mkdir(f"{cfg.recognition_dir}classRegions/")
-outfile = f"{cfg.recognition_dir}classRegions/{roiloc}_{roinum}_{roihemi}.npy")
+outfile = f"{cfg.recognition_dir}classRegions/{roiloc}_{roinum}_{roihemi}.npy"
 print(outfile)
 np.save(outfile, np.array(sl_result))
