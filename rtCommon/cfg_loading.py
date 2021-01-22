@@ -1,5 +1,7 @@
 import rtCommon.utils as utils
 import os
+print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}")
+
 # sys.path.append('/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/')
 def mkdir(folder):
     if not os.path.isdir(folder):
