@@ -31,11 +31,13 @@ import rtCommon.projectUtils as projUtils
 from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
 
-argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
-args = argParser.parse_args()
+# argParser = argparse.ArgumentParser()
+# argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
+# args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
-cfg = cfg_loading(args.config)
+config="sub001.ses1.toml"
+cfg = cfg_loading(config)
+# cfg = cfg_loading(args.config)
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
 from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading
@@ -58,15 +60,15 @@ run the mask selection
 '''
 # make ROIs
     # make-wang-rois.sh
-call(f"sbatch {cfg.recognition_expScripts_dir}make-wang-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
+call(f"sbatch {cfg.recognition_expScripts_dir}make-wang-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
     # make-schaefer-rois.sh
-call(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
+call(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
 
-# train classifiers on each ROI
-call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {args.config}")
+# train classifiers on each ROI 
+call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {args.config}",shell=True)
 
 # summarize classification accuracy and select best mask
-call(f"sbatch {cfg.recognition_expScripts_dir}aggregate.sh {cfg.subjectName} {cfg.recognition_dir}")
+call(f"bash {cfg.recognition_expScripts_dir}runAggregate.sh {args.config}",shell=True)
 
 # select the mask with the best performance as cfg.chosenMask = {cfg.recognition_dir}chosenMask.nii.gz
 # and also save this mask in all 

@@ -1,4 +1,12 @@
 '''
+steps:
+    load best performed ROI masks
+    for given number of ROIs wanted, combine them and use that as the wanted mask
+    train a new classifier and save the testing accuracy
+'''
+
+
+'''
 you could try to see whether combining parcels improves performance. 
 That's going to be the most important bit, because we'll want to decide on a tradeoff between number of voxels and accuracy. 
 The script of interest here is aggregate.sh which is just a feeder for aggregate.py. 
@@ -38,14 +46,14 @@ Takes args (in order):
     roiloc (wang or schaefer)
     N (the number of parcels or ROIs to start with)
 '''
-toml = sys.argv[1]
-cfg = cfg_loading(toml)
-N = int(sys.argv[4])
-roiloc = str(sys.argv[3])
+toml = sys.argv[1] # sub001.ses1.toml
+cfg = cfg_loading(toml) 
+N = int(sys.argv[4]) # 20
+roiloc = str(sys.argv[3]) #wang or schaefer 
 print("Using user-selected roi location: {}".format(roiloc))
 dataSource = sys.argv[2]  # could be neurosketch or realtime
 print("Using {} data".format(dataSource))
-print("Running subject {}, with {} as a data source, {}, starting with {} ROIs".format(subject, dataSource, roiloc, N))
+print("Running subject {}, with {} as a data source, {}, starting with {} ROIs".format(cfg.subjectName, dataSource, roiloc, N))
 
 
 # if dataSource == "neurosketch":
@@ -69,7 +77,7 @@ outloc = f'{cfg.recognition_dir}classRegions/'
 if roiloc == "schaefer":
     topN = []
     for roinum in range(1,301):
-        result = np.load(f"{outloc}/{roiloc}_{roinum}.npy")
+        result = np.load(f"{outloc}/{roiloc}_{roinum}_.npy") #this is the saved testing accuracy
         RESULT = result if roinum == 1 else np.vstack((RESULT, result))
     RESULTix = RESULT[:,0].argsort()[-N:]
     for idx in RESULTix:
@@ -135,7 +143,7 @@ def Class(data, bcvar):
 imcodeDict={"A": "bed", "B": "Chair", "C": "table", "D": "bench"}
 
 for pn, parc in enumerate(topN):
-    _mask = nib.load("./{}/{}/{}".format(roiloc, subject, parc))
+    _mask = nib.load(f'{cfg.recognition_dir}mask/{roiloc}_{parc}')
     aff = _mask.affine
     _mask = _mask.get_data()
     _mask = _mask.astype(int)
@@ -148,27 +156,64 @@ print('number of voxels in mask: {}'.format(np.sum(mask)))
 runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
 cfg.actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
 
+# # Compile preprocessed data and corresponding indices
+# metas = []
+# for run_i,run in enumerate(cfg.actualRuns):
+#     print(run, end='--')
+#     # retrieve from the dictionary which phase it is, assign the session
+#     # phase = phasedict[run]
+#     # ses = 1
+    
+#     # Build the path for the preprocessed functional data
+#     # this4d = funcdata.format(ses=cfg.session, run=run, sub=cfg.subjectName)
+#     this4d = f"{cfg.recognition_dir}run{run}.nii.gz" # run data
+
+#     # Read in the metadata, and reduce it to only the TR values from this run, add to a list
+#     # thismeta = pd.read_csv(metadata.format(ses=ses, run=run, phase=phase, sub=subject))
+#     # thismeta = pd.read_csv(f"{cfg.recognition_dir}{cfg.subjectName}_{run_i+1}.csv")
+#     thismeta = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
+    
+#     # thismeta = thismeta[thismeta['run_num'] == int(run)]
+
+#     TR_num = list(thismeta.TR.astype(int))
+#     labels = list(thismeta.Item)
+#     labels = [imcodeDict[label] for label in labels]
+    
+#     print("LENGTH OF TR: {}".format(len(TR_num)))
+#     # Load the functional data
+#     runIm = nib.load(this4d)
+#     affine_mat = runIm.affine
+#     runImDat = runIm.get_data()
+    
+#     # Use the TR numbers to select the correct features
+#     features = [runImDat[:,:,:,n+3] for n in TR_num]
+#     features = np.array(features)
+#     features = features[:, mask==1]
+#     print("shape of features", features.shape, "shape of mask", mask.shape)
+#     featmean = features.mean(1)[..., None]
+#     features = features - featmean
+#     features = np.expand_dims(features, 0)
+    
+#     # Append both so we can use it later
+#     metas.append(labels)
+#     runs = features if run_i == 0 else np.concatenate((runs, features))
+
 # Compile preprocessed data and corresponding indices
 metas = []
+runs=[]
 for run_i,run in enumerate(cfg.actualRuns):
     print(run, end='--')
-    # retrieve from the dictionary which phase it is, assign the session
-    # phase = phasedict[run]
-    # ses = 1
-    
     # Build the path for the preprocessed functional data
-    # this4d = funcdata.format(ses=cfg.session, run=run, sub=cfg.subjectName)
     this4d = f"{cfg.recognition_dir}run{run}.nii.gz" # run data
-
+    
     # Read in the metadata, and reduce it to only the TR values from this run, add to a list
-    # thismeta = pd.read_csv(metadata.format(ses=ses, run=run, phase=phase, sub=subject))
     thismeta = pd.read_csv(f"{cfg.recognition_dir}{cfg.subjectName}_{run_i+1}.csv")
-    # thismeta = thismeta[thismeta['run_num'] == int(run)]
 
     TR_num = list(thismeta.TR.astype(int))
     labels = list(thismeta.Item)
-    labels = [imcodeDict[label] for label in labels]
-    
+    labels = [None if type(label)==float else imcodeDict[label] for label in labels]
+
+
     print("LENGTH OF TR: {}".format(len(TR_num)))
     # Load the functional data
     runIm = nib.load(this4d)
@@ -176,33 +221,68 @@ for run_i,run in enumerate(cfg.actualRuns):
     runImDat = runIm.get_data()
     
     # Use the TR numbers to select the correct features
-    features = [runImDat[:,:,:,n+3] for n in TR_num]
+    features = [runImDat[:,:,:,n+2] for n in TR_num]
     features = np.array(features)
     features = features[:, mask==1]
     print("shape of features", features.shape, "shape of mask", mask.shape)
     featmean = features.mean(1)[..., None]
     features = features - featmean
-    features = np.expand_dims(features, 0)
     
     # Append both so we can use it later
     metas.append(labels)
-    runs = features if run == 1 else np.concatenate((runs, features))
+    runs.append(features) # if run_i == 0 else np.concatenate((runs, features))
 
-dimsize = runIm.header.get_zooms()
 
-data = []
-# Preset the variables
-print("Runs shape", runs.shape)
-_data = runs
-print(_data.shape)
-data.append(_data)
-print("shape of data: {}".format(_data.shape))
-    
-bcvar = [metas]
-                 
-# Distribute the information to the searchlights (preparing it to run)
+def Class(data, bcvar):
+    metas = bcvar
+    data4d = data
+    accs = []
+    for curr_run in range(8):
+        testX = data4d[curr_run]
+        testY = metas[curr_run]
+        trainX=None
+        for train_run in range(8):
+            if train_run!=curr_run:
+                trainX = data4d[train_run] if type(trainX)!=np.ndarray else np.concatenate((trainX, data4d[train_run]),axis=0)
+        trainY = []
+        for train_run in range(8):
+            if train_run!=curr_run:
+                trainY.extend(metas[train_run])
+        # remove nan type
+        id=[type(i)==str for i in trainY]
+        trainY=[i for i in trainY if type(i)==str]
+        trainX=trainX[id]
+
+        clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                 multi_class='multinomial').fit(trainX, trainY)
+
+        # Monitor progress by printing accuracy (only useful if you're running a test set)
+        id=[type(i)==str for i in testY]
+        testY=[i for i in testY if type(i)==str]
+        testX=testX[id]
+        acc = clf.score(testX, testY)
+        accs.append(acc)
+    return np.mean(accs)
+data = runs
+bcvar = metas
 slstart = time.time()
-sl_result = Class(data, bcvar)
+sl_result=Class(data, bcvar)
+
+# dimsize = runIm.header.get_zooms()
+
+# data = []
+# # Preset the variables
+# print("Runs shape", runs.shape)
+# _data = runs
+# print(_data.shape)
+# data.append(_data)
+# print("shape of data: {}".format(_data.shape))
+
+# bcvar = [metas]
+
+# # Distribute the information to the searchlights (preparing it to run)
+# slstart = time.time()
+# sl_result = Class(data, bcvar)
 print("results of classifier: {}, type: {}".format(sl_result, type(sl_result)))
 
 SL = time.time() - slstart
