@@ -154,6 +154,9 @@ def minimalClass(cfg):
     from sklearn.linear_model import LogisticRegression
     from tqdm import tqdm
 
+    def gaussian(x, mu, sig):
+        # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+        return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
 
     def normalize(X):
         X = X - X.mean(0)
@@ -243,7 +246,7 @@ def minimalClass(cfg):
 
     for ii,run in enumerate(actualRuns): # load behavior and brain data for current session
         t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
-        mask = nib.load(f"{cfg.recognition_dir}chosenMask.nii.gz").get_data()
+        mask = nib.load(f"{cfg.chosenMask}").get_data()
         t = t[:,mask==1]
         brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
 
@@ -252,7 +255,7 @@ def minimalClass(cfg):
 
     for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for previous session
         t = np.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/brain_run{run}.npy")
-        mask = nib.load(f"{cfg.recognition_dir}chosenMask.nii.gz").get_data()
+        mask = nib.load(f"{cfg.chosenMask}").get_data()
         t = t[:,mask==1]
         brain_data = np.concatenate((brain_data,t), axis=0)
 
@@ -407,13 +410,18 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
         find the middle volume of the run1 as the template volume, convert this to the previous template volume space and save the converted file as today's functional template (templateFunctionalVolume)
         align every other functional volume with templateFunctionalVolume (3dvolreg)
     '''
-
+    from shutil import copyfile
+    from rtCommon.imageHandling import convertDicomFileToNifti
     # convert all dicom files into nii files in the temp dir. 
     tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
     dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
     for curr_dicom in dicomFiles:
-        dicomImg = readDicomFromFile(curr_dicom) # read dicom file
-        convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}") #convert dicom to nii    
+        # dicomImg = readDicomFromFile(curr_dicom) # read dicom file
+        dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}"
+        copyfile(curr_dicom,dicomFilename)
+        niftiFilename = dicomFilename[:-4]+'.nii'
+        convertDicomFileToNifti(dicomFilename, niftiFilename)
+        # convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}") #convert dicom to nii    
         # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
 
     # find the middle volume of the run1 as the template volume
@@ -515,10 +523,6 @@ def morphingTarget(cfg):
     working_dir=main_dir
     os.chdir(working_dir)
 
-    '''
-    if you read runRecording for current session and found that there are only 4 runs in the current session, 
-    you read the runRecording for previous session and fetch the last 4 recognition runs from previous session
-    '''
     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])]) # can be [1,2,3,4,5,6,7,8] or [1,2,4,5]
 
@@ -548,7 +552,6 @@ def morphingTarget(cfg):
     META['label']=label # merge the label column with the data dataframe
 
     # evidence_floor is C evidence for AC_CD BC_CD CD_CD classifier(can also be D evidence for CD classifier)
-    
 
     def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
         # This function get the data X and evidence object I want to know Y, and output the trained model evidence.

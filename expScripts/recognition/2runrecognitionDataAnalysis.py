@@ -57,6 +57,7 @@ steps:
         evidence_floor is C evidence for CD classifier(can also be D evidence for CD classifier)
         evidence_ceil  is A evidence in AC and AD classifier
 '''
+
 floor, ceil = morphingTarget(cfg)
 
 mu = (ceil+floor)/2
@@ -65,8 +66,6 @@ np.save(f"{cfg.feedback_dir}morphingTarget",[mu,sig])
 # [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
 # y=gaussian(x, mu, sig)
 # plt.plot(x,y)
-
-
 
 
 

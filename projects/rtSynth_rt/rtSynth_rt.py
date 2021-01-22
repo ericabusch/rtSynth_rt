@@ -1,3 +1,12 @@
+'''
+steps:
+    conver the new dicom to nii
+    align the nii to cfg.templateFunctionalVolume_converted
+    apply mask 
+    load clf
+    get morphing parameter
+'''
+
 """-----------------------------------------------------------------------------
 
 sample.py (Last Updated: 05/26/2020)
@@ -30,13 +39,16 @@ if verbose:
         "-----------------------------------------------------------------------------")
 
 # import important modules
-import os
+import os,time
 import sys
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 import argparse
 import warnings
 import numpy as np
 import nibabel as nib
 import scipy.io as sio
+from rtCommon.cfg_loading import mkdir,cfg_loading
+from subprocess import call
 
 if verbose:
     print(''
@@ -62,6 +74,8 @@ sys.path.append(rootPath)
 from rtCommon.utils import loadConfigFile
 import rtCommon.clientInterface as clientInterface
 from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
+from recognition_dataAnalysisFunctions import gaussian
 
 # obtain the full path for the configuration toml file
 # defaultConfig = os.path.join(currPath, 'conf/sample.toml')
@@ -111,14 +125,14 @@ def doRuns(cfg, fileInterface, subjInterface):
         "Allowed file types: %s" %allowedFileTypes)
 
     # obtain the path for the directory where the subject's dicoms live
-    if cfg.isSynthetic:
-        cfg.dicomDir = cfg.imgDir
-    else:
-        subj_imgDir = "{}.{}.{}".format(cfg.datestr, cfg.subjectName, cfg.subjectName)
-        cfg.dicomDir = os.path.join(cfg.imgDir, subj_imgDir)
-    if verbose:
-        print("Location of the subject's dicoms: \n%s\n" %cfg.dicomDir,
-        "-----------------------------------------------------------------------------")
+    # if cfg.isSynthetic:
+    #     cfg.dicomDir = cfg.imgDir
+    # else:
+    #     subj_imgDir = "{}.{}.{}".format(cfg.datestr, cfg.subjectName, cfg.subjectName)
+    #     cfg.dicomDir = os.path.join(cfg.imgDir, subj_imgDir)
+    # if verbose:
+    #     print("Location of the subject's dicoms: \n%s\n" %cfg.dicomDir,
+    #     "-----------------------------------------------------------------------------")
 
     # initialize a watch for the entire dicom folder (it doesn't look for a
     #   specific dicom) using the function 'initWatch' in 'fileClient.py'
@@ -129,7 +143,9 @@ def doRuns(cfg, fileInterface, subjInterface):
     #               accidentally grab a dicom before it's fully acquired)
     if verbose:
         print("• initalize a watch for the dicoms using 'initWatch'")
-    fileInterface.initWatch(cfg.dicomDir, cfg.dicomNamePattern,
+
+    print(f"cfg.dicom_dir={cfg.dicom_dir}, cfg.dicomNamePattern={cfg.dicomNamePattern}, cfg.minExpectedDicomSize={cfg.minExpectedDicomSize}")
+    fileInterface.initWatch(cfg.dicom_dir, cfg.dicomNamePattern,
         cfg.minExpectedDicomSize)
 
     # we will use the function 'sendResultToWeb' in 'projectUtils.py' whenever we
@@ -167,12 +183,15 @@ def doRuns(cfg, fileInterface, subjInterface):
         "not particularly relevant for this sample project but it is very important\n"
         "when running real-time experiments.\n"
         "-----------------------------------------------------------------------------\n")
+    
+    tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
 
     num_total_TRs = 10  # number of TRs to use for example 1
     if cfg.isSynthetic:
         num_total_TRs = cfg.numSynthetic
     all_avg_activations = np.zeros((num_total_TRs, 1))
-    for this_TR in np.arange(num_total_TRs):
+    nift_data=[]
+    for this_TR in np.arange(1,num_total_TRs):
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
         timeout_file = 5 # small number because of demo, can increase for real-time
 
@@ -202,22 +221,71 @@ def doRuns(cfg, fileInterface, subjInterface):
         if verbose:
             print("• use 'readRetryDicomFromFileInterface' to read dicom file for",
                 "TR %d, %s" %(this_TR, fileName))
-        dicomData = readRetryDicomFromFileInterface(fileInterface, fileName,
-            timeout_file)
+        dicomData = readRetryDicomFromFileInterface(fileInterface, fileName, timeout_file)
+        
 
-        if cfg.isSynthetic:
-            niftiObject = convertDicomImgToNifti(dicomData)
-        else:
-            # use 'dicomreaders.mosaic_to_nii' to convert the dicom data into a nifti
-            #   object. additional steps need to be taken to get the nifti object in
-            #   the correct orientation, but we will ignore those steps here. refer to
-            #   the 'advanced sample project' for more info about that
-            if verbose:
-                print("| convert dicom data into a nifti object")
-            niftiObject = dicomreaders.mosaic_to_nii(dicomData)
+        # use 'dicomreaders.mosaic_to_nii' to convert the dicom data into a nifti
+        #   object. additional steps need to be taken to get the nifti object in
+        #   the correct orientation, but we will ignore those steps here. refer to
+        #   the 'advanced sample project' for more info about that
+        if verbose:
+            print("| convert dicom data into a nifti object")
+        niftiObject = dicomreaders.mosaic_to_nii(dicomData)
+        # print(f"niftiObject={niftiObject}")
+
+
+        # save(f"{tmp_dir}niftiObject")
+        niiFileName=f"{tmp_dir}{fileName.split('/')[-1].split('.')[0]}.nii"
+        nib.save(niftiObject, niiFileName)  
+        # align -in f"{tmp_dir}niftiObject" -ref cfg.templateFunctionalVolume_converted -out f"{tmp_dir}niftiObject"
+        command = f"3dvolreg \
+                -base {cfg.templateFunctionalVolume_converted} \
+                -prefix  {niiFileName} \
+                {niiFileName}"
+        call(command,shell=True)
+        niftiObject = nib.load(niiFileName)
+        nift_data.append(niftiObject.get_fdata())
+        print(f"niftiObjects[-1].shape={niftiObjects[-1].shape}")
+
+        # load f"{tmp_dir}niftiObject"
+        # load cfg.chosenMask
+        mask=nib.load(cfg.chosenMask)
+        print(f"mask.shape{mask.shape}")
+        # load clf
+        [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
+        print(f"mu={mu},sig={sig}")
+
+        # getting MorphingParameter: 
+        # which clf to load? 
+        # B evidence in BC/BD classifier for currt TR
+
+        def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
+            # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+            targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+            Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
+            return np.asarray(Evidence)
+
+        X = nift_data[-1][mask==1]
+        X = np.expand_dims(X, axis=0)
+        print(f"X.shape={X.shape}")
+        import joblib
+        Y = ['chair'] * X.shape[0]
+        imcodeDict={
+        'A': 'bed',
+        'B': 'chair',
+        'C': 'table',
+        'D': 'bench'}
+        BC_clf=joblib.load(cfg.usingModel_dir +'benchchair_chairtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+        BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+        BC_B_evidence = classifierEvidence(BC_clf,X,Y)
+        BD_B_evidence = classifierEvidence(BD_clf,X,Y)
+        morphParam=gaussian((BC_B_evidence+BD_B_evidence)/2, mu, sig)
+
+
+
 
         # take the average of all the activation values
-        avg_niftiData = np.mean(niftiObject.get_fdata())
+        # avg_niftiData = np.mean(niftiObject.get_fdata())
         # avg_niftiData = np.round(avg_niftiData,decimals=2)
         print("| average activation value for TR %d is %f" %(this_TR, avg_niftiData))
 
@@ -289,8 +357,13 @@ def main(argv=None):
     fileInterface = clientRPC.fileInterface
     subjInterface = clientRPC.subjInterface
 
+
     # load the experiment configuration file
-    cfg = loadConfigFile(args.config)
+    # cfg = loadConfigFile(args.config)
+    
+    config="rtSynth_rt.toml" #"sub001.ses1.toml"
+    cfg = cfg_loading(config)
+
 
     # obtain paths for important directories (e.g. location of dicom files)
     if cfg.imgDir is None:
