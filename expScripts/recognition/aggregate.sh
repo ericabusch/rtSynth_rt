@@ -25,4 +25,4 @@ recogExpFolder=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/
 # Run the python scripts
 echo python -u ${recogExpFolder}aggregate.py $toml $dataSource $roiloc $Nregions
 
-#python -u ${recogExpFolder}aggregate.py $toml $dataSource $roiloc $Nregions
+python -u ${recogExpFolder}aggregate.py $toml $dataSource $roiloc $Nregions
