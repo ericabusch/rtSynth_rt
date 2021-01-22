@@ -49,7 +49,7 @@ def cfg_loading(toml=''):
     cfg.templateFunctionalVolume = f"{cfg.recognition_dir}/templateFunctionalVolume.nii" 
     cfg.dicomNamePattern  = "001_0000{}_000{}.dcm"
     cfg.mask_dir          = f"{cfg.recognition_dir}mask/"
-    cfg.chosenMask = f"{cfg.recognition_dir}chosenMask.nii.gz"
+    cfg.chosenMask = f"{cfg.subjects_dir}{cfg.subjectName}/ses1/recognition/chosenMask.nii.gz"
 
     # prepare folder structure
     mkdir(f"{cfg.subjects_dir}{cfg.subjectName}") # mkdir subject folder

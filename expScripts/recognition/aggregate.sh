@@ -20,8 +20,8 @@ toml=$1
 dataSource=$2
 roiloc=$3
 Nregions=$4
-
+recogExpFolder=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/
 # Run the python scripts
-echo "running searchlight"
+echo python -u ${recogExpFolder}aggregate.py $toml $dataSource $roiloc $Nregions
 
-python -u ./aggregate.py $toml $dataSource $roiloc $Nregions
+#python -u ${recogExpFolder}aggregate.py $toml $dataSource $roiloc $Nregions
