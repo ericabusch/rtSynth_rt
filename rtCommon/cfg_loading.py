@@ -1,6 +1,7 @@
 import rtCommon.utils as utils
 import os
-print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}")
+print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}") 
+# source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
 # sys.path.append('/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/')
 def mkdir(folder):
