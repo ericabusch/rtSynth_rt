@@ -13,13 +13,13 @@ roiloc=wang
 for num in {1..50};
 do
     sbatch ${recogExpFolder}aggregate.sh $toml $dataSource $roiloc $num
-    echo $toml realtime $roiloc $num
+    echo sbatch ${recogExpFolder}aggregate.sh $toml $dataSource $roiloc $num
 done
 
 roiloc=schaefer
 for num in {1..300};do
     sbatch ${recogExpFolder}aggregate.sh $toml $dataSource $roiloc $num
-    echo $toml realtime $roiloc $num
+    echo sbatch ${recogExpFolder}aggregate.sh $toml $dataSource $roiloc $num
 done
 
 

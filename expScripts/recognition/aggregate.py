@@ -14,9 +14,10 @@ This will use the .npy outputs of classRegion.py to select and merge the top N R
 in this newly combined larger mask. An example run of this is as follows:
 sbatch aggregate.sh 0111171 neurosketch schaefer2018 15
 '''
+import os
+print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}")
 import numpy as np
 import nibabel as nib
-import os
 import sys
 import time
 import pandas as pd
