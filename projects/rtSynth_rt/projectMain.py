@@ -12,18 +12,18 @@ from rtCommon.structDict import StructDict
 from rtCommon.projectInterface import Web
 
 # HERE: Set the path to the fMRI Python script to run here
-scriptToRun = 'projects/sample/sample.py'
-initScript = 'projects/sample/initialize.py'
-finalizeScript = 'projects/sample/finalize.py'
-defaultConfig = os.path.join(currPath, 'conf/sample.toml')
-
+scriptToRun = 'projects/rtSynth_rt/rtSynth_rt.py'
+initScript = 'projects/rtSynth_rt/initialize.py'
+finalizeScript = 'projects/rtSynth_rt/finalize.py'
+# defaultConfig = 'sample.toml'
+defaultConfig = "sub001.ses2.toml"
 
 if __name__ == "__main__":
     installLoggers(logging.INFO, logging.INFO, filename=os.path.join(currPath, 'logs/sample.log'))
     argParser = argparse.ArgumentParser()
     argParser.add_argument('--filesremote', '-x', default=False, action='store_true',
                            help='dicom files retrieved from remote server')
-    argParser.add_argument('--config', '-c', default=defaultConfig, type=str,
+    argParser.add_argument('--config', '-c', default='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/'+defaultConfig, type=str,
                            help='experiment file (.json or .toml)')
     argParser.add_argument('--test', '-t', default=False, action='store_true',
                            help='start projectInterface in test mode, unsecure')
