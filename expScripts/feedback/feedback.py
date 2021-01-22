@@ -164,6 +164,9 @@ print('total trial number=',TrialNumber)
 print('preloaded parameter range=',parameterRange)
 # print('used parameters=',parameters)
 
+def gaussian(x, mu, sig):
+    # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+    return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
 
 
 def sample(L,num=10):
