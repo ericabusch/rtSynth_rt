@@ -15,6 +15,7 @@ module load FreeSurfer/6.0.0
 module load BXH_XCEDE_TOOLS
 module load brainiak
 module load nilearn
+source activate rtcloud
 
 toml=$1
 dataSource=$2
