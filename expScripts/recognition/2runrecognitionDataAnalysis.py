@@ -44,7 +44,8 @@ find the middle volume of the run1 as the template volume
 align every other functional volume with templateFunctionalVolume (3dvolreg)
 load behavior data and align with brain data
 '''
-recognition_preprocess_2run(cfg)
+run_asTemplate=2 # which run in the realtime folder to select the middle volume as the template volume
+recognition_preprocess_2run(cfg,run_asTemplate)
 
 '''
 purpose:

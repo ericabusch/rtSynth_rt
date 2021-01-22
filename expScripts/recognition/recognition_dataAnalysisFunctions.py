@@ -397,10 +397,11 @@ def behaviorDataLoading(cfg,curr_run):
 
 
 
-def recognition_preprocess_2run(cfg): 
+def recognition_preprocess_2run(cfg,run_asTemplate): 
     '''
     purpose: 
-        prepare data for the model training code.
+        prepare the data for 2 recognition runs     (to later(not in this function) get the morphing target function)
+        find the functional template image for current session
     steps:
         convert all dicom files into nii files in the temp dir. 
         find the middle volume of the run1 as the template volume, convert this to the previous template volume space and save the converted file as today's functional template (templateFunctionalVolume)
@@ -417,17 +418,14 @@ def recognition_preprocess_2run(cfg):
 
     # find the middle volume of the run1 as the template volume
     # here you are assuming that the first run is a good run
-    tmp=glob(f"{tmp_dir}/001_000002*.nii") ; tmp.sort()
-    call(f"cp {tmp[int(len(tmp)/2)]} {cfg.templateFunctionalVolume}", shell=True)
+    run_asTemplate=str(run_asTemplate).zfill(6)
+    tmp=glob(f"{tmp_dir}/001_{run_asTemplate}*.nii") ; tmp.sort()
+    # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.recognition_dir}t.nii", shell=True)
 
     # convert cfg.templateFunctionalVolume to the previous template volume space 
-    call(f"flirt -ref {cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/templateFunctionalVolume.nii \
-        -in {cfg.templateFunctionalVolume} \
-        -out {cfg.recognition_dir}/templateFunctionalVolume_converted.nii",shell=True)
-
-    # save the converted file as today's functional template (templateFunctionalVolume) 
-    call(f"mv {cfg.recognition_dir}/templateFunctionalVolume_converted.nii \
-        {cfg.templateFunctionalVolume}",shell=True)
+    call(f"flirt -ref {cfg.templateFunctionalVolume} \
+        -in {tmp[int(len(tmp)/2)]} \
+        -out {cfg.templateFunctionalVolume_converted}",shell=True) 
         
     # align every other functional volume with templateFunctionalVolume (3dvolreg)
     allTRs=glob(f"{tmp_dir}/001_*.nii") ; allTRs.sort()
@@ -440,7 +438,7 @@ def recognition_preprocess_2run(cfg):
         runTRs=glob(f"{tmp_dir}/001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
         for curr_TR in runTRs:
             command = f"3dvolreg \
-                -base {cfg.templateFunctionalVolume} \
+                -base {cfg.templateFunctionalVolume_converted} \
                 -prefix  {curr_TR[0:-4]}_aligned.nii \
                 {curr_TR}"
             call(command,shell=True)
