@@ -3,8 +3,8 @@
 
 #SBATCH --output=logs/agg-%j.out
 #SBATCH --job-name aggregate
-#SBATCH --partition=verylong
-#SBATCH --time=20:00:00
+#SBATCH --partition=short,day,scavenge
+#SBATCH --time=1:00:00
 #SBATCH --mem=10000
 #SBATCH -n 5
 
