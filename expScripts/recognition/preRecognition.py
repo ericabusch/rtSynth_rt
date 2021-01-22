@@ -27,7 +27,7 @@ sys.path.append(main_dir)
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
 argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default='pilot_sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
