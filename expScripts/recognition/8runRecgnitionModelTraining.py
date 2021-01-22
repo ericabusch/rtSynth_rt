@@ -65,10 +65,10 @@ call(f"sbatch {cfg.recognition_expScripts_dir}make-wang-rois.sh {cfg.subjectName
 call(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
 
 # train classifiers on each ROI 
-call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {args.config}",shell=True)
+call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {config}",shell=True)
 
 # summarize classification accuracy and select best mask
-call(f"bash {cfg.recognition_expScripts_dir}runAggregate.sh {args.config}",shell=True)
+call(f"bash {cfg.recognition_expScripts_dir}runAggregate.sh {config}",shell=True)
 
 # select the mask with the best performance as cfg.chosenMask = {cfg.recognition_dir}chosenMask.nii.gz
 # and also save this mask in all 
