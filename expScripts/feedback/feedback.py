@@ -1,6 +1,13 @@
 # This code should be run in console room computer to display the feedback morphings
 from __future__ import print_function, division
 #os.chdir("/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtSynth_repo/kp_scratch/expcode")
+import os
+if 'watts' in os.getcwd():
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
+else:
+    main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
+import sys
+sys.path.append(main_dir+"expScripts/feedback/")
 from psychopy import visual, event, core, logging, gui, data, monitors
 from psychopy.hardware.emulator import launchScan, SyncGenerator
 from PIL import Image
@@ -8,32 +15,50 @@ import string
 import fmrisim as sim
 import numpy as np
 import pandas as pd
-import sys
-import os
 import pylink
 from tqdm import tqdm
 import time
 import re
+import argparse
 alpha = string.ascii_uppercase
 
 if 'watts' in os.getcwd():
-    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
 else:
-    main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
+    main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
 
 # startup parameters
-sub = sys.argv[1] #'pilot_sub001' # # this is the name of the subject
-sess = int(sys.argv[2]) #2 #  which session is this in? by design this can be 2 3 4 
-run = sys.argv[3] #1 # # which run is this in
-scanmode = 'Test'  # 'Scan' or 'Test' or None
-screenmode = False  # fullscr True or False
+sys.path.append(main_dir)
+from rtCommon.cfg_loading import mkdir,cfg_loading
 
+argParser = argparse.ArgumentParser()
+argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
+argParser.add_argument('--sess', '-s', default='1', type=str, help='current session')
+args = argParser.parse_args()
+
+cfg = cfg_loading(args.config)
+sub = cfg.subjectName
+run = int(args.run)  # 1
+sess = int(args.sess)
+TR=cfg.TR
+
+cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
+
+if False:
+    scanmode = 'Scan'  # 'Scan' or 'Test' or None
+    screenmode = True  # fullscr True or False
+    monitor_name = "scanner"
+else:
+    scanmode = 'Test'  # 'Scan' or 'Test' or None
+    screenmode = False  # fullscr True or False
+    monitor_name = "testMonitor" #"testMonitor"
 
 gui = True if screenmode == False else False
-monitor_name = "scanner" # scanner testMonitor
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
 TRduration=2.0
+
 
 # mywin = visual.Window(
     # size=[1280, 800], fullscr=screenmode, screen=0,
@@ -56,7 +81,7 @@ step=3 #in simulation, how quickly the morph changes ramp up. Note this is only 
 TR=2 # the length of a TR is 2s
 parameterRange=np.arange(1,11) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
-TrialNumber=10 #how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
+TrialNumber=180 # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
 
 ## - design the trial list: the sequence of the different types of components: 
 ## - e.g: ITI + waiting for fMRI signal + feedback (receive model output from feedbackReceiver.py)
@@ -164,9 +189,6 @@ print('total trial number=',TrialNumber)
 print('preloaded parameter range=',parameterRange)
 # print('used parameters=',parameters)
 
-def gaussian(x, mu, sig):
-    # mu and sig is determined before each neurofeedback session using 2 recognition runs.
-    return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
 
 
 def sample(L,num=10):
@@ -198,32 +220,32 @@ def preloadimages(parameterRange=np.arange(1,20),tune=1):
                 currMorph=100-round(currImg/numberOfUpdates+1) if axis=='benchBed' else round(currImg/numberOfUpdates+1)
                 if currMorph<1 or currMorph>99:
                     raise Exception('morphing outside limit')
-                curr_image='carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
+                curr_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
                 if curr_image!=last_image:
                     currImage=visual.ImageStim(win=mywin,
                                                 name='image',
-                                                image='carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5), mask=None,
+                                                image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5), mask=None,
                                                 ori=0, pos=(0, 0), size=(0.5, 0.5),
                                                 color=[1,1,1], colorSpace='rgb', opacity=1,
                                                 flipHoriz=False, flipVert=False,
                                                 texRes=128, interpolate=True, depth=-4.0)
                 tmp_images.append(currImage)
-                last_image='carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
+                last_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
             images=images+sample(tmp_images)
             tmp_images=[]
             for currImg in reversed(range(1,int(round(tune*currParameter*numberOfUpdates+1)),int((currParameter*numberOfUpdates+2)/numberOfUpdates))):
                 currMorph=100-round(currImg/numberOfUpdates+1) if axis=='benchBed' else round(currImg/numberOfUpdates+1)
-                curr_image='carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
+                curr_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
                 if curr_image!=last_image:
                     currImage=visual.ImageStim(win=mywin,
                                                 name='image',
-                                                image='carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5), mask=None,
+                                                image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5), mask=None,
                                                 ori=0, pos=(0, 0), size=(0.5, 0.5),
                                                 color=[1,1,1], colorSpace='rgb', opacity=1,
                                                 flipHoriz=False, flipVert=False,
                                                 texRes=128, interpolate=True, depth=-4.0)
                 tmp_images.append(currImage)
-                last_image='carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
+                last_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
             images=images+sample(tmp_images)
         imageLists.update( {currParameter : images} )
     end = time.time()
@@ -234,7 +256,7 @@ imageLists=preloadimages(parameterRange=parameterRange,tune=tune)
 
 # Open data file for eye tracking
 # datadir = "./data/feedback/"
-datadir = main_dir + f"subjects/{sub}/ses{sess}_feedback/"
+datadir = main_dir + f"subjects/{sub}/ses{sess}/feedback/"
 
 maxTR=int(trial_list['TR'].iloc[-1])+6
 # Settings for MRI sequence
@@ -267,7 +289,7 @@ vol = launchScan(mywin, MR_settings, simResponses=None, mode=scanmode,
 image = visual.ImageStim(
     win=mywin,
     name='image',
-    image='./carchair_exp_feedback/bedChair_1_5.png', mask=None,
+    image=cfg.feedback_expScripts_dir + './carchair_exp_feedback/bedChair_1_5.png', mask=None,
     ori=0, pos=(0, 0), size=(0.5, 0.5),
     color=[1,1,1], colorSpace='rgb', opacity=1,
     flipHoriz=False, flipVert=False,
@@ -276,7 +298,7 @@ image = visual.ImageStim(
 backgroundImage = visual.ImageStim(
     win=mywin,
     name='image',
-    image='./carchair_exp_feedback/greyBackground.png', mask=None,
+    image=cfg.feedback_expScripts_dir+'./carchair_exp_feedback/greyBackground.png', mask=None,
     ori=0, pos=(0, 0), size=(0.5, 0.5),
     color=[1,1,1], colorSpace='rgb', opacity=1,
     flipHoriz=False, flipVert=False,
@@ -295,32 +317,39 @@ newWobble=list(trial_list['newWobble'])
 ParameterUpdateDuration=np.diff(np.where(trial_list['newWobble']==1))[0][0]*TRduration
 curr_parameter=0
 remainImageNumber=[]
-feedbackParameterFileName=main_dir+f"subjects/{sub}/ses{sess}_feedbackParameter/run_{run}.csv"
 
-# While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
-_=1
-while not os.path.exists(feedbackParameterFileName):
-    keys = event.getKeys(["5","0"])
-    if '0' in keys: # whenever you want to quite, type 0
-        mywin.close()
-        core.quit()
-    time.sleep(0.01)
-    if _ % 100==0:
-        print(f'waiting {feedbackParameterFileName}')
-    _+=1
-parameters=pd.read_csv(feedbackParameterFileName)
-while np.isnan(parameters['value'].iloc[-1]):
-    keys = event.getKeys(["5","0"])
-    if '0' in keys: # whenever you want to quite, type 0
-        mywin.close()
-        core.quit()
-    time.sleep(0.01)
-    if _ % 100==0:
-        print(f'waiting parameters nan')
-    _+=1
-    parameters=pd.read_csv(feedbackParameterFileName)
 
-curr_parameter=len(parameters['value'])-1
+# feedbackParameterFileName=main_dir+f"subjects/{sub}/ses{sess}_feedbackParameter/run_{run}.csv"
+# # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
+# _=1
+# while not os.path.exists(feedbackParameterFileName):
+#     keys = event.getKeys(["5","0"])
+#     if '0' in keys: # whenever you want to quite, type 0
+#         mywin.close()
+#         core.quit()
+#     time.sleep(0.01)
+#     if _ % 100==0:
+#         print(f'waiting {feedbackParameterFileName}')
+#     _+=1
+# parameters=pd.read_csv(feedbackParameterFileName)
+# while np.isnan(parameters['value'].iloc[-1]):
+#     keys = event.getKeys(["5","0"])
+#     if '0' in keys: # whenever you want to quite, type 0
+#         mywin.close()
+#         core.quit()
+#     time.sleep(0.01)
+#     if _ % 100==0:
+#         print(f'waiting parameters nan')
+#     _+=1
+#     parameters=pd.read_csv(feedbackParameterFileName)
+from rtCommon.feedbackReceiver import WsFeedbackReceiver
+WsFeedbackReceiver.startReceiverThread(args.server,
+                                    retryInterval=args.interval,
+                                    username=args.username,
+                                    password=args.password,
+                                    testMode=args.test)
+
+# curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
     keys = event.getKeys(["5","0"])  # check for triggers
@@ -333,17 +362,21 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         newWobble.pop(0)
         print(states[0])
         if states[0] == 'feedback' and newWobble[0]==1:
-            # fetch parameter from preprocessing process on Milgram            
-            print('feedbackParameterFileName=',feedbackParameterFileName)
-            parameters=pd.read_csv(feedbackParameterFileName)
+            # fetch parameter from preprocessing process on Milgram       
+            feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
+            runId,trID,value,timestamp=feedbackMsg.get('runId'),\
+                feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
+            parameter=value
+            # print('feedbackParameterFileName=',feedbackParameterFileName)
+            # parameters=pd.read_csv(feedbackParameterFileName)
             # if curr_parameter>(len(parameters['value'])-1):
                 # curr_parameter=curr_parameter-1
-            curr_parameter=(len(parameters['value'])-1)
-            parameter=parameters['value'].iloc[curr_parameter]
-            print('curr_parameter=',curr_parameter)
+            # curr_parameter=(len(parameters['value'])-1)
+            # parameter=parameters['value'].iloc[curr_parameter]
+            # print('curr_parameter=',curr_parameter)
             print('parameter=',parameter)
 
-            curr_parameter=curr_parameter+1
+            # curr_parameter=curr_parameter+1
             # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
             trialClock=core.Clock()
             trialTime=trialClock.getTime()
