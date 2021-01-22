@@ -40,6 +40,7 @@ def cfg_loading(toml=''):
     cfg.subjects_dir=f'{cfg.projectDir}subjects/'
     cfg.dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
     cfg.recognition_expScripts_dir = f"{cfg.projectDir}expScripts/recognition/"
+    cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
 
     cfg.TR=2
 
