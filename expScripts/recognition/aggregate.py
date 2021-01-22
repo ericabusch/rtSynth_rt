@@ -14,6 +14,9 @@ This will use the .npy outputs of classRegion.py to select and merge the top N R
 in this newly combined larger mask. An example run of this is as follows:
 sbatch aggregate.sh 0111171 neurosketch schaefer2018 15
 '''
+
+# test: sbatch /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/aggregate.sh sub001.ses1.toml realtime schaefer 299
+
 import os
 print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}")
 # /gpfs/milgram/project/turk-browne/kp578/conda_envs/rtcloud
@@ -317,28 +320,26 @@ def plot():
 
     toml="sub001.ses1.toml"
     cfg = cfg_loading(toml) 
-    subjects=cfg.subjectName
+    subjects=[cfg.subjectName]
 
     # testDir='/gpfs/milgram/project/turk-browne/projects/rtTest/'
     hemis=["lh", "rh"]
 
-    wangAcc=np.zeros((50,len(subs)))
+    wangAcc=np.zeros((50,len(subjects)))
     roiloc="wang"
     for sub_i,sub in enumerate(subjects):
         for num in range(1,51):
             try:
-                wangAcc[num-1,sub_i]=np.load(f"{testDir}{roiloc}/{sub}/output/top{num}.npy")
-    #             print(f"{roiloc} {sub} {num} ROIs acc={wangAcc[num-1,sub_i]}")
+                wangAcc[num-1,sub_i]=np.load(f"{cfg.recognition_dir}classRegions/{roiloc}_top{num}.npy")
             except:
                 pass
 
-    schaeferAcc=np.zeros((300,3))
+    schaeferAcc=np.zeros((300,len(subjects)))
     roiloc="schaefer"
     for sub_i,sub in enumerate(subjects):
         for num in range(1,301):
             try:
-                schaeferAcc[num-1,sub_i]=np.load(f"{testDir}{roiloc}/{sub}/output/top{num}.npy")
-    #             print(f"{roiloc} {sub} {num} ROIs acc={schaeferAcc[num-1,sub_i]}")
+                schaeferAcc[num-1,sub_i]=np.load(f"{cfg.recognition_dir}classRegions/{roiloc}_top{num}.npy")
             except:
                 pass
 
@@ -360,4 +361,15 @@ def plot():
     plt.xlabel("number of ROIs")
     plt.ylabel("accuracy")
 
-    # sbatch /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/aggregate.sh sub001.ses1.toml realtime schaefer 299
+    bestN=np.where(schaeferAcc==max(schaeferAcc))[0][0]+1
+    print(f"best performed ROI N={bestN}")
+    print(f"fslview_deprecated {cfg.recognition_dir}wanginfunc.nii.gz \
+        {cfg.recognition_dir}classRegions/wang_top{bestN}mask.nii.gz")
+
+    from shutil import copyfile
+    copyfile(f"{cfg.recognition_dir}classRegions/wang_top{bestN}mask.nii.gz", 
+            cfg.chosenMask
+            )
+
+    
+    
