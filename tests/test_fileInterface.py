@@ -1,6 +1,6 @@
 import pytest
 import os
-from rtCommon.fileClient import FileInterface
+from rtCommon.fileInterface import FileInterface
 
 # Note these tests will test the local version of FileInterface (not remote)
 
@@ -10,7 +10,7 @@ tmpDir = os.path.join(testDir, 'tmp/')
 
 @pytest.fixture(scope="module")
 def dicomTestFilename():  # type: ignore
-    return os.path.join(testDir, 'test_input/001_000005_000100.dcm')
+    return os.path.join(testDir, 'test_input/001_000013_000005.dcm')
 
 
 class TestFileInterface:

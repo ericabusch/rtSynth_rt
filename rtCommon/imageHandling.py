@@ -12,11 +12,14 @@ import os
 import time
 import logging
 import subprocess
+import warnings
 import numpy as np  # type: ignore
 import nibabel as nib
-from rtCommon.errors import StateError, ValidationError, InvocationError
+from rtCommon.errors import StateError, ValidationError, InvocationError, RequestError
 from nilearn.image import new_img_like
-from nibabel.nicom import dicomreaders
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from nibabel.nicom import dicomreaders
 try:
     import pydicom as dicom  # type: ignore
 except ModuleNotFoundError:
@@ -48,8 +51,8 @@ def getDicomFileName(cfg, scanNum, fileNum):
     if cfg.dicomNamePattern is None:
         raise InvocationError("Missing config settings dicomNamePattern")
 
-    if '{run' in cfg.dicomNamePattern:
-        fileName = cfg.dicomNamePattern.format(scan=scanNum, run=fileNum)
+    if '{TR' in cfg.dicomNamePattern:
+        fileName = cfg.dicomNamePattern.format(SCAN=scanNum, TR=fileNum)
     else:
         scanNumStr = str(scanNum).zfill(2)
         fileNumStr = str(fileNum).zfill(3)
@@ -58,37 +61,28 @@ def getDicomFileName(cfg, scanNum, fileNum):
 
     return fullFileName
 
+attributesToAnonymize = [
+        'PatientID', 'PatientAge', 'PatientBirthDate', 'PatientName',
+        'PatientSex', 'PatientSize', 'PatientWeight', 'PatientPosition',
+        'StudyDate', 'StudyTime', 'SeriesDate', 'SeriesTime',
+        'AcquisitionDate', 'AcquisitionTime', 'ContentDate', 'ContentTime',
+        'InstanceCreationDate', 'InstanceCreationTime',
+        'PerformedProcedureStepStartDate', 'PerformedProcedureStepStartTime'
+]
 
 def anonymizeDicom(dicomImg):
     """
     This function takes in the dicom image that you read in and deletes
-    lots of different variables. The purpose of this is to anonymize the
+    lots of different attributes. The purpose of this is to anonymize the
     dicom data before transferring it to the cloud.
 
     Used externally.
     """
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientID
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientAge
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientBirthDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientName
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientSex
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientSize
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientWeight
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PatientPosition
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.StudyDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.StudyTime
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.SeriesDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.SeriesTime
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.AcquisitionDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.AcquisitionTime
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.ContentDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.ContentTime
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.InstanceCreationDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.InstanceCreationTime
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PerformedProcedureStepStartDate
-    if hasattr(dicomImg, 'PatientID'): del dicomImg.PerformedProcedureStepStartTime
-    return dicomImg
+    for toAnonymize in attributesToAnonymize:
+        if hasattr(dicomImg, toAnonymize):
+            setattr(dicomImg, toAnonymize, "")
 
+    return dicomImg
 
 def readDicomFromFile(filename):
     """
@@ -159,9 +153,12 @@ def readRetryDicomFromFileInterface(fileInterface, filename, timeout=5):
             dicomImg.convert_pixel_data()
             # successful
             return dicomImg
-        except Exception as err:
-            logging.warning("LoadImage error, retry in 100 ms: {} ".format(err))
+        except TimeoutError as err:
+            logging.warning(f"Timeout waiting for {filename}. Retry in 100 ms")
             time.sleep(0.1)
+        except Exception as err:
+            logging.error(f"ReadRetryDicom Error, filename {filename} err: {err}")
+            return None
     return None
 
 
@@ -271,10 +268,9 @@ def convertDicomFileToNifti(dicomFilename, niftiFilename):
     outPath, outName = os.path.split(niftiFilename)
     if outName.endswith('.nii'):
         outName = os.path.splitext(outName)[0]  # remove extention
-    cmd = '{bin} -s y -b n -o {outdir} -f {outname} {inname}'.format(
-        bin=dcm2niiCmd, outdir=outPath, outname=outName, inname=dicomFilename
-        )
-    os.system(cmd)
+    cmd = [dcm2niiCmd, '-s', 'y', '-b', 'n', '-o', outPath, '-f', outName,
+           dicomFilename]
+    subprocess.run(cmd, shell=False, stdout=subprocess.DEVNULL)
 
 
 def readNifti(niftiFilename):

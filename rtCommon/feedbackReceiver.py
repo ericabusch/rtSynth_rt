@@ -8,7 +8,6 @@ import logging
 import threading
 import websocket
 from queue import Queue, Empty
-import pandas as pd
 # import project modules
 # Add base project path (two directories up)
 currPath = os.path.dirname(os.path.realpath(__file__))
@@ -19,10 +18,11 @@ from rtCommon.projectUtils import login, certFile, checkSSLCertAltName, makeSSLC
 
 
 class WsFeedbackReceiver:
-    ''' A client that receives classification results (feedback for the subject)
-        from the cloud service. The communication connection
-        is made with webSockets (ws)
-    '''
+    """
+    Feedback Receiver is a client that receives classification results (i.e. feedback for the subject)
+    from the cloud service. The communication connection is made with webSockets (wss).
+    MsgQueue is where the caller will receive the result values once the receiver is started.
+    """
     serverAddr = None
     sessionCookie = None
     needLogin = True
@@ -37,6 +37,7 @@ class WsFeedbackReceiver:
     def startReceiverThread(serverAddr, retryInterval=10,
                             username=None, password=None,
                             testMode=False):
+        """Starts the receiver in it's own thread."""
         WsFeedbackReceiver.recvThread = \
             threading.Thread(name='recvThread',
                              target=WsFeedbackReceiver.runReceiver,
@@ -52,6 +53,7 @@ class WsFeedbackReceiver:
     def runReceiver(serverAddr, retryInterval=10,
                     username=None, password=None,
                     testMode=False):
+        """Run the receiver loop. This function doesn't return."""
         WsFeedbackReceiver.serverAddr = serverAddr
         # go into loop trying to do webSocket connection periodically
         WsFeedbackReceiver.shouldExit = False
@@ -83,6 +85,7 @@ class WsFeedbackReceiver:
 
     @staticmethod
     def on_message(client, message):
+        """Queues feedback values as they arrive."""
         response = {'status': 400, 'error': 'unhandled request'}
         try:
             request = json.loads(message)
@@ -172,13 +175,6 @@ if __name__ == "__main__":
                         help="rtcloud website password")
     parser.add_argument('--test', default=False, action='store_true',
                         help='Use unsecure non-encrypted connection')
-    parser.add_argument('-sub', action="store", dest="sub", default="pilot_sub001",
-                        help="the name of subject as subxxx")
-    parser.add_argument('-ses', action="store", dest="ses", default="2",
-                        help="This is the sess number of the current day, e.g. in day2 sess is 2")
-    parser.add_argument('-run', action="store", dest="run", default="01",
-                        help="which feedback run is this?")
-    
     args = parser.parse_args()
 
     if not re.match(r'.*:\d+', args.server):
@@ -187,21 +183,6 @@ if __name__ == "__main__":
         sys.exit()
 
     addr, port = args.server.split(':')
-    sub = args.sub
-    ses = args.ses
-    run = args.run
-    if 'watts' in os.getcwd():
-        main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
-    else:
-        main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
-
-    parameterWriteFile = main_dir+f"subjects/{sub}/ses{ses}_feedbackParameter/run_{run}.csv"
-    print('parameterWriteFile=',parameterWriteFile)
-    if not os.path.isdir(f"{main_dir}subjects/{sub}"):
-        os.mkdir(f"{main_dir}subjects/{sub}")
-    if not os.path.isdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/"):
-        os.mkdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/")
-
     # Check if the ssl certificate is valid for this server address
     if checkSSLCertAltName(certFile, addr) is False:
         # Addr not listed in sslCert, recreate ssl Cert
@@ -215,25 +196,11 @@ if __name__ == "__main__":
                                            password=args.password,
                                            testMode=args.test)
 
-    parameters = pd.DataFrame(columns=['runId','trId','value','timestamp','writeTime'])
-
     while True:
         feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)
-        
-        runId=feedbackMsg.get('runId')
-        trId=feedbackMsg.get('trId')
-        value=feedbackMsg.get('value')
-        timestamp=feedbackMsg.get('timestamp')
-        # parameterFileName=f"{parameterWriteFolder}{runId}"
         print("Dequeue run: {}, tr: {}, value: {}, timestamp: {}".
-              format(runId,trId,value,timestamp))
-
-        parameters = parameters.append({'runId':runId,
-                            'trId':trId,
-                            'value':value,
-                            'timestamp':timestamp,
-                            'writeTime':time.time()}, #time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(1347517370))
-                            ignore_index=True)
-        print('parameters=',parameters)
-        parameters.to_csv(parameterWriteFile)
-
+              format(feedbackMsg.get('runId'),
+                     feedbackMsg.get('trId'),
+                     feedbackMsg.get('value'),
+                     feedbackMsg.get('timestamp')))
+    
