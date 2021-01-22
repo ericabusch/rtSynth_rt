@@ -31,7 +31,6 @@ import pydicom as dicom  # type: ignore
 from glob import glob
 import shutil
 from nilearn.image import new_img_like
-import joblib
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
 from rtCommon.fileClient import FileInterface
@@ -308,19 +307,17 @@ ROILIST.to_csv(f"{cfg.recognition_dir}classRegions/{roiloc}_top{N}.csv")
 
 
 def plot():
-    # code to load and compare the result of above:
-
-    di="/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/"
+        
+    import sys
+    sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
+    from rtCommon.cfg_loading import mkdir,cfg_loading
     from glob import glob
-    subs=glob(f"{di}[0,1]*_neurosketch")
-    subs=[sub.split("/")[-1].split("_")[0] for sub in subs]
-    subjects=""
-    for sub in subs:
-        subjects=subjects+sub+" "
-        
-        
-    testDir='/gpfs/milgram/project/turk-browne/projects/rtTest/'
-    subjects=subs #["0110171", "0110172", "0111171"]
+
+    toml="sub001.ses1.toml"
+    cfg = cfg_loading(toml) 
+    subjects=cfg.subjectName
+
+    # testDir='/gpfs/milgram/project/turk-browne/projects/rtTest/'
     hemis=["lh", "rh"]
 
     wangAcc=np.zeros((50,len(subs)))
@@ -357,10 +354,6 @@ def plot():
         plt.scatter([i]*schaeferAcc.shape[1],schaeferAcc[i],c='g')
     for i in range(wangAcc.shape[0]):
         plt.scatter([i]*wangAcc.shape[1],wangAcc[i],c='b')
-        
+
     plt.xlabel("number of ROIs")
     plt.ylabel("accuracy")
-    # plt.savefig('/tmp/test.png')
-
-    # next step is to use averageAggregatee.sh to cnvert things to standard space and add things together to visualize things.
-    
