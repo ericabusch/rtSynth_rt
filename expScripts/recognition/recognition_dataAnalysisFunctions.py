@@ -413,13 +413,13 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
     dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
     for curr_dicom in dicomFiles:
         dicomImg = readDicomFromFile(curr_dicom) # read dicom file
-        convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}/{curr_dicom.split('/')[-1]}") #convert dicom to nii    
+        convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}") #convert dicom to nii    
         # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
 
     # find the middle volume of the run1 as the template volume
     # here you are assuming that the first run is a good run
     run_asTemplate=str(run_asTemplate).zfill(6)
-    tmp=glob(f"{tmp_dir}/001_{run_asTemplate}*.nii") ; tmp.sort()
+    tmp=glob(f"{tmp_dir}001_{run_asTemplate}*.nii") ; tmp.sort()
     # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.recognition_dir}t.nii", shell=True)
 
     # convert cfg.templateFunctionalVolume to the previous template volume space 
@@ -428,14 +428,14 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
         -out {cfg.templateFunctionalVolume_converted}",shell=True) 
         
     # align every other functional volume with templateFunctionalVolume (3dvolreg)
-    allTRs=glob(f"{tmp_dir}/001_*.nii") ; allTRs.sort()
+    allTRs=glob(f"{tmp_dir}001_*.nii") ; allTRs.sort()
 
     # select a list of run IDs based on the runRecording.csv, actualRuns would be [1,2] is the 1st and the 3rd runs are recognition runs.
     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
     for curr_run in actualRuns:
         outputFileNames=[]
-        runTRs=glob(f"{tmp_dir}/001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
+        runTRs=glob(f"{tmp_dir}001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
         for curr_TR in runTRs:
             command = f"3dvolreg \
                 -base {cfg.templateFunctionalVolume_converted} \
