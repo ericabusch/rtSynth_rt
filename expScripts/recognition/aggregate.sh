@@ -15,7 +15,7 @@ module load FreeSurfer/6.0.0
 module load BXH_XCEDE_TOOLS
 module load brainiak
 module load nilearn
-source activate rtcloud
+source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
 toml=$1
 dataSource=$2

@@ -69,6 +69,7 @@ call(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {config}",shell=Tr
 
 # summarize classification accuracy and select best mask
 call(f"bash {cfg.recognition_expScripts_dir}runAggregate.sh {config}",shell=True)
+# bash /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/runAggregate.sh sub001.ses1.toml
 
 # select the mask with the best performance as cfg.chosenMask = {cfg.recognition_dir}chosenMask.nii.gz
 # and also save this mask in all 

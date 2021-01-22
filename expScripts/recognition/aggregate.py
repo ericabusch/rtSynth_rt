@@ -16,6 +16,8 @@ sbatch aggregate.sh 0111171 neurosketch schaefer2018 15
 '''
 import os
 print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}")
+# /gpfs/milgram/project/turk-browne/kp578/conda_envs/rtcloud
+# /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 import numpy as np
 import nibabel as nib
 import sys
@@ -87,7 +89,7 @@ else:
     topN = []
     for hemi in ["lh", "rh"]:
         for roinum in range(1, 26):
-            result = np.load(f"{outloc}/{roiloc}_roi{roinum}_{hemi}.npy")
+            result = np.load(f"{outloc}{roiloc}_roi{roinum}__{hemi}.npy")
             Result = result if roinum == 1 else np.vstack((Result, result))
         RESULT = Result if hemi == "lh" else np.hstack((RESULT, Result))
 
@@ -357,3 +359,5 @@ def plot():
 
     plt.xlabel("number of ROIs")
     plt.ylabel("accuracy")
+
+    # sbatch /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/aggregate.sh sub001.ses1.toml realtime schaefer 299
