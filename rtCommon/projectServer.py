@@ -54,7 +54,7 @@ if __name__ == "__main__":
                            help='project name')
     argParser.add_argument('--projectDir', '-d', default=None, type=str,
                            help='project directory')
-    argParser.add_argument('--config', '-c', default=None, type=str,
+    argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str,
                            help='experiment file (.json or .toml)')
     argParser.add_argument('--mainScript', '-m', default=None, type=str,
                            help='project main script')
@@ -73,7 +73,9 @@ if __name__ == "__main__":
     if args.projectDir is None:
         args.projectDir = os.path.join(rootPath, 'projects', args.projectName)
     if args.config is None:
-        args.config = os.path.join(args.projectDir, f'conf/{args.projectName}.toml')
+        args.config = os.path.join(args.projectDir, f'conf/{args.projectName}')
+    else:
+        args.config = os.path.join(args.projectDir, f'conf/{args.config}')
     if args.mainScript is None:
         args.mainScript = os.path.join(args.projectDir, f'{args.projectName}.py')
     if args.initScript is None:
