@@ -75,7 +75,11 @@ from rtCommon.utils import loadConfigFile
 import rtCommon.clientInterface as clientInterface
 from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-from recognition_dataAnalysisFunctions import gaussian
+
+def gaussian(x, mu, sig):
+    # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+    return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
+
 
 # obtain the full path for the configuration toml file
 # defaultConfig = os.path.join(currPath, 'conf/sample.toml')
@@ -189,7 +193,7 @@ def doRuns(cfg, fileInterface, subjInterface):
     num_total_TRs = 10  # number of TRs to use for example 1
     if cfg.isSynthetic:
         num_total_TRs = cfg.numSynthetic
-    all_avg_activations = np.zeros((num_total_TRs, 1))
+    morphParams = np.zeros((num_total_TRs, 1))
     nift_data=[]
     for this_TR in np.arange(1,num_total_TRs):
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
@@ -224,6 +228,7 @@ def doRuns(cfg, fileInterface, subjInterface):
         dicomData = readRetryDicomFromFileInterface(fileInterface, fileName, timeout_file)
         
 
+
         # use 'dicomreaders.mosaic_to_nii' to convert the dicom data into a nifti
         #   object. additional steps need to be taken to get the nifti object in
         #   the correct orientation, but we will ignore those steps here. refer to
@@ -245,12 +250,12 @@ def doRuns(cfg, fileInterface, subjInterface):
         call(command,shell=True)
         niftiObject = nib.load(niiFileName)
         nift_data.append(niftiObject.get_fdata())
-        print(f"niftiObjects[-1].shape={niftiObjects[-1].shape}")
+        
 
         # load f"{tmp_dir}niftiObject"
         # load cfg.chosenMask
-        mask=nib.load(cfg.chosenMask)
-        print(f"mask.shape{mask.shape}")
+        mask=nib.load(cfg.chosenMask).get_data()
+        
         # load clf
         [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
         print(f"mu={mu},sig={sig}")
@@ -265,47 +270,46 @@ def doRuns(cfg, fileInterface, subjInterface):
             Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
             return np.asarray(Evidence)
 
+        print(f"nift_data[-1].shape={nift_data[-1].shape}")
+        print(f"mask.shape={mask.shape}")
+        print(f"np.sum(mask)={np.sum(mask)}")
         X = nift_data[-1][mask==1]
         X = np.expand_dims(X, axis=0)
         print(f"X.shape={X.shape}")
+        
         import joblib
         Y = ['chair'] * X.shape[0]
-        imcodeDict={
-        'A': 'bed',
-        'B': 'chair',
-        'C': 'table',
-        'D': 'bench'}
+        # imcodeDict={
+        # 'A': 'bed',
+        # 'B': 'chair',
+        # 'C': 'table',
+        # 'D': 'bench'}
         BC_clf=joblib.load(cfg.usingModel_dir +'benchchair_chairtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
         BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-        BC_B_evidence = classifierEvidence(BC_clf,X,Y)
-        BD_B_evidence = classifierEvidence(BD_clf,X,Y)
+        BC_B_evidence = classifierEvidence(BC_clf,X,Y)[0]
+        BD_B_evidence = classifierEvidence(BD_clf,X,Y)[0]
+        print(f"BC_B_evidence={BC_B_evidence}")
+        print(f"BD_B_evidence={BD_B_evidence}")
         morphParam=gaussian((BC_B_evidence+BD_B_evidence)/2, mu, sig)
+        print(f"morphParam={morphParam}")
 
 
-
-
-        # take the average of all the activation values
-        # avg_niftiData = np.mean(niftiObject.get_fdata())
-        # avg_niftiData = np.round(avg_niftiData,decimals=2)
-        print("| average activation value for TR %d is %f" %(this_TR, avg_niftiData))
-
-        max_niftiData = np.amax(niftiObject.get_fdata())
-        if verbose:
-            print("| max activation value for TR %d is %d" %(this_TR, max_niftiData))
+        print("| morphParam for TR %d is %f" %(this_TR, morphParam))
 
         # use 'sendResultToWeb' from 'projectUtils.py' to send the result to the
         #   web browser to be plotted in the --Data Plots-- tab.
         if verbose:
             print("| send result to the web, plotted in the 'Data Plots' tab")
-        subjInterface.sendClassificationResult(runNum, int(this_TR), float(avg_niftiData))
+        subjInterface.sendClassificationResult(runNum, int(this_TR), morphParam)
+        fileInterface.putTextFile("/tmp/test.txt",str(morphParam))
 
         # save the activations value info into a vector that can be saved later
-        all_avg_activations[this_TR] = avg_niftiData
+        morphParams[this_TR] = morphParam
 
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
-    output_textFilename = '/tmp/cloud_directory/tmp/avg_activations.txt'
-    output_matFilename = os.path.join('/tmp/cloud_directory/tmp/avg_activations.mat')
+    output_textFilename = f'{cfg.feedback_dir}morphParam.txt'
+    output_matFilename = os.path.join(f'{cfg.feedback_dir}morphParam.mat')
 
     # use 'putTextFile' from 'fileClient.py' to save the .txt file
     #   INPUT:
@@ -315,12 +319,12 @@ def doRuns(cfg, fileInterface, subjInterface):
         print(""
         "-----------------------------------------------------------------------------\n"
         "• save activation value as a text file to tmp folder")
-    fileInterface.putTextFile(output_textFilename,str(all_avg_activations))
+    fileInterface.putTextFile(output_textFilename,str(morphParams))
 
     # use sio.save mat from scipy to save the matlab file
     if verbose:
         print("• save activation value as a matlab file to tmp folder")
-    sio.savemat(output_matFilename,{'value':all_avg_activations})
+    sio.savemat(output_matFilename,{'value':morphParam})
 
     if verbose:
         print(""
