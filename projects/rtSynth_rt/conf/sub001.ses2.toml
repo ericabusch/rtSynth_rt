@@ -14,11 +14,12 @@
 # for 8 recognition run on day5 ; 
 
 # subject Yuexuan Li,
-# 
+
+title = 'rtSynth_rt'
 
 session=2 # which session is this? which day is this on? could be 1 2 3 4 5 
-runNum = [1,2,3,4,5,6,7,8] # This is the list of unique run, e.g. when the recognition1 is repeated twice, this can be 1 and 2
-scanNum = [1,2,3,4,5,6,7,8] # This is a list of scan(or runs that might be repetitive)
+runNum = [1] #[1,2,3,4,5,6,7,8] # This is the list of unique run, e.g. when the recognition1 is repeated twice, this can be 1 and 2
+scanNum = [1] #[1,2,3,4,5,6,7,8] # This is a list of scan(or runs that might be repetitive)
 
 
 subjectName = "sub001" # subject folder name in the rtSynth_rt/subjects folder
