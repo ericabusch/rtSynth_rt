@@ -22,8 +22,7 @@ class ProjectServer:
             args.test = False
         if not hasattr(args, 'filesremote'):
             args.filesremote = False
-        if not hasattr(args, 'port'):
-            args.port = 8888
+        
         self.args = args
         self.params = StructDict(
             {'mainScript': args.mainScript,
@@ -66,7 +65,10 @@ if __name__ == "__main__":
                            help='dicom files retrieved from remote server')
     argParser.add_argument('--test', '-t', default=False, action='store_true',
                            help='start webServer in test mode, unsecure')
+    argParser.add_argument('--port', '-o', default="7777", action='store_true', type=str,
+                           help='start webServer in test mode, unsecure')
     args = argParser.parse_args()
+    args.port = int(args.port)
 
     if args.projectName is None:
         raise InvocationError('Must specify project name using -p parameter')
@@ -76,6 +78,7 @@ if __name__ == "__main__":
         args.config = os.path.join(args.projectDir, f'conf/{args.projectName}')
     else:
         args.config = os.path.join(args.projectDir, f'conf/{args.config}')
+
     if args.mainScript is None:
         args.mainScript = os.path.join(args.projectDir, f'{args.projectName}.py')
     if args.initScript is None:
