@@ -65,10 +65,11 @@ if __name__ == "__main__":
                            help='dicom files retrieved from remote server')
     argParser.add_argument('--test', '-t', default=False, action='store_true',
                            help='start webServer in test mode, unsecure')
-    argParser.add_argument('--port', '-o', default="7777", action='store_true', type=str,
-                           help='start webServer in test mode, unsecure')
+    # argParser.add_argument('--port', '-o', default="7777", action='store_true', type=str,
+    #                        help='start webServer in test mode, unsecure')
     args = argParser.parse_args()
-    args.port = int(args.port)
+    # args.port = int(args.port)
+    args.port=7777
 
     if args.projectName is None:
         raise InvocationError('Must specify project name using -p parameter')

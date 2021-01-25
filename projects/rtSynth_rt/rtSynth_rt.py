@@ -365,8 +365,8 @@ def main(argv=None):
     # load the experiment configuration file
     # cfg = loadConfigFile(args.config)
     
-    config="rtSynth_rt.toml" #"sub001.ses1.toml"
-    cfg = cfg_loading(config)
+    # config="rtSynth_rt.toml" #"sub001.ses1.toml"
+    cfg = cfg_loading(args.config)
 
 
     # obtain paths for important directories (e.g. location of dicom files)
