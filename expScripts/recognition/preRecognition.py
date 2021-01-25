@@ -11,9 +11,15 @@ output:
 usage example:
     python expScripts/recognition/preRecognition.py -c pilot_sub001.ses1.toml -r 3
 '''
+import sys
+if 'watts' in os.getcwd():
+    sys.path.append("/home/watts/Desktop/ntblab/kailong/rtSynth_rt/")
+elif 'kailong' in os.getcwd():
+    sys.path.append("/Users/kailong/Desktop/rtEnv/rtSynth_rt/")
+elif 'milgram' in os.getcwd():
+    sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 
 import os
-import sys
 import argparse
 import numpy as np
 import pandas as pd

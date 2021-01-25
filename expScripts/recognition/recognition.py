@@ -9,16 +9,7 @@
 
 
 from __future__ import print_function, division
-import os
-# os.chdir("/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtSynth_repo/kp_scratch/expcode")
-from psychopy import visual, event, core, logging, gui, data, monitors
-from psychopy.hardware.emulator import launchScan, SyncGenerator
-from PIL import Image
-import string
-import numpy as np
-import pandas as pd
 import sys
-
 if 'watts' in os.getcwd():
     sys.path.append("/home/watts/Desktop/ntblab/kailong/rtSynth_rt/")
 elif 'kailong' in os.getcwd():
@@ -27,6 +18,12 @@ elif 'milgram' in os.getcwd():
     sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 
 import os
+from psychopy import visual, event, core, logging, gui, data, monitors
+from psychopy.hardware.emulator import launchScan, SyncGenerator
+from PIL import Image
+import string
+import numpy as np
+import pandas as pd
 import pylink
 import argparse
 import rtCommon.fmrisim as sim
