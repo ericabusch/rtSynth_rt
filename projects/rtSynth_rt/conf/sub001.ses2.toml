@@ -35,3 +35,16 @@ num_total_TRs=174 # number of total TRs in feedback session
 
 TrialNumber= 12 # feedback trial number for a feedback run.
 
+
+plotTitle = 'Realtime Plot'
+plotXLabel = 'Sample #'
+plotYLabel = 'Value'
+plotXRangeLow = 0
+plotXRangeHigh = 20
+plotYRangeLow = -1
+plotYRangeHigh = 1
+plotAutoRangeX = false
+plotAutoRangeY = true
+dicomNamePattern = "001_0000{}_000{}.dcm"
+minExpectedDicomSize=300000
+

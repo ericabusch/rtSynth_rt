@@ -15,7 +15,7 @@ import string
 import fmrisim as sim
 import numpy as np
 import pandas as pd
-import pylink
+import pylink   
 from tqdm import tqdm
 import time
 import re
@@ -35,13 +35,14 @@ argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
 argParser.add_argument('--sess', '-s', default='1', type=str, help='current session')
+argParser.add_argument('--server', '-v', default='localhost:7777', type=str, help='current server')
 args = argParser.parse_args()
 
 cfg = cfg_loading(args.config)
 sub = cfg.subjectName
 run = int(args.run)  # 1
 sess = int(args.sess)
-TR=cfg.TR
+TR=int(cfg.TR)
 
 cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
 
@@ -78,7 +79,6 @@ mywin = visual.Window(
 step=3 #in simulation, how quickly the morph changes ramp up. Note this is only for simulation, has nothing to do with real experiment
 
 # trial_list designing parameters
-TR=2 # the length of a TR is 2s
 parameterRange=np.arange(1,11) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
 TrialNumber=180 # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
@@ -344,10 +344,10 @@ remainImageNumber=[]
 #     parameters=pd.read_csv(feedbackParameterFileName)
 from rtCommon.feedbackReceiver import WsFeedbackReceiver
 WsFeedbackReceiver.startReceiverThread(args.server,
-                                    retryInterval=args.interval,
-                                    username=args.username,
-                                    password=args.password,
-                                    testMode=args.test)
+                                    retryInterval=5,
+                                    username="kp578",
+                                    password="kp578",
+                                    testMode=True)
 
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
