@@ -22,15 +22,26 @@ def cfg_loading(toml=''):
 
     # toml="pilot_sub001.ses1.toml"
     # cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/users/kp578/realtime/rt-cloud/projects/rtSynth_rt/conf/{toml}")
-    toml=toml.split("/")[-1]
+    if len(toml.split("/"))==1:
+        if 'watts' in os.getcwd():
+            toml=f"/home/watts/Desktop/ntblab/kailong/rtSynth_rt/projects/rtSynth_rt/conf/{toml}"
+        elif 'kailong' in os.getcwd():
+            toml=f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/projects/rtSynth_rt/conf/{toml}"
+        elif 'milgram' in os.getcwd():
+            toml=f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}"
+        else:
+            raise Exception('path error')
+    else:
+        toml=toml
+
     if 'watts' in os.getcwd():
-        cfg = utils.loadConfigFile(f"/home/watts/Desktop/ntblab/kailong/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
+        cfg = utils.loadConfigFile(toml)
         cfg.projectDir="/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
     elif 'kailong' in os.getcwd():
-        cfg = utils.loadConfigFile(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
+        cfg = utils.loadConfigFile(toml)
         cfg.projectDir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
     elif 'milgram' in os.getcwd():
-        cfg = utils.loadConfigFile(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/projects/rtSynth_rt/conf/{toml}")
+        cfg = utils.loadConfigFile(toml)
         cfg.projectDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/"
     else: 
         raise Exception('path error')

@@ -341,10 +341,10 @@ def runSession(cfg, pyScript, tag, logType='run'):
     """Run the experimenter provided python script as a separate process."""
     # write out config file for use by pyScript
     if logType == 'run':
-        configFileName = os.path.join(Web.confDir, 'cfg_sub{}_day{}_run{}.toml'.
+        configFileName = os.path.join(Web.confDir, '{}_day{}_run{}.toml'.
                                       format(cfg.subjectName, cfg.subjectDay, cfg.runNum[0]))
     else:
-        configFileName = os.path.join(Web.confDir, 'cfg_sub{}_day{}_{}.toml'.
+        configFileName = os.path.join(Web.confDir, '{}_day{}_{}.toml'.
                                       format(cfg.subjectName, cfg.subjectDay, tag))
     with open(configFileName, 'w+') as fd:
         toml.dump(cfg, fd)

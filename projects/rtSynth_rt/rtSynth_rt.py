@@ -366,6 +366,7 @@ def main(argv=None):
     # cfg = loadConfigFile(args.config)
     
     # config="rtSynth_rt.toml" #"sub001.ses1.toml"
+    print(f"rtSynth_rt: args.config={args.config}")
     cfg = cfg_loading(args.config)
 
 
