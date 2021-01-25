@@ -190,9 +190,7 @@ def doRuns(cfg, fileInterface, subjInterface):
     
     tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
 
-    num_total_TRs = 10  # number of TRs to use for example 1
-    if cfg.isSynthetic:
-        num_total_TRs = cfg.numSynthetic
+    num_total_TRs = cfg.num_total_TRs  # number of TRs to use for example 1
     morphParams = np.zeros((num_total_TRs, 1))
     nift_data=[]
     for this_TR in np.arange(1,num_total_TRs):
