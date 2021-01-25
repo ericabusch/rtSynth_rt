@@ -304,6 +304,9 @@ def doRuns(cfg, fileInterface, subjInterface):
         # save the activations value info into a vector that can be saved later
         morphParams[this_TR] = morphParam
 
+        
+        time.sleep(1.5)
+
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
     output_textFilename = f'{cfg.feedback_dir}morphParam.txt'
