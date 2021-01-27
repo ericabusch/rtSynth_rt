@@ -7,6 +7,6 @@
 #SBATCH -n 1
 module load XNATClientTools
 sess_ID=$1
-cd where-you-want-the-raw-data-to-be
+cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/
 
 ArcGet -host https://xnat-milgram.hpc.yale.edu/ -u kailong -p 563214789Peng! -s $sess_ID
