@@ -124,6 +124,8 @@ if __name__ == "__main__":
         args.projectDir = os.path.join(rootPath, 'projects', args.projectName)
     if args.config is None:
         args.config = os.path.join(args.projectDir, f'conf/{args.projectName}.toml')
+    else:
+        args.config = os.path.join(args.projectDir, f'conf/{args.config}')
     if args.mainScript is None:
         args.mainScript = os.path.join(args.projectDir, f'{args.projectName}.py')
     if args.initScript is None:
