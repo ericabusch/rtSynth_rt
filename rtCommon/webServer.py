@@ -283,14 +283,22 @@ class WsBrowserRequestHandler:
         the script's printed output to the web page's log message area.
         """
         # write out config file for use by pyScript
-        if logType == 'run':
-            configFileName = os.path.join(self.confDir, 'cfg_sub{}_day{}_run{}.toml'.
+        # if logType == 'run':
+        #     configFileName = os.path.join(self.confDir, 'cfg_sub{}_day{}_run{}.toml'.
+        #                                 format(cfg.subjectName, cfg.subjectDay, cfg.runNum[0]))
+        # else:
+        #     configFileName = os.path.join(self.confDir, 'cfg_sub{}_day{}_{}.toml'.
+        #                                 format(cfg.subjectName, cfg.subjectDay, tag))
+        if logType == 'run': #changed by KP
+            configFileName = os.path.join(self.confDir, '{}_day{}_run{}.toml'.
                                         format(cfg.subjectName, cfg.subjectDay, cfg.runNum[0]))
         else:
-            configFileName = os.path.join(self.confDir, 'cfg_sub{}_day{}_{}.toml'.
+            configFileName = os.path.join(self.confDir, '{}_day{}_{}.toml'.
                                         format(cfg.subjectName, cfg.subjectDay, tag))
+
         with open(configFileName, 'w+') as fd:
             toml.dump(cfg, fd)
+
 
         # specify -u python option to disable buffering print commands
         cmdStr = f'python -u {pyScript} -c {configFileName}'
