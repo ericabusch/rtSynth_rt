@@ -3,18 +3,10 @@
 # move and delete all sever data
 
 import os
-import glob
-import numpy as np
-from subprocess import call
-import time
-import nilearn
-from scipy import stats
-import scipy.io as sio
-import pickle
-import nibabel as nib
-import argparse
-import random
 import sys
+import time
+import argparse
+import numpy as np
 from datetime import datetime
 from dateutil import parser
 
@@ -27,10 +19,11 @@ sys.path.append(rootPath)
 #sys.path.append('/jukebox/norman/amennen/github/brainiak/rt-cloud/')
 
 import rtCommon.utils as utils
-from rtCommon.fileClient import FileInterface
-import rtCommon.projectUtils as projUtils
-from rtCommon.structDict import StructDict
-from rtCommon.dicomNiftiHandler import getTransform
+from rtCommon.clientInterface import ClientInterface
+#from rtCommon.dicomNiftiHandler import getTransform
+from rtCommon.imageHandling import getTransform
+from rtCommon.dataInterface import uploadFolderToCloud, uploadFilesFromList
+from rtCommon.errors import RequestError
 
 
 # obtain the full path for the configuration toml file
@@ -82,7 +75,14 @@ def initialize(cfg, args):
     cfg.wf_dir = cfg.local.wf_dir
     cfg.n_masks = len(cfg.MASK)
 
-    if args.filesremote: # here we will need to specify separate paths for processing
+    # Copy mask files to registration directory
+    if not os.path.exists(cfg.local.subject_reg_dir):
+        os.makedirs(cfg.local.subject_reg_dir)
+    if not os.path.exists(cfg.local.wf_dir):
+        os.makedirs(cfg.local.wf_dir)
+    os.system(f'cp {cfg.local.maskDir}/* {cfg.local.subject_reg_dir}')
+
+    if args.dataRemote: # here we will need to specify separate paths for processing
         cfg.server.codeDir = os.path.join(cfg.server.rtcloudDir, 'projects', cfg.projectName)
         cfg.server.dataDir = os.path.join(cfg.server.codeDir, cfg.server.serverDataDir)
         cfg.server.subject_full_day_path = os.path.join(cfg.server.dataDir, cfg.bids_id, cfg.ses_id)
@@ -140,7 +140,7 @@ def buildSubjectFoldersOnServer(cfg):
 ####################################################################################
 # from initialize import *
 # defaultConfig = 'conf/amygActivation.toml'
-# args = StructDict({'config':defaultConfig, 'runs': '1', 'scans': '9', 'commpipe': None, 'filesremote': True})
+# args = StructDict({'config':defaultConfig, 'runs': '1', 'scans': '9'})
 ####################################################################################
 
 def main(argv=None):
@@ -148,7 +148,7 @@ def main(argv=None):
     This is the main function that is called when you run 'intialize.py'.
     
     Here, you will load the configuration settings specified in the toml configuration 
-    file, initiate the class fileInterface, and set up some directories and other 
+    file, initiate the class dataInterface, and set up some directories and other 
     important things through 'initialize()'
     """
 
@@ -156,46 +156,40 @@ def main(argv=None):
     argParser = argparse.ArgumentParser()
     argParser.add_argument('--config', '-c', default=defaultConfig, type=str,
                            help='experiment config file (.json or .toml)')
-    # This parameter is used for projectInterface
-    argParser.add_argument('--commpipe', '-q', default=None, type=str,
-                           help='Named pipe to communicate with projectInterface')
-    argParser.add_argument('--filesremote', '-x', default=False, action='store_true',
-                           help='retrieve files from the remote server')
-    argParser.add_argument('--addr', '-a', default='localhost', type=str, 
-               help='server ip address')
     argParser.add_argument('--runs', '-r', default='', type=str,
                        help='Comma separated list of run numbers')
     argParser.add_argument('--scans', '-s', default='', type=str,
                        help='Comma separated list of scan number')
     args = argParser.parse_args(argv)
 
+    print('Initializing directories and configurations')
+
+    # establish the RPC connection to the projectInterface
+    clientInterface = ClientInterface()
+    dataInterface = clientInterface.dataInterface
+    args.dataRemote = clientInterface.isDataRemote()
+
     # load the experiment configuration file
     cfg = utils.loadConfigFile(args.config)
     cfg = initialize(cfg, args)
 
     # build subject folders on server
-    if args.filesremote:
+    if args.dataRemote:
+        print('Files Remote Case')
+
         buildSubjectFoldersOnServer(cfg)
 
-        # open up the communication pipe using 'projectInterface'
-        projectComm = projUtils.initProjectComm(args.commpipe, args.filesremote)
-
-        # initiate the 'fileInterface' class, which will allow you to read and write 
-        #   files and many other things using functions found in 'fileClient.py'
-        #   INPUT:
-        #       [1] args.filesremote (to retrieve dicom files from the remote server)
-        #       [2] projectComm (communication pipe that is set up above)
-        fileInterface = FileInterface(filesremote=args.filesremote, commPipes=projectComm)
-
         # next, transfer transformation files from local --> server for online processing
-        projUtils.uploadFolderToCloud(fileInterface,cfg.local.wf_dir,cfg.server.wf_dir)
+        uploadFolderToCloud(dataInterface, cfg.local.wf_dir, cfg.server.wf_dir)
 
         # upload ROI folder to cloud server - we would need to do this if we were using
         # a standard mask, but we're not in this case
-        #projUtils.uploadFolderToCloud(fileInterface,cfg.local.maskDir,cfg.server.maskDir)
+        #uploadFolderToCloud(dataInterface, cfg.local.maskDir, cfg.server.maskDir)
 
         # upload all transformed masks to the cloud
-        projUtils.uploadFilesFromList(fileInterface,cfg.local_MASK_transformed,cfg.subject_reg_dir)
+        uploadFilesFromList(dataInterface, cfg.local_MASK_transformed, cfg.subject_reg_dir)
+
+    print('Initialization Complete!')
     return 0
 
 if __name__ == "__main__":
