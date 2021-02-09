@@ -66,6 +66,7 @@ sys.path.append(rootPath)
 from rtCommon.utils import loadConfigFile, stringPartialFormat
 from rtCommon.clientInterface import ClientInterface
 from rtCommon.imageHandling import readRetryDicomFromDataInterface, convertDicomImgToNifti
+from rtCommon.dataInterface import DataInterface #added by QL
 
 # obtain the full path for the configuration toml file
 defaultConfig = os.path.join(currPath, 'conf/sample.toml')
@@ -315,7 +316,9 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     #   we're going to save things as .txt and .mat files
     output_textFilename = '/tmp/cloud_directory/tmp/avg_activations.txt'
     output_matFilename = os.path.join('/tmp/cloud_directory/tmp/avg_activations.mat')
-
+    output_textFilename = '/gpfs/milgram/pi/turk-browne/projects/rt-cloud/projects/sample/dicomDir/20190219.0219191_faceMatching.0219191_faceMatching/avg_activations.txt'
+    output_matFilename = os.path.join('/gpfs/milgram/pi/turk-browne/projects/rt-cloud/projects/sample/dicomDir/20190219.0219191_faceMatching.0219191_faceMatching/avg_activations.mat')
+    
     # use 'putFile' from the dataInterface to save the .txt file
     #   INPUT:
     #       [1] filename (full path!)
@@ -388,9 +391,14 @@ def main(argv=None):
     # a subjectInterface for giving feedback, and a webInterface
     # for updating what is displayed on the experimenter's webpage.
     clientInterfaces = ClientInterface(yesToPrompts=args.yesToPrompts)
-    dataInterface = clientInterfaces.dataInterface
+    #dataInterface = clientInterfaces.dataInterface
     subjInterface = clientInterfaces.subjInterface
     webInterface  = clientInterfaces.webInterface
+
+    ## Added by QL
+    allowedDirs = ['/gpfs/milgram/pi/turk-browne/projects/rt-cloud/projects/sample/dicomDir/20190219.0219191_faceMatching.0219191_faceMatching','/gpfs/milgram/project/turk-browne/projects/rt-cloud/projects/sample', '/gpfs/milgram/project/turk-browne/projects/rt-cloud/projects/sample/dicomDir']
+    allowedFileTypes = ['.txt', '.dcm']
+    dataInterface = DataInterface(dataRemote=False,allowedDirs=allowedDirs,allowedFileTypes=allowedFileTypes) # Create an instance of local datainterface
 
     # Also try the placeholder for bidsInterface (an upcoming feature)
     bidsInterface = clientInterfaces.bidsInterface
@@ -426,3 +434,5 @@ if __name__ == "__main__":
     """
     main()
     sys.exit(0)
+
+
