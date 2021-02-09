@@ -388,7 +388,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         print(""
         "-----------------------------------------------------------------------------\n"
         "• save activation value as a text file to tmp folder")
-    fileInterface.putTextFile(output_textFilename,str(morphParams))
+    dataInterface.putFile(output_textFilename,str(morphParams))
 
     # use sio.save mat from scipy to save the matlab file
     if verbose:
