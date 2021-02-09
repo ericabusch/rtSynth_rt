@@ -396,8 +396,8 @@ def main(argv=None):
     webInterface  = clientInterfaces.webInterface
 
     ## Added by QL
-    allowedDirs = ['/gpfs/milgram/pi/turk-browne/projects/rt-cloud/projects/sample/dicomDir/20190219.0219191_faceMatching.0219191_faceMatching','/gpfs/milgram/project/turk-browne/projects/rt-cloud/projects/sample', '/gpfs/milgram/project/turk-browne/projects/rt-cloud/projects/sample/dicomDir']
-    allowedFileTypes = ['.txt', '.dcm']
+    allowedDirs = ['*'] #['/gpfs/milgram/pi/turk-browne/projects/rt-cloud/projects/sample/dicomDir/20190219.0219191_faceMatching.0219191_faceMatching','/gpfs/milgram/project/turk-browne/projects/rt-cloud/projects/sample', '/gpfs/milgram/project/turk-browne/projects/rt-cloud/projects/sample/dicomDir']
+    allowedFileTypes = ['*'] #['.txt', '.dcm']
     dataInterface = DataInterface(dataRemote=False,allowedDirs=allowedDirs,allowedFileTypes=allowedFileTypes) # Create an instance of local datainterface
 
     # Also try the placeholder for bidsInterface (an upcoming feature)
