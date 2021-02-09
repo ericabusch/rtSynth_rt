@@ -440,7 +440,7 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
 
     # select a list of run IDs based on the runRecording.csv, actualRuns would be [1,2] is the 1st and the 3rd runs are recognition runs.
     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
-    actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
+    actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])[:2]
     for curr_run in actualRuns:
         outputFileNames=[]
         runTRs=glob(f"{tmp_dir}001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
@@ -551,7 +551,6 @@ def morphingTarget(cfg):
         label.append(imcodeDict[META['Item'].iloc[curr_trial]])
     META['label']=label # merge the label column with the data dataframe
 
-    # evidence_floor is C evidence for AC_CD BC_CD CD_CD classifier(can also be D evidence for CD classifier)
 
     def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
         # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
@@ -562,6 +561,7 @@ def morphingTarget(cfg):
     A_ID = (META['label']=='bed')
     X = FEAT[A_ID]
 
+    # evidence_floor is C evidence for AC_CD BC_CD CD_CD classifier(can also be D evidence for CD classifier)
     Y = ['table'] * X.shape[0]
     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
@@ -634,3 +634,25 @@ def morphingTarget(cfg):
     #             # Monitor progress by printing accuracy (only useful if you're running a test set)
     #             acc = clf.score(testX, testY)
     #             print(naming, acc)
+
+
+def Wait(waitfor, delay=1):
+    while not os.path.exists(waitfor):
+        time.sleep(delay)
+        print('waiting for {}'.format(waitfor))
+        
+
+def fetchXnat(sess_ID):
+    "rtSynth_sub001"
+    "rtSynth_sub001_ses2"
+    import subprocess
+    from subprocess import call
+    rawPath="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/"
+    proc = subprocess.Popen([f'sbatch {rawPath}../fetchXNAT.sh {sess_ID}'],shell=True)
+
+    Wait(f"{rawPath}{sess_ID}.zip")
+    call(f"unzip {rawPath}{sess_ID}.zip")
+    time.sleep(10)
+    proc = subprocess.Popen([f'sbatch {rawPath}../change2nifti.sh {sess_ID}'],shell=True)
+
+    # furthur work need to be done with this resulting nifti folder

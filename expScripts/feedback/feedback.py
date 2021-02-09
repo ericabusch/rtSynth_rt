@@ -204,8 +204,15 @@ def sample(L,num=10):
     return newList
 
 
-# preload image list for parameter from 1 to 10.
+# preload image list for parameter from 1 to 19.
 def preloadimages(parameterRange=np.arange(1,20),tune=1):
+    '''
+    purpose:
+        preload images into image object sequences corrresponding too each parameter
+        each parameter corresponds to 40 image objects
+    steps:
+
+    '''
     tune=tune-1
     start = time.time()
     imageLists={}
@@ -348,7 +355,7 @@ WsFeedbackReceiver.startReceiverThread(args.server,
                                     username="kp578",
                                     password="kp578",
                                     testMode=True)
-
+default_parameter=19
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -366,7 +373,12 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
             runId,trID,value,timestamp=feedbackMsg.get('runId'),\
                 feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
-            parameter=value
+
+            if value==None:
+                parameter = default_parameter
+            else:
+                parameter = value
+
             # print('feedbackParameterFileName=',feedbackParameterFileName)
             # parameters=pd.read_csv(feedbackParameterFileName)
             # if curr_parameter>(len(parameters['value'])-1):
@@ -374,7 +386,8 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # curr_parameter=(len(parameters['value'])-1)
             # parameter=parameters['value'].iloc[curr_parameter]
             # print('curr_parameter=',curr_parameter)
-            print('parameter=',parameter)
+            # print('parameter=',parameter)
+            print(f'TR[0]={TR[0]},trID={trID},parameter={parameter},timestamp={timestamp},runId={runId}')
 
             # curr_parameter=curr_parameter+1
             # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
