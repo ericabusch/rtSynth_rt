@@ -239,6 +239,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     num_total_TRs = cfg.num_total_TRs  # number of TRs to use for example 1
     morphParams = np.zeros((num_total_TRs, 1))
     nift_data=[]
+    B_evidences=[]
     for this_TR in np.arange(1,num_total_TRs):
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
         timeout_file = 5 # small number because of demo, can increase for real-time
@@ -352,9 +353,11 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         BD_B_evidence = classifierEvidence(BD_clf,X,Y)[0]
         print(f"BC_B_evidence={BC_B_evidence}")
         print(f"BD_B_evidence={BD_B_evidence}")
-        print(f"(BC_B_evidence+BD_B_evidence)/2={(BC_B_evidence+BD_B_evidence)/2}")
+        B_evidence = (BC_B_evidence+BD_B_evidence)/2
+        print(f"(BC_B_evidence+BD_B_evidence)/2={B_evidence}")
         print(f"mu={mu}, sig={sig}")
-        morphParam=gaussian((BC_B_evidence+BD_B_evidence)/2, mu, sig)
+        morphParam=gaussian(B_evidence, mu, sig)
+        B_evidences.append(B_evidence)
         print(f"morphParam={morphParam}")
 
 
@@ -370,11 +373,14 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         if verbose:
             print("| send result to the web, plotted in the 'Data Plots' tab")
-        webInterface.plotDataPoint(runNum, int(this_TR), morphParam)
+        webInterface.plotDataPoint(runNum, int(this_TR), B_evidence)
 
         # save the activations value info into a vector that can be saved later
         morphParams[this_TR] = morphParam
+
         dataInterface.putFile(output_textFilename,str(morphParams))
+        np.save(f'{cfg.feedback_dir}B_evidences_{scanNum}',B_evidences)
+        
 
         
         # time.sleep(1.5)

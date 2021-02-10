@@ -47,7 +47,7 @@ from glob import glob
 import shutil
 import pandas as pd
 # from import convertDicomFileToNifti
-from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti, readDicomFromFile
+from rtCommon.imageHandling import convertDicomImgToNifti, readDicomFromFile
 from rtCommon.cfg_loading import mkdir,cfg_loading
 
 # setting up code testing environment: 
@@ -235,7 +235,7 @@ def minimalClass(cfg):
     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])]) # can be [1,2,3,4,5,6,7,8] or [1,2,4,5]
     if len(actualRuns) < 8:
-        runRecording_preDay = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/../runRecording.csv")
+        runRecording_preDay = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/../runRecording.csv")
         actualRuns_preDay = list(runRecording_preDay['run'].iloc[list(np.where(1==1*(runRecording_preDay['type']=='recognition'))[0])])[-(8-len(actualRuns)):] # might be [5,6,7,8]
     else: 
         actualRuns_preDay = []
@@ -263,6 +263,10 @@ def minimalClass(cfg):
         behav_data = pd.concat([behav_data,t])
 
     FEAT=brain_data.reshape(brain_data.shape[0],-1)
+    print(f"FEAT.shape={FEAT.shape}")
+    FEAT_mean=np.mean(FEAT,axis=1)
+    FEAT=(FEAT.T-FEAT_mean).T
+
     META=behav_data
 
     # convert item colume to label colume

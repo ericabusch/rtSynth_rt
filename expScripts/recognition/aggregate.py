@@ -36,11 +36,11 @@ import pydicom as dicom  # type: ignore
 from glob import glob
 import shutil
 from nilearn.image import new_img_like
-import rtCommon.utils as utils
-from rtCommon.utils import loadConfigFile
-from rtCommon.fileClient import FileInterface
-import rtCommon.projectUtils as projUtils
-from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
+# import rtCommon.utils as utils
+# from rtCommon.utils import loadConfigFile
+# from rtCommon.fileClient import FileInterface
+# import rtCommon.projectUtils as projUtils
+# from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 from rtCommon.cfg_loading import mkdir,cfg_loading
 
 

@@ -15,6 +15,11 @@ steps:
     convert the standard brain to the individual functional tempalte 
 
 '''
+module load AFNI/2018.08.28
+module load FSL
+source /gpfs/milgram/apps/hpc.rhel7/software/FSL/6.0.0-centos7_64/etc/fslconf/fsl.sh
+module load miniconda
+source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
 
 set -e #stop immediately encountering error

@@ -24,9 +24,9 @@ from nilearn.image import new_img_like
 import joblib
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
-from rtCommon.fileClient import FileInterface
+# from rtCommon.fileClient import FileInterface
 import rtCommon.projectUtils as projUtils
-from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
+# from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')

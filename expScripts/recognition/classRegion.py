@@ -21,8 +21,8 @@ input:
 
 '''
 
-
 import os
+print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}") 
 import sys
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 import argparse
@@ -40,9 +40,9 @@ from nilearn.image import new_img_like
 import joblib
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
-from rtCommon.fileClient import FileInterface
+# from rtCommon.fileClient import FileInterface
 import rtCommon.projectUtils as projUtils
-from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
+# from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
 toml=sys.argv[1]
 from rtCommon.cfg_loading import mkdir,cfg_loading
@@ -51,6 +51,13 @@ cfg = cfg_loading(toml)
 runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
 cfg.actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
 
+if len(cfg.actualRuns) < 8:
+    runRecording_preDay = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/../runRecording.csv")
+    cfg.actualRuns_preDay = list(runRecording_preDay['run'].iloc[list(np.where(1==1*(runRecording_preDay['type']=='recognition'))[0])])[-(8-len(cfg.actualRuns)):] # might be [5,6,7,8]
+else: 
+    cfg.actualRuns_preDay = []
+
+assert len(cfg.actualRuns_preDay)+len(cfg.actualRuns)==8 
 
 import nibabel as nib
 import numpy as np
@@ -159,6 +166,39 @@ for run_i,run in enumerate(cfg.actualRuns):
     
     # Read in the metadata, and reduce it to only the TR values from this run, add to a list
     thismeta = pd.read_csv(f"{cfg.recognition_dir}{cfg.subjectName}_{run_i+1}.csv")
+
+    TR_num = list(thismeta.TR.astype(int))
+    labels = list(thismeta.Item)
+    labels = [None if type(label)==float else imcodeDict[label] for label in labels]
+
+
+    print("LENGTH OF TR: {}".format(len(TR_num)))
+    # Load the functional data
+    runIm = nib.load(this4d)
+    affine_mat = runIm.affine
+    runImDat = runIm.get_data()
+    
+    # Use the TR numbers to select the correct features
+    features = [runImDat[:,:,:,n+2] for n in TR_num]
+    features = np.array(features)
+    features = features[:, mask==1]
+    print("shape of features", features.shape, "shape of mask", mask.shape)
+    featmean = features.mean(1)[..., None]
+    features = features - featmean
+    # features = np.expand_dims(features, 0)
+    
+    # Append both so we can use it later
+    metas.append(labels)
+    runs.append(features) # if run_i == 0 else np.concatenate((runs, features))
+
+for run_i,run in enumerate(cfg.actualRuns_preDay):
+    print(run, end='--')
+    
+    # Build the path for the preprocessed functional data
+    this4d = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/run{run}.nii.gz" # run data
+    
+    # Read in the metadata, and reduce it to only the TR values from this run, add to a list
+    thismeta = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/{cfg.subjectName}_{run_i+1}.csv")
 
     TR_num = list(thismeta.TR.astype(int))
     labels = list(thismeta.Item)
