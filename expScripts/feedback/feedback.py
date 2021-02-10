@@ -28,7 +28,7 @@ from rtCommon.wsRemoteService import WsRemoteService, parseConnectionArgs
 from rtCommon.utils import installLoggers
 from rtCommon.cfg_loading import mkdir,cfg_loading
 
-if False:
+if True:
     scanmode = 'Scan'  # 'Scan' or 'Test' or None
     screenmode = True  # fullscr True or False
     monitor_name = "scanner"
