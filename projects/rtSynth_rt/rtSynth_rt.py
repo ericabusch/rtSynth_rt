@@ -139,11 +139,11 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         "Allowed file types: %s" %allowedFileTypes)
 
     # obtain the path for the directory where the subject's dicoms live
-    if cfg.isSynthetic:
-        cfg.dicomDir = cfg.imgDir
-    else:
-        subj_imgDir = "{}.{}.{}".format(cfg.datestr, cfg.subjectName, cfg.subjectName)
-        cfg.dicomDir = os.path.join(cfg.imgDir, subj_imgDir)
+    # if cfg.isSynthetic:
+    #     cfg.dicomDir = cfg.imgDir
+    # else:
+    #     subj_imgDir = "{}.{}.{}".format(cfg.datestr, cfg.subjectName, cfg.subjectName)
+    #     cfg.dicomDir = os.path.join(cfg.imgDir, subj_imgDir)
     if verbose:
         print("Location of the subject's dicoms: \n" + cfg.dicomDir + "\n"
         "-----------------------------------------------------------------------------")
@@ -297,7 +297,9 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
 
         # save(f"{tmp_dir}niftiObject")
-        niiFileName=f"{tmp_dir}{fileName.split('/')[-1].split('.')[0]}.nii"
+        # niiFileName=f"{tmp_dir}{fileName.split('/')[-1].split('.')[0]}.nii"
+        niiFileName= tmp_dir+cfg.dicomNamePattern.format(SCAN=scanNum,TR=this_TR).split('.')[0] + ".nii"
+        print(f"niiFileName={niiFileName}")
         nib.save(niftiObject, niiFileName)  
         # align -in f"{tmp_dir}niftiObject" -ref cfg.templateFunctionalVolume_converted -out f"{tmp_dir}niftiObject"
         command = f"3dvolreg \
@@ -367,7 +369,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             print("| send result to the web, plotted in the 'Data Plots' tab")
         webInterface.plotDataPoint(runNum, int(this_TR), morphParam)
 
-        fileInterface.putTextFile("/tmp/test.txt",str(morphParam))
+        dataInterface.putFile("/tmp/test.txt",str(morphParam))
 
         # save the activations value info into a vector that can be saved later
         morphParams[this_TR] = morphParam
@@ -469,9 +471,9 @@ def main(argv=None):
     print(res)
 
     # obtain paths for important directories (e.g. location of dicom files)
-    if cfg.imgDir is None:
-        cfg.imgDir = os.path.join(currPath, 'dicomDir')
-    cfg.codeDir = currPath
+    # if cfg.imgDir is None:
+    #     cfg.imgDir = os.path.join(currPath, 'dicomDir')
+    # cfg.codeDir = currPath
 
     # now that we have the necessary variables, call the function 'doRuns' in order
     #   to actually start reading dicoms and doing your analyses of interest!
