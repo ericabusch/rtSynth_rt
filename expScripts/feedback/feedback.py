@@ -32,10 +32,12 @@ if False:
     scanmode = 'Scan'  # 'Scan' or 'Test' or None
     screenmode = True  # fullscr True or False
     monitor_name = "scanner"
+    prange=20
 else:
     scanmode = 'Test'  # 'Scan' or 'Test' or None
     screenmode = False  # fullscr True or False
     monitor_name = "testMonitor" #"testMonitor"
+    prange=11
 
 
 class SubjectService:
@@ -124,7 +126,7 @@ mywin = visual.Window(
 step=3 #in simulation, how quickly the morph changes ramp up. Note this is only for simulation, has nothing to do with real experiment
 
 # trial_list designing parameters
-parameterRange=np.arange(1,11) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
+parameterRange=np.arange(1,prange) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
 TrialNumber=180 # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
 
