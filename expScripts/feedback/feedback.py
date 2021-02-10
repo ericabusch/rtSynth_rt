@@ -75,11 +75,11 @@ argParser.add_argument('-s', action="store", dest="server", default="localhost:7
 
 argParser.add_argument('-i', action="store", dest="interval", type=int, default=5,
                     help="Retry connection interval (seconds)")
-argParser.add_argument('-u', '--username', action="store", dest="username", default='',
+argParser.add_argument('-u', '--username', action="store", dest="username", default='kp578',
                     help="rtcloud website username")
-argParser.add_argument('-p', '--password', action="store", dest="password", default='',
+argParser.add_argument('-p', '--password', action="store", dest="password", default='kp578',
                     help="rtcloud website password")
-argParser.add_argument('--test', default=True, action='store_true',
+argParser.add_argument('--test', default=False, action='store_true',
                     help='Use unsecure non-encrypted connection')
 args = argParser.parse_args()
 
