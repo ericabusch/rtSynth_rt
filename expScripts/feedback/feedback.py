@@ -64,11 +64,13 @@ class SubjectService:
 
 
 argParser = argparse.ArgumentParser()
+
 argParser.add_argument('-c', '--config', action="store", dest="config", default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('-r', '--run', action="store", dest="run", default='1', type=str, help='current run')
 argParser.add_argument('-e', '--sess', action="store", dest="sess", default='1', type=str, help='current session')
 argParser.add_argument('-s', action="store", dest="server", default="localhost:7777",
                     help="Server Address with Port [server:port]")
+
 argParser.add_argument('-i', action="store", dest="interval", type=int, default=5,
                     help="Retry connection interval (seconds)")
 argParser.add_argument('-u', '--username', action="store", dest="username", default='kp578',

@@ -25,7 +25,7 @@ Finally, this script is called from 'projectMain.py', which is called from
 
 -----------------------------------------------------------------------------"""
 
-verbose = True
+verbose = False
 useInitWatch = True
 
 if verbose:
