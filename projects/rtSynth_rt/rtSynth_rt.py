@@ -386,7 +386,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         
 
         
-        # time.sleep(1.5)
+        time.sleep(1.5)
 
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
