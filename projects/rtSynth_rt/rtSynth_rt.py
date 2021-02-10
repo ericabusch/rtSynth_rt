@@ -232,6 +232,10 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
     tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
 
+    # where the morphParams are saved
+    output_textFilename = f'{cfg.feedback_dir}morphParam_{scanNum}.txt'
+    output_matFilename = os.path.join(f'{cfg.feedback_dir}morphParam_{scanNum}.mat')
+
     num_total_TRs = cfg.num_total_TRs  # number of TRs to use for example 1
     morphParams = np.zeros((num_total_TRs, 1))
     nift_data=[]
@@ -294,7 +298,6 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             print("| convert dicom data into a nifti object")
         niftiObject = dicomreaders.mosaic_to_nii(dicomData)
         # print(f"niftiObject={niftiObject}")
-
 
         # save(f"{tmp_dir}niftiObject")
         # niiFileName=f"{tmp_dir}{fileName.split('/')[-1].split('.')[0]}.nii"
@@ -369,18 +372,16 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             print("| send result to the web, plotted in the 'Data Plots' tab")
         webInterface.plotDataPoint(runNum, int(this_TR), morphParam)
 
-        dataInterface.putFile("/tmp/test.txt",str(morphParam))
-
         # save the activations value info into a vector that can be saved later
         morphParams[this_TR] = morphParam
+        dataInterface.putFile(output_textFilename,str(morphParams))
 
         
-        time.sleep(1.5)
+        # time.sleep(1.5)
 
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
-    output_textFilename = f'{cfg.feedback_dir}morphParam.txt'
-    output_matFilename = os.path.join(f'{cfg.feedback_dir}morphParam.mat')
+    
 
     # use 'putTextFile' from 'fileClient.py' to save the .txt file
     #   INPUT:
