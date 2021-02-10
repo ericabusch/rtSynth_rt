@@ -46,7 +46,8 @@ def cfg_loading(toml=''):
     else: 
         raise Exception('path error')
     
-    cfg.tmp_folder="/gpfs/milgram/scratch60/turk-browne/kp578/rtcloud_rt/"
+    # cfg.tmp_folder="/gpfs/milgram/scratch60/turk-browne/kp578/rtcloud_rt/"
+    cfg.tmp_folder="/tmp/" # for speeding up, use the storage on the local memory unit
     cfg.orderFolder=f'{cfg.projectDir}expScripts/recognition/orders/'
     cfg.subjects_dir=f'{cfg.projectDir}subjects/'
     cfg.dicom_folder="/gpfs/milgram/project/realtime/DICOM/"
