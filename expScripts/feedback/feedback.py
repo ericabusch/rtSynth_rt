@@ -1,12 +1,12 @@
 # This code should be run in console room computer to display the feedback morphings
 from __future__ import print_function, division
-#os.chdir("/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtSynth_repo/kp_scratch/expcode")
 import os
 if 'watts' in os.getcwd():
     main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
 else:
     main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
 import sys
+sys.path.append(main_dir)
 sys.path.append(main_dir+"expScripts/feedback/")
 from psychopy import visual, event, core, logging, gui, data, monitors
 from psychopy.hardware.emulator import launchScan, SyncGenerator
@@ -19,32 +19,14 @@ import pylink
 from tqdm import tqdm
 import time
 import re
+import logging
+import threading
 import argparse
 alpha = string.ascii_uppercase
-
-if 'watts' in os.getcwd():
-    main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
-else:
-    main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
-
-# startup parameters
-sys.path.append(main_dir)
+from rtCommon.subjectInterface import SubjectInterface
+from rtCommon.wsRemoteService import WsRemoteService, parseConnectionArgs
+from rtCommon.utils import installLoggers
 from rtCommon.cfg_loading import mkdir,cfg_loading
-
-argParser = argparse.ArgumentParser()
-argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
-argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
-argParser.add_argument('--sess', '-s', default='1', type=str, help='current session')
-argParser.add_argument('--server', '-v', default='localhost:7777', type=str, help='current server')
-args = argParser.parse_args()
-
-cfg = cfg_loading(args.config)
-sub = cfg.subjectName
-run = int(args.run)  # 1
-sess = int(args.sess)
-TR=int(cfg.TR)
-
-cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
 
 if False:
     scanmode = 'Scan'  # 'Scan' or 'Test' or None
@@ -55,11 +37,72 @@ else:
     screenmode = False  # fullscr True or False
     monitor_name = "testMonitor" #"testMonitor"
 
+
+class SubjectService:
+    def __init__(self, args, webSocketChannelName='wsSubject'):
+        """
+        Uses the WsRemoteService framework to parse connection-related args and establish
+        a connection to a remote projectServer. Instantiates a local version of
+        SubjectInterface to handle client requests coming from the projectServer connection.
+        Args:
+            args: Argparse args related to connecting to the remote server. These include
+                "-s <server>", "-u <username>", "-p <password>", "--test",
+                "-i <retry-connection-interval>"
+            webSocketChannelName: The websocket url extension used to connecy and communicate
+                to the remote projectServer, 'wsSubject' will connect to 'ws://server:port/wsSubject'
+        """
+        self.subjectInterface = SubjectInterface(subjectRemote=False)
+        self.wsRemoteService = WsRemoteService(args, webSocketChannelName)
+        self.wsRemoteService.addHandlerClass(SubjectInterface, self.subjectInterface)
+
+    def runDetached(self):
+        """Starts the receiver in it's own thread."""
+        self.recvThread = threading.Thread(name='recvThread',
+                                           target=self.wsRemoteService.runForever)
+        self.recvThread.setDaemon(True)
+        self.recvThread.start()
+
+
+argParser = argparse.ArgumentParser()
+argParser.add_argument('-c', '--config', action="store", dest="config", default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('-r', '--run', action="store", dest="run", default='1', type=str, help='current run')
+argParser.add_argument('-e', '--sess', action="store", dest="sess", default='1', type=str, help='current session')
+argParser.add_argument('-s', action="store", dest="server", default="localhost:7777",
+                    help="Server Address with Port [server:port]")
+argParser.add_argument('-i', action="store", dest="interval", type=int, default=5,
+                    help="Retry connection interval (seconds)")
+argParser.add_argument('-u', '--username', action="store", dest="username", default='kp578',
+                    help="rtcloud website username")
+argParser.add_argument('-p', '--password', action="store", dest="password", default='kp578',
+                    help="rtcloud website password")
+argParser.add_argument('--test', default=False, action='store_true',
+                    help='Use unsecure non-encrypted connection')
+args = argParser.parse_args()
+
+if not re.match(r'.*:\d+', args.server):
+    print("Error: Expecting server address in the form <servername:port>")
+    argParser.print_help()
+    sys.exit()
+
+# Check if the ssl certificate is valid for this server address
+from rtCommon.projectUtils import login, certFile, checkSSLCertAltName, makeSSLCertFile
+addr, _ = args.server.split(':')
+if checkSSLCertAltName(certFile, addr) is False:
+    # Addr not listed in sslCert, recreate ssl Cert
+    makeSSLCertFile(addr)
+
+
+cfg = cfg_loading(args.config)
+sub = cfg.subjectName
+run = int(args.run)  # 1
+sess = int(args.sess)
+
+cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
+
 gui = True if screenmode == False else False
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
-TRduration=2.0
-
+TRduration=int(cfg.TR)
 
 # mywin = visual.Window(
     # size=[1280, 800], fullscr=screenmode, screen=0,
@@ -106,7 +149,7 @@ for currTrial in range(1,1+TrialNumber):
                                     'state':'ITI',
                                     'newWobble':0},
                                     ignore_index=True)
-        curTime=curTime+TR
+        curTime=curTime+TRduration
         curTR=curTR+1
 
     # waiting for metric calculation
@@ -117,7 +160,7 @@ for currTrial in range(1,1+TrialNumber):
                                     'state':'waiting',
                                     'newWobble':0},
                                     ignore_index=True)
-        curTime=curTime+TR
+        curTime=curTime+TRduration
         curTR=curTR+1
     
     # feedback trial: try minimize the whobbling
@@ -128,7 +171,7 @@ for currTrial in range(1,1+TrialNumber):
                                     'state':'feedback',
                                     'newWobble':1},
                                     ignore_index=True)
-        curTime=curTime+TR
+        curTime=curTime+TRduration
         curTR=curTR+1
 
 # ITI
@@ -139,7 +182,7 @@ for i in range(6): # should be 6TR=12s
                                 'state':'ITI',
                                 'newWobble':0},
                                 ignore_index=True)
-    curTime=curTime+TR
+    curTime=curTime+TRduration
     curTR=curTR+1
 
 # for currTrial in range(1,1+TrialNumber):
@@ -349,12 +392,24 @@ remainImageNumber=[]
 #         print(f'waiting parameters nan')
 #     _+=1
 #     parameters=pd.read_csv(feedbackParameterFileName)
-from rtCommon.feedbackReceiver import WsFeedbackReceiver
-WsFeedbackReceiver.startReceiverThread(args.server,
-                                    retryInterval=5,
-                                    username="kp578",
-                                    password="kp578",
-                                    testMode=True)
+
+# from rtCommon.feedbackReceiver import WsFeedbackReceiver
+# WsFeedbackReceiver.startReceiverThread(args.server,
+#                                     retryInterval=5,
+#                                     username="kp578",
+#                                     password="kp578",
+#                                     testMode=True)
+
+installLoggers(logging.INFO, logging.INFO, filename=f'{cfg.feedback_dir}SubjectService_{run}_{sess}.log')
+
+# parse connection args
+# These include: "-s <server>", "-u <username>", "-p <password>", "--test",
+#   "-i <retry-connection-interval>"
+# connectionArgs = parseConnectionArgs()
+
+subjectService = SubjectService(args)
+subjectService.runDetached()
+
 default_parameter=19
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
@@ -370,9 +425,9 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         print(states[0])
         if states[0] == 'feedback' and newWobble[0]==1:
             # fetch parameter from preprocessing process on Milgram       
-            feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
-            runId,trID,value,timestamp=feedbackMsg.get('runId'),\
-                feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
+            # feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
+            feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=None)
+            runId,trID,value,timestamp=feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
 
             if value==None:
                 parameter = default_parameter
