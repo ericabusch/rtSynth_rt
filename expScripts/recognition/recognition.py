@@ -9,7 +9,7 @@
 
 
 from __future__ import print_function, division
-import sys
+import sys,os
 if 'watts' in os.getcwd():
     sys.path.append("/home/watts/Desktop/ntblab/kailong/rtSynth_rt/")
 elif 'kailong' in os.getcwd():
