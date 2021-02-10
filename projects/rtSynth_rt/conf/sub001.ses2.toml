@@ -40,11 +40,11 @@ plotTitle = 'Realtime Plot'
 plotXLabel = 'Sample #'
 plotYLabel = 'Value'
 plotXRangeLow = 0
-plotXRangeHigh = 20
-plotYRangeLow = -1
-plotYRangeHigh = 1
+plotXRangeHigh = 176
+plotYRangeLow = 0
+plotYRangeHigh = 20
 plotAutoRangeX = false
 plotAutoRangeY = true
-dicomNamePattern = "001_{SCAN:06d}_{TR:06d}.dcm"
+# dicomNamePattern = "001_{SCAN:06d}_{TR:06d}.dcm"
 minExpectedDicomSize=300000
 
