@@ -337,7 +337,10 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         print(f"mask.shape={mask.shape}")
         print(f"np.sum(mask)={np.sum(mask)}")
         X = nift_data[-1][mask==1]
+        X=X-np.mean(X)
+        print(f"X.shape={X.shape}")
         X = np.expand_dims(X, axis=0)
+        
         print(f"X.shape={X.shape}")
         
         import joblib

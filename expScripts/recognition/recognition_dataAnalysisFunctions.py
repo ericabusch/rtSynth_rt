@@ -532,7 +532,7 @@ def morphingTarget(cfg):
 
     objects = ['bed', 'bench', 'chair', 'table']
 
-    for ii,run in enumerate(actualRuns): # load behavior and brain data for current session
+    for ii,run in enumerate(actualRuns[:2]): # load behavior and brain data for current session
         t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
         mask = nib.load(f"{cfg.chosenMask}").get_data()
         t = t[:,mask==1]
@@ -542,6 +542,8 @@ def morphingTarget(cfg):
         behav_data=t if ii==0 else pd.concat([behav_data,t])
 
     FEAT=brain_data.reshape(brain_data.shape[0],-1)
+    FEAT_mean=np.mean(FEAT,axis=1)
+    FEAT=(FEAT.T-FEAT_mean).T
     META=behav_data
 
     # convert item colume to label colume
