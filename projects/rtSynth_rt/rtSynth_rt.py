@@ -359,7 +359,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         B_evidence = (BC_B_evidence+BD_B_evidence)/2
         print(f"B_evidence={B_evidence}")
         print(f"mu={mu}, sig={sig}")
-        morphParam=gaussian(B_evidence, mu, sig)
+        morphParam=int(gaussian(B_evidence, mu, sig))
         B_evidences.append(B_evidence)
         print(f"morphParam={morphParam}")
 

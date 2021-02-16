@@ -441,7 +441,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             if value==None:
                 parameter = default_parameter
             else:
-                parameter = value
+                parameter = int(value)
 
             # print('feedbackParameterFileName=',feedbackParameterFileName)
             # parameters=pd.read_csv(feedbackParameterFileName)

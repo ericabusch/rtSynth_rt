@@ -152,7 +152,6 @@ def minimalClass(cfg):
     import nibabel as nib
     import itertools
     from sklearn.linear_model import LogisticRegression
-    from tqdm import tqdm
 
     def gaussian(x, mu, sig):
         # mu and sig is determined before each neurofeedback session using 2 recognition runs.
@@ -510,13 +509,9 @@ def morphingTarget(cfg):
     import os
     import numpy as np
     import pandas as pd
-    import matplotlib.pyplot as plt
-    import sklearn
     import joblib
     import nibabel as nib
-    import itertools
-    from sklearn.linear_model import LogisticRegression
-    from tqdm import tqdm
+
 
 
     if 'milgram' in os.getcwd():
