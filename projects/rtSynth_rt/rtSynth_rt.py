@@ -317,7 +317,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         # load f"{tmp_dir}niftiObject"
         # load cfg.chosenMask
-        mask=nib.load(cfg.chosenMask).get_data()
+        # mask=nib.load(cfg.chosenMask).get_data()
+        mask=np.load(cfg.chosenMask)
         
         # load clf
         [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
@@ -386,7 +387,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         
 
         
-        time.sleep(1.5)
+        # time.sleep(1.5)
 
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
