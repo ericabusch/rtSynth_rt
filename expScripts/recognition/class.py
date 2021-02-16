@@ -42,9 +42,9 @@ def Class(brain_data,behav_data):
     return np.mean(accs)
 
 def getMask(topN, subject):
-    workingDir="/gpfs/milgram/project/turk-browne/projects/rtTest/"
     for pn, parc in enumerate(topN):
-        _mask = nib.load(workingDir+"/{}/{}/{}".format(roiloc, subject, parc))
+        _mask = nib.load(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/{subject}/ses1/recognition/mask/schaefer_{parc}")
+        # schaefer_56.nii.gz
         aff = _mask.affine
         _mask = _mask.get_data()
         _mask = _mask.astype(int)
@@ -52,6 +52,7 @@ def getMask(topN, subject):
         mask = _mask if pn == 0 else mask + _mask
         mask[mask>0] = 1
     return mask
+
 
 tmpFile = sys.argv[1]
 print(f"tmpFile={tmpFile}")
