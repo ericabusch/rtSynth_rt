@@ -28,16 +28,6 @@ from rtCommon.wsRemoteService import WsRemoteService, parseConnectionArgs
 from rtCommon.utils import installLoggers
 from rtCommon.cfg_loading import mkdir,cfg_loading
 
-if True:
-    scanmode = 'Scan'  # 'Scan' or 'Test' or None
-    screenmode = True  # fullscr True or False
-    monitor_name = "scanner"
-    prange=20
-else:
-    scanmode = 'Test'  # 'Scan' or 'Test' or None
-    screenmode = False  # fullscr True or False
-    monitor_name = "testMonitor" #"testMonitor"
-    prange=11
 
 
 class SubjectService:
@@ -81,7 +71,22 @@ argParser.add_argument('-p', '--password', action="store", dest="password", defa
                     help="rtcloud website password")
 argParser.add_argument('--test', default=False, action='store_true',
                     help='Use unsecure non-encrypted connection')
+argParser.add_argument('--trying', default=False, action='store_true',
+                    help='Use unsecure non-encrypted connection')
 args = argParser.parse_args()
+
+
+
+if trying:
+    scanmode = 'Scan'  # 'Scan' or 'Test' or None
+    screenmode = True  # fullscr True or False
+    monitor_name = "scanner"
+    prange=20
+else:
+    scanmode = 'Test'  # 'Scan' or 'Test' or None
+    screenmode = False  # fullscr True or False
+    monitor_name = "testMonitor" #"testMonitor"
+    prange=11
 
 if not re.match(r'.*:\d+', args.server):
     print("Error: Expecting server address in the form <servername:port>")
