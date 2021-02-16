@@ -17,8 +17,9 @@ steps:
 '''
 module load AFNI/2018.08.28
 module load FSL
-source /gpfs/milgram/apps/hpc.rhel7/software/FSL/6.0.0-centos7_64/etc/fslconf/fsl.sh
-module load miniconda
+# which fsl:   /gpfs/milgram/apps/hpc.rhel7/software/FSL/6.0.3-centos7_64/bin/fsl
+# source       /gpfs/milgram/apps/hpc.rhel7/software/FSL/6.0.0-centos7_64/etc/fslconf/fsl.sh
+# module load miniconda
 source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
 
@@ -38,7 +39,7 @@ ROIpath=/gpfs/milgram/scratch/turk-browne/tsy6/CBIG/stable_projects/brain_parcel
 #register deskulled roi to individual subject t1
 WANG2FUNC=${recognition_dir}wang2func.mat
 TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
-TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
+TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii     
 if [ -f "$TEMPLATE_bet" ]; then
     echo "TEMPLATE_bet mat exists"
 else 
