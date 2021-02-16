@@ -25,6 +25,7 @@ print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}")
 import numpy as np
 import nibabel as nib
 import sys
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
 import time
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -198,7 +199,7 @@ for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for p
     t=list(t['Item'])
     behav_data.append(t)
 
-save_obj([brain_data,behav_data],f"./tmp_folder/{subject}_{dataSource}_{roiloc}_{N}") #{len(topN)}_{i}
+save_obj([brain_data,behav_data],f"{cfg.projectDir}tmp_folder/{subject}_{dataSource}_{roiloc}_{N}") #{len(topN)}_{i}
 # bcvar = [behav_data]
 # runs = brain_data
 # save_obj([bcvar,runs],f"./tmp_folder/{subject}_{dataSource}_{roiloc}_{N}") #{len(topN)}_{i}
@@ -276,8 +277,8 @@ def numOfRunningJobs():
     # subprocess.Popen(['squeue -u kp578 | wc -l > squeue.txt'],shell=True) # sl_result = Class(_runs, bcvar)
     randomID=str(time.time())
     # print(f"squeue -u kp578 | wc -l > squeue/{randomID}.txt")
-    call(f'squeue -u kp578 | wc -l > squeue/{randomID}.txt',shell=True)
-    numberOfJobsRunning = int(open(f"squeue/{randomID}.txt", "r").read())
+    call(f'squeue -u kp578 | wc -l > {cfg.projectDir}squeue/{randomID}.txt',shell=True)
+    numberOfJobsRunning = int(open(f"{cfg.projectDir}squeue/{randomID}.txt", "r").read())
     print(f"numberOfJobsRunning={numberOfJobsRunning}")
     return numberOfJobsRunning
 
@@ -311,7 +312,7 @@ def Class(brain_data,behav_data):
     
     return np.mean(accs)
 
-if not os.path.exists(f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}.pkl"):
+if not os.path.exists(f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}.pkl"):
     brain_data = [t[:,mask==1] for t in brain_data]
     # _runs = [runs[:,mask==1]]
     print("Runs shape", [t.shape for t in brain_data])
@@ -323,11 +324,11 @@ if not os.path.exists(f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(to
     "currNumberOfROI":len(topN),
     "bestAcc":sl_result, # this is the sl_result for the topN, not the bestAcc, bestAcc is for the purpose of keeping consistent with others
     "bestROIs":topN},# this is the topN, not the bestROIs, bestROIs is for the purpose of keeping consistent with others
-    f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}"
+    f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}"
     )
 # ./tmp_folder/0125171_40_schaefer2018_neurosketch_39.pkl
-if os.path.exists(f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{1}.pkl"):
-    print(f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_1.pkl exists")
+if os.path.exists(f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{1}.pkl"):
+    print(f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_1.pkl exists")
     raise Exception('runned or running')
 
 # N-1
@@ -343,13 +344,13 @@ def next(topN):
             topNs=[]
             sl_results=[]
             tmpFiles=[]
-            while os.path.exists("./tmp_folder/holdon.npy"):
+            while os.path.exists(f"{cfg.projectDir}tmp_folder/holdon.npy"):
                 time.sleep(10)
                 print("sleep for 10s ; waiting for ./tmp_folder/holdon.npy to be deleted")
-            np.save("./tmp_folder/holdon",1)
+            np.save(f"{cfg.projectDir}tmp_folder/holdon",1)
 
             for i,_topN in enumerate(allpairs):
-                tmpFile=f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_{i}"
+                tmpFile=f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_{i}"
                 print(f"tmpFile={tmpFile}")
                 topNs.append(_topN)
                 tmpFiles.append(tmpFile)
@@ -369,12 +370,13 @@ def next(topN):
                         print("kp5")
 
                     # get the evidence for the current mask
-                    print(f'sbatch class.sh {tmpFile}')
-                    proc = subprocess.Popen([f'sbatch --requeue class.sh {tmpFile}'],shell=True) # sl_result = Class(_runs, bcvar) 
+                    cmd=f'sbatch --requeue {cfg.recognition_expScripts_dir}class.sh {tmpFile}'
+                    print(cmd)
+                    proc = subprocess.Popen([cmd],shell=True) # sl_result = Class(_runs, bcvar) 
                     print("kp6")
                 else:
                     print(tmpFile+'_result.npy exists!')
-            os.remove("./tmp_folder/holdon.npy")
+            os.remove(f"{cfg.projectDir}tmp_folder/holdon.npy")
 
             # wait for everything to be finished and make a summary to find the best performed megaROI
             sl_results=[]
@@ -389,9 +391,9 @@ def next(topN):
             "currNumberOfROI":len(topN)-1,
             "bestAcc":max(sl_results),
             "bestROIs":topNs[maxID]},
-            f"./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}"
+            f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}"
             )
-            print(f"bestAcc={max(sl_results)} For {len(topN)-1} = ./tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}")
+            print(f"bestAcc={max(sl_results)} For {len(topN)-1} = {cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}")
             tmpFiles=next(topNs[maxID])
         except:
             return tmpFiles

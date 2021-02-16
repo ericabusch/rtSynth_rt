@@ -19,5 +19,5 @@ module load FSL
 # module load nilearn
 source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
-echo python -u class.py $1
-python -u class.py $1
+echo python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/class.py $1
+python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/class.py $1
