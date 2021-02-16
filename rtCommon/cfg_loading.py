@@ -67,7 +67,7 @@ def cfg_loading(toml=''):
     cfg.templateFunctionalVolume_converted = f"{cfg.recognition_dir}/templateFunctionalVolume_converted.nii" # templateFunctionalVolume_converted is the current day run1 middle volume converted in day1 template space
     cfg.dicomNamePattern  = "001_{SCAN:06d}_{TR:06d}.dcm" # "001_0000{}_000{}.dcm"
     cfg.mask_dir          = f"{cfg.recognition_dir}mask/"
-    cfg.chosenMask = f"{cfg.subjects_dir}{cfg.subjectName}/ses1/recognition/chosenMask.nii.gz"
+    cfg.chosenMask = f"{cfg.subjects_dir}{cfg.subjectName}/ses1/recognition/chosenMask.npy"
 
     # prepare folder structure
     mkdir(f"{cfg.subjects_dir}{cfg.subjectName}") # mkdir subject folder
