@@ -39,7 +39,7 @@ config="sub001.ses2.toml"
 cfg = cfg_loading(config)
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading
+from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,greedyMask
 def wait(waitfor, delay=1):
     while not os.path.exists(waitfor):
         time.sleep(delay)
@@ -52,38 +52,57 @@ align every other functional volume with templateFunctionalVolume (3dvolreg)
 '''
 recognition_preprocess(cfg) #somehow this cannot be run in jupyter
 
+
 '''
 run the mask selection
     make ROIs
-        make-wang-rois.sh
         make-schaefer-rois.sh
-    train classifiers on each ROI
-    summarize classification accuracy and select best mask
+    starting from 31 megaROIs use greedyMask to find best ROI for the current subject
 '''
 # make ROIs
-    # make-wang-rois.sh
-subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-wang-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
-
-    # make-schaefer-rois.sh
 subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
-
 wait(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz")
-wait(f"{cfg.recognition_dir}mask/wang_roi25_lh.nii.gz")
-# train classifiers on each ROI 
-subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {config}",shell=True)
 
-# summarize classification accuracy and select best mask
-subprocess.Popen(f"bash {cfg.recognition_expScripts_dir}runAggregate.sh {config}",shell=True)
-# bash /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/runAggregate.sh sub001.ses1.toml
 
-# select the mask with the best performance as cfg.chosenMask = {cfg.recognition_dir}chosenMask.nii.gz
-# and also save this mask in all 
+if cfg.sess==1:
+    # when this is the first session, you need to select the chosenMask
+    # python expScripts/recognition/greedyMask.py
+    greedyMask(config)
 
-'''
-load preprocessed and aligned behavior and brain data 
-select data with the wanted pattern like AB AC AD BC BD CD 
-train correspondng classifier and save the classifier performance and the classifiers themselves.
-'''
+# train the classifiers
 minimalClass(cfg)
+
+# '''
+# run the mask selection
+#     make ROIs
+#         make-wang-rois.sh
+#         make-schaefer-rois.sh
+#     train classifiers on each ROI
+#     summarize classification accuracy and select best mask
+# '''
+# # make ROIs
+#     # make-wang-rois.sh
+# subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-wang-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
+#     # make-schaefer-rois.sh
+# subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
+# wait(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz")
+# wait(f"{cfg.recognition_dir}mask/wang_roi25_lh.nii.gz")
+
+# # train classifiers on each ROI 
+# subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}batchRegions.sh {config}",shell=True)
+
+# # summarize classification accuracy and select best mask
+# subprocess.Popen(f"bash {cfg.recognition_expScripts_dir}runAggregate.sh {config}",shell=True)
+# # bash /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/runAggregate.sh sub001.ses1.toml
+
+# # select the mask with the best performance as cfg.chosenMask = {cfg.recognition_dir}chosenMask.nii.gz
+# # and also save this mask in all 
+
+# '''
+# load preprocessed and aligned behavior and brain data 
+# select data with the wanted pattern like AB AC AD BC BD CD 
+# train correspondng classifier and save the classifier performance and the classifiers themselves.
+# '''
+# minimalClass(cfg)
 
 
