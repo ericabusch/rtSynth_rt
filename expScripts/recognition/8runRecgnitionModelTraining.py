@@ -70,7 +70,7 @@ if cfg.session==1:
     # when this is the first session, you need to select the chosenMask
     # python expScripts/recognition/greedyMask.py
     print("running greedyMask")
-    greedyMask(config)
+    greedyMask(cfg)
 
 # train the classifiers
 minimalClass(cfg)
