@@ -755,10 +755,6 @@ def greedyMask(cfg,N=26): # N used to be 31
         while not os.path.exists(waitfor):
             time.sleep(delay)
             print('waiting for {}'.format(waitfor))
-            
-    def normalize(X):
-        X = X - X.mean(3)
-        return X
 
     imcodeDict={"A": "bed", "B": "Chair", "C": "table", "D": "bench"}
 
