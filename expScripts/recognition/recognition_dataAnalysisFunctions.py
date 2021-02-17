@@ -130,7 +130,10 @@ def recognition_preprocess(cfg):
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
-
+        
+def normalize(X):
+    X = X - X.mean(0)
+    return X
 
 def minimalClass(cfg):
     '''
@@ -157,10 +160,6 @@ def minimalClass(cfg):
     def gaussian(x, mu, sig):
         # mu and sig is determined before each neurofeedback session using 2 recognition runs.
         return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
-
-    def normalize(X):
-        X = X - X.mean(0)
-        return X
 
     def jitter(size,const=0):
         jit = np.random.normal(0+const, 0.05, size)
