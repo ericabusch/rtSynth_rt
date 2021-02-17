@@ -60,13 +60,14 @@ run the mask selection
     starting from 31 megaROIs use greedyMask to find best ROI for the current subject
 '''
 # make ROIs
-subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
-wait(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz")
+if cfg.session==1:
+    if not os.path.exists(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz"):
+        subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
+        wait(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz")
 
-
-if cfg.sess==1:
     # when this is the first session, you need to select the chosenMask
     # python expScripts/recognition/greedyMask.py
+    print("running greedyMask")
     greedyMask(config)
 
 # train the classifiers
