@@ -230,8 +230,9 @@ for run_i,run in enumerate(cfg.actualRuns):
     features = np.array(features)
     features = features[:, mask==1]
     print("shape of features", features.shape, "shape of mask", mask.shape)
-    featmean = features.mean(1)[..., None]
-    features = features - featmean
+    # featmean = features.mean(1)[..., None]
+    # features = features - featmean
+    features = features - features.mean(0)
     
     # Append both so we can use it later
     metas.append(labels)
@@ -366,10 +367,10 @@ def plot():
     print(f"fslview_deprecated {cfg.recognition_dir}wanginfunc.nii.gz \
         {cfg.recognition_dir}classRegions/wang_top{bestN}mask.nii.gz")
 
-    from shutil import copyfile
-    copyfile(f"{cfg.recognition_dir}classRegions/wang_top{bestN}mask.nii.gz", 
-            cfg.chosenMask
-            )
+    # from shutil import copyfile
+    # copyfile(f"{cfg.recognition_dir}classRegions/wang_top{bestN}mask.nii.gz", 
+    #         cfg.chosenMask
+    #         )
 
     
     

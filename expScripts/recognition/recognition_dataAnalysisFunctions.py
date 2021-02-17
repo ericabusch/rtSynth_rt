@@ -131,8 +131,6 @@ def recognition_preprocess(cfg):
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
 
-def greedyMask(cfg):
-    return 0
 
 def minimalClass(cfg):
     '''
@@ -266,8 +264,10 @@ def minimalClass(cfg):
 
     FEAT=brain_data.reshape(brain_data.shape[0],-1)
     print(f"FEAT.shape={FEAT.shape}")
-    FEAT_mean=np.mean(FEAT,axis=1)
-    FEAT=(FEAT.T-FEAT_mean).T
+    # FEAT_mean=np.mean(FEAT,axis=1)
+    # FEAT=(FEAT.T-FEAT_mean).T
+    FEAT_mean=np.mean(FEAT,axis=0)
+    FEAT=FEAT-FEAT_mean
 
     META=behav_data
 
@@ -541,8 +541,11 @@ def morphingTarget(cfg):
         behav_data=t if ii==0 else pd.concat([behav_data,t])
 
     FEAT=brain_data.reshape(brain_data.shape[0],-1)
-    FEAT_mean=np.mean(FEAT,axis=1)
-    FEAT=(FEAT.T-FEAT_mean).T
+    # FEAT_mean=np.mean(FEAT,axis=1)
+    # FEAT=(FEAT.T-FEAT_mean).T
+    FEAT_mean=np.mean(FEAT,axis=0)
+    FEAT=FEAT-FEAT_mean
+
     META=behav_data
 
     # convert item colume to label colume
