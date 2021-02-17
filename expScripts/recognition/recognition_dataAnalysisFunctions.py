@@ -665,14 +665,14 @@ def fetchXnat(sess_ID):
 
     # furthur work need to be done with this resulting nifti folder
 
-def greedyMask(cfg):
+def greedyMask(cfg,N=26): # N used to be 31
     '''
     purpose:
-        starting from 31 ROIs, get the best performed ROI combination in a greedy way
+        starting from N ROIs, get the best performed ROI combination in a greedy way
         this code is aggregate_greedy.py adapted to match rtcloud
     steps:
-        load the 31 ROIs from result of neurosketch dataset
-        train the model using the 31ROIs and get the accuracy.
+        load the N ROIs from result of neurosketch dataset
+        train the model using the NROIs and get the accuracy.
 
         get the N combinations of N-1 ROIs
         retrain the model and get the accuracy for these N combinations
@@ -723,7 +723,7 @@ def greedyMask(cfg):
 
 
 
-    subject,dataSource,roiloc,N=cfg.subjectName,"realtime","schaefer2018",31
+    subject,dataSource,roiloc,N=cfg.subjectName,"realtime","schaefer2018",N
     # subject,dataSource,roiloc,N=sys.argv[1],sys.argv[2],sys.argv[3],int(sys.argv[4])
 
     print("Running subject {}, with {} as a data source, {}, starting with {} ROIs".format(subject, dataSource, roiloc, N))
@@ -797,7 +797,7 @@ def greedyMask(cfg):
     #             topN.append("roi{}_rh.nii.gz".format(x+1))
     #         # print(topN[-1])
 
-    topN = load_obj(f"{cfg.recognition_expScripts_dir}top31ROIs")
+    topN = load_obj(f"{cfg.recognition_expScripts_dir}top{N}ROIs")
     print(f"len(topN)={len(topN)}")
     print(f"topN={topN}")
 
@@ -1069,7 +1069,7 @@ def greedyMask(cfg):
     roiloc="schaefer2018"
     dataSource="realtime"
     subjects=cfg.subjectName
-    N=31
+    N=N
     GreedyBestAcc=np.zeros((len(subjects),N+1))
     GreedyBestAcc[GreedyBestAcc==0]=None
     for ii,subject in enumerate(subjects):
