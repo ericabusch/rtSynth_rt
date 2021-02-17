@@ -31,12 +31,13 @@ from rtCommon.utils import loadConfigFile
 # from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
 
 
-# argParser = argparse.ArgumentParser()
-# argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
-# args = argParser.parse_args()
+argParser = argparse.ArgumentParser()
+argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--skipPre', '-s', default=0, type=int, help='skip preprocess or not')
+args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
-config="sub001.ses2.toml"
-cfg = cfg_loading(config)
+# config="sub001.ses2.toml"
+cfg = cfg_loading(args.config)
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
 from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,greedyMask
@@ -50,7 +51,8 @@ convert all dicom files into nii files in the temp dir.
 find the middle volume of the run1 as the template volume
 align every other functional volume with templateFunctionalVolume (3dvolreg)
 '''
-recognition_preprocess(cfg) #somehow this cannot be run in jupyter
+if not args.skipPre:
+    recognition_preprocess(cfg) #somehow this cannot be run in jupyter
 
 
 '''
