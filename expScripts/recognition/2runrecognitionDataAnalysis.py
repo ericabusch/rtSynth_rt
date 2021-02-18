@@ -31,6 +31,8 @@ import rtCommon.projectUtils as projUtils
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
+argParser.add_argument('--skipPre', '-s', default=0, type=int, help='skip preprocess or not')
+
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
 cfg = cfg_loading(args.config)
@@ -45,8 +47,9 @@ find the middle volume of the run1 as the template volume
 align every other functional volume with templateFunctionalVolume (3dvolreg)
 load behavior data and align with brain data
 '''
-run_asTemplate=2 # which run in the realtime folder to select the middle volume as the template volume
-recognition_preprocess_2run(cfg,run_asTemplate)
+if not args.skipPre:
+    run_asTemplate=2 # which run in the realtime folder to select the middle volume as the template volume
+    recognition_preprocess_2run(cfg,run_asTemplate)
 
 '''
 purpose:
