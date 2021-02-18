@@ -130,7 +130,7 @@ def recognition_preprocess(cfg):
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
-        
+
 from scipy.stats import zscore
 def normalize(X):
     _X=X.copy()
@@ -668,7 +668,7 @@ def fetchXnat(sess_ID):
 
     # furthur work need to be done with this resulting nifti folder
 
-def greedyMask(cfg,N=26): # N used to be 31
+def greedyMask(cfg,N=25): # N used to be 31
     '''
     purpose:
         starting from N ROIs, get the best performed ROI combination in a greedy way
