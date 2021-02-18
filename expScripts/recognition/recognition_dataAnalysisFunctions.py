@@ -130,9 +130,12 @@ def recognition_preprocess(cfg):
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
-        
+
 def normalize(X):
-    X = X - X.mean(0)
+    from scipy.stats import zscore
+    # X = X - X.mean(0)
+    X = zscore(X, axis=0)
+    X[np.isnan(X)]=0
     return X
 
 def minimalClass(cfg):
@@ -267,8 +270,9 @@ def minimalClass(cfg):
     print(f"FEAT.shape={FEAT.shape}")
     # FEAT_mean=np.mean(FEAT,axis=1)
     # FEAT=(FEAT.T-FEAT_mean).T
-    FEAT_mean=np.mean(FEAT,axis=0)
-    FEAT=FEAT-FEAT_mean
+    # FEAT_mean=np.mean(FEAT,axis=0)
+    # FEAT=FEAT-FEAT_mean
+    # FEAT = normalize(FEAT)
 
     META=behav_data
 
@@ -533,6 +537,7 @@ def morphingTarget(cfg):
         # mask = nib.load(f"{cfg.chosenMask}").get_data()
         mask = np.load(cfg.chosenMask)
         t = t[:,mask==1]
+        t = normalize(t)
         brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
@@ -541,8 +546,8 @@ def morphingTarget(cfg):
     FEAT=brain_data.reshape(brain_data.shape[0],-1)
     # FEAT_mean=np.mean(FEAT,axis=1)
     # FEAT=(FEAT.T-FEAT_mean).T
-    FEAT_mean=np.mean(FEAT,axis=0)
-    FEAT=FEAT-FEAT_mean
+    # FEAT_mean=np.mean(FEAT,axis=0)
+    # FEAT=FEAT-FEAT_mean
 
     META=behav_data
 
@@ -858,7 +863,7 @@ def greedyMask(cfg,N=26): # N used to be 31
         print("Runs shape", [t.shape for t in brain_data])
         slstart = time.time()
         sl_result = Class(brain_data, behav_data)
-
+        print(f"passed {time.time()-slstart}s for training")
         save_obj({"subject":subject,
         "startFromN":N,
         "currNumberOfROI":len(topN),
