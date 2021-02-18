@@ -697,7 +697,7 @@ def greedyMask(cfg,N=25): # N used to be 31
     from sklearn.linear_model import LogisticRegression
     import itertools
     # from tqdm import tqdm
-    import pickle
+    import pickle5 as pickle
     import subprocess
     from subprocess import call
     def save_obj(obj, name):
@@ -947,7 +947,7 @@ def greedyMask(cfg,N=25): # N used to be 31
 
 
 
-
+    # when every mask has run, find the best mask and save as the chosenMask
     roiloc="schaefer2018"
     dataSource="realtime"
     subjects=cfg.subjectName

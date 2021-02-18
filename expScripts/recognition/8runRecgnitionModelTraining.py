@@ -35,6 +35,7 @@ from rtCommon.utils import loadConfigFile
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--skipPre', '-s', default=0, type=int, help='skip preprocess or not')
+argParser.add_argument('--skipGreedy', '-g', default=0, type=int, help='skip greedy or not')
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
 # config="sub001.ses2.toml"
@@ -70,8 +71,9 @@ if cfg.session==1:
 
     # when this is the first session, you need to select the chosenMask
     # python expScripts/recognition/greedyMask.py
-    print("running greedyMask")
-    greedyMask(cfg)
+    if not args.skipGreedy:
+        print("running greedyMask")
+        greedyMask(cfg)
 
 # train the classifiers
 minimalClass(cfg)
