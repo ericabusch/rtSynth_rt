@@ -50,7 +50,8 @@ import nibabel as nib
 import scipy.io as sio
 from rtCommon.cfg_loading import mkdir,cfg_loading
 from subprocess import call
-
+import joblib
+from scipy.stats import zscore
 if verbose:
     print(''
         '|||||||||||||||||||||||||||| IGNORE THIS WARNING ||||||||||||||||||||||||||||')
@@ -76,12 +77,15 @@ from rtCommon.utils import loadConfigFile, stringPartialFormat
 from rtCommon.clientInterface import ClientInterface
 from rtCommon.imageHandling import readRetryDicomFromDataInterface, convertDicomImgToNifti
 from rtCommon.dataInterface import DataInterface #added by QL
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
+from recognition_dataAnalysisFunctions import normalize
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
 
 def gaussian(x, mu, sig):
     # mu and sig is determined before each neurofeedback session using 2 recognition runs.
     return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
+
 
 
 # obtain the full path for the configuration toml file
@@ -231,6 +235,23 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         "-----------------------------------------------------------------------------\n")
 
     tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
+    mask=np.load(cfg.chosenMask)
+
+    # load clf
+    [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
+    print(f"mu={mu},sig={sig}")
+
+    # getting MorphingParameter: 
+    # which clf to load? 
+    # B evidence in BC/BD classifier for currt TR
+
+    def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
+        # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+        targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+        Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
+        return np.asarray(Evidence)
+    BC_clf=joblib.load(cfg.usingModel_dir +'benchchair_chairtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
 
     # where the morphParams are saved
     output_textFilename = f'{cfg.feedback_dir}morphParam_{scanNum}.txt'
@@ -238,8 +259,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
     num_total_TRs = cfg.num_total_TRs  # number of TRs to use for example 1
     morphParams = np.zeros((num_total_TRs, 1))
-    nift_data=[]
     B_evidences=[]
+    maskedData=0
     for this_TR in np.arange(1,num_total_TRs):
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
         timeout_file = 5 # small number because of demo, can increase for real-time
@@ -312,47 +333,25 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
                 {niiFileName}"
         call(command,shell=True)
         niftiObject = nib.load(niiFileName)
-        nift_data.append(niftiObject.get_fdata())
+        nift_data = niftiObject.get_fdata()
         
-
-        # load f"{tmp_dir}niftiObject"
-        # load cfg.chosenMask
-        # mask=nib.load(cfg.chosenMask).get_data()
-        mask=np.load(cfg.chosenMask)
-        
-        # load clf
-        [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
-        print(f"mu={mu},sig={sig}")
-
-        # getting MorphingParameter: 
-        # which clf to load? 
-        # B evidence in BC/BD classifier for currt TR
-
-        def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
-            # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
-            targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-            Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-            return np.asarray(Evidence)
-
-        print(f"nift_data[-1].shape={nift_data[-1].shape}")
+        print(f"nift_data.shape={nift_data.shape}")
         print(f"mask.shape={mask.shape}")
         print(f"np.sum(mask)={np.sum(mask)}")
-        X = nift_data[-1][mask==1]
-        X=X-np.mean(X)
-        print(f"X.shape={X.shape}")
-        X = np.expand_dims(X, axis=0)
+        X = nift_data[mask==1]
+        maskedData=X if this_TR==1 else np.concatenate((maskedData,X),axis=0)
+        _maskedData = normalize(maskedData)
         
         print(f"X.shape={X.shape}")
+        X = np.expand_dims(_maskedData[-1], axis=0)
+        print(f"X.shape={X.shape}")
         
-        import joblib
         Y = ['chair'] * X.shape[0]
         # imcodeDict={
         # 'A': 'bed',
         # 'B': 'chair',
         # 'C': 'table',
         # 'D': 'bench'}
-        BC_clf=joblib.load(cfg.usingModel_dir +'benchchair_chairtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-        BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
         BC_B_evidence = classifierEvidence(BC_clf,X,Y)[0]
         BD_B_evidence = classifierEvidence(BD_clf,X,Y)[0]
         print(f"BC_B_evidence={BC_B_evidence}")

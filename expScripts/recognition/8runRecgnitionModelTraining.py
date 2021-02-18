@@ -17,6 +17,7 @@ import numpy as np
 import nibabel as nib
 import scipy.io as sio
 import subprocess
+from scipy.stats import zscore
 from nibabel.nicom import dicomreaders
 import pydicom as dicom  # type: ignore
 import time

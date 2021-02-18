@@ -130,13 +130,13 @@ def recognition_preprocess(cfg):
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
-
+        
+from scipy.stats import zscore
 def normalize(X):
-    from scipy.stats import zscore
-    # X = X - X.mean(0)
-    X = zscore(X, axis=0)
-    X[np.isnan(X)]=0
-    return X
+    _X=X.copy()
+    _X = zscore(_X, axis=0)
+    _X[np.isnan(_X)]=0
+    return _X
 
 def minimalClass(cfg):
     '''

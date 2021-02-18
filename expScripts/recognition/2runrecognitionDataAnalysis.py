@@ -18,6 +18,7 @@ from subprocess import call
 from nibabel.nicom import dicomreaders
 import pydicom as dicom  # type: ignore
 import time
+from scipy.stats import zscore
 from glob import glob
 import shutil
 from nilearn.image import new_img_like
