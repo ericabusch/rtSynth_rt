@@ -59,7 +59,7 @@ argParser = argparse.ArgumentParser()
 
 argParser.add_argument('-c', '--config', action="store", dest="config", default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('-r', '--run', action="store", dest="run", default='1', type=str, help='current run')
-argParser.add_argument('-e', '--sess', action="store", dest="sess", default='1', type=str, help='current session')
+# argParser.add_argument('-e', '--sess', action="store", dest="sess", default='1', type=str, help='current session')
 argParser.add_argument('-s', action="store", dest="server", default="localhost:7777",
                     help="Server Address with Port [server:port]")
 
@@ -104,7 +104,7 @@ if checkSSLCertAltName(certFile, addr) is False:
 cfg = cfg_loading(args.config)
 sub = cfg.subjectName
 run = int(args.run)  # 1
-sess = int(args.sess)
+sess = int(cfg.session)
 
 cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
 
