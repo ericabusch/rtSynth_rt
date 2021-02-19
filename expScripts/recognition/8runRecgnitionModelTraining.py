@@ -27,6 +27,14 @@ from nilearn.image import new_img_like
 import joblib
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
+import pickle5 as pickle
+def save_obj(obj, name):
+    with open(name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name):
+    with open(name + '.pkl', 'rb') as f:
+        return pickle.load(f)
 # from rtCommon.fileClient import FileInterface
 # import rtCommon.projectUtils as projUtils
 # from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
@@ -76,8 +84,9 @@ if cfg.session==1:
         greedyMask(cfg)
 
 # train the classifiers
-minimalClass(cfg)
-
+accs = minimalClass(cfg)
+print(f"minimalClass accs={accs}")
+save_obj(accs,f"{cfg.recognition_dir}minimalClass_accs")
 # '''
 # run the mask selection
 #     make ROIs

@@ -293,7 +293,7 @@ def minimalClass(cfg):
     # Decide on the proportion of crescent data to use for classification
     include = 1
     allpairs = itertools.combinations(objects,2)
-
+    accs={}
     # Iterate over all the possible target pairs of objects
     for pair in allpairs:
         # Find the control (remaining) objects for this pair
@@ -368,6 +368,9 @@ def minimalClass(cfg):
                 # Monitor progress by printing accuracy (only useful if you're running a test set)
                 acc = clf.score(testX, testY)
                 print(naming, acc)
+                accs[naming]=acc
+    return accs
+                
 
 def behaviorDataLoading(cfg,curr_run):
     '''
@@ -563,11 +566,19 @@ def morphingTarget(cfg):
     META['label']=label # merge the label column with the data dataframe
 
 
-    def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
-        # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
-        targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-        Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-        return np.asarray(Evidence)
+    # def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
+    #     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+    #     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+    #     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
+    #     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (1-(X@clf.coef_.T+clf.intercept_))
+    #     Evidence = 1/(1+np.exp(-Evidence))
+    #     return np.asarray(Evidence)
+    
+    def classifierEvidence(clf,X,Y):
+        ID=np.where((clf.classes_==Y[0])*1==1)
+        p = clf.predict_proba(X)[:,ID]
+        BX=np.log(p/(1-p))
+        return BX
 
     A_ID = (META['label']=='bed')
     X = FEAT[A_ID]
