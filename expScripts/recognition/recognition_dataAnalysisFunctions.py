@@ -573,7 +573,7 @@ def morphingTarget(cfg):
     #     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (1-(X@clf.coef_.T+clf.intercept_))
     #     Evidence = 1/(1+np.exp(-Evidence))
     #     return np.asarray(Evidence)
-    
+
     def classifierEvidence(clf,X,Y):
         ID=np.where((clf.classes_==Y[0])*1==1)
         p = clf.predict_proba(X)[:,ID]
@@ -601,7 +601,9 @@ def morphingTarget(cfg):
     AD_A_evidence = classifierEvidence(AD_clf,X,Y)
     evidence_ceil2 = AD_A_evidence
 
-    evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
+    # evidence_ceil = evidence_ceil1
+    # evidence_ceil = evidence_ceil2
+    evidence_ceil = (evidence_ceil1+evidence_ceil2)/2
     print(f"evidence_ceil={evidence_ceil}")
 
     return evidence_floor, evidence_ceil
