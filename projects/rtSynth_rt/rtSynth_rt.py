@@ -335,10 +335,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         niftiObject = nib.load(niiFileName)
         nift_data = niftiObject.get_fdata()
         
-        print(f"nift_data.shape={nift_data.shape}")
-        print(f"mask.shape={mask.shape}")
-        print(f"np.sum(mask)={np.sum(mask)}")
-        X = nift_data[mask==1]
+        X = np.expand_dims(nift_data[mask==1], axis=0)
         maskedData=X if this_TR==1 else np.concatenate((maskedData,X),axis=0)
         _maskedData = normalize(maskedData)
 
@@ -354,6 +351,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # 'B': 'chair',
         # 'C': 'table',
         # 'D': 'bench'}
+        print(f"classifierEvidence(BC_clf,X,Y)={classifierEvidence(BC_clf,X,Y)}")
+        print(f"classifierEvidence(BD_clf,X,Y)={classifierEvidence(BD_clf,X,Y)}")
         BC_B_evidence = classifierEvidence(BC_clf,X,Y)[0]
         BD_B_evidence = classifierEvidence(BD_clf,X,Y)[0]
         print(f"BC_B_evidence={BC_B_evidence}")
