@@ -727,27 +727,8 @@ def greedyMask(cfg,N=25): # N used to be 31
 
     print("Running subject {}, with {} as a data source, {}, starting with {} ROIs".format(subject, dataSource, roiloc, N))
 
-
-    # dataSource depending, there are a number of keywords to fill in: 
-    # ses: which day of data collection
-    # run: which run number on that day (single digit)
-    # phase: 12, 34, or 56
-    # sub: subject number
-    if dataSource == "neurosketch":
-        funcdata = "/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/{sub}_neurosketch/data/nifti/realtime_preprocessed/{sub}_neurosketch_recognition_run_{run}.nii.gz"
-        metadata = "/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/data/features/recog/metadata_{sub}_V1_{phase}.csv"
-        anat = "/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/{sub}_neurosketch/data/nifti/{sub}_neurosketch_anat_mprage_brain.nii.gz"
-    elif dataSource == "realtime":
-        funcdata = cfg.recognition_dir + "brain_run{run}.npy"
-        metadata = cfg.recognition_dir + "behav_run{run}.csv"
-        # funcdata = "/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/{sub}/ses{ses}_recognition/run0{run}/nifti/{sub}_functional.nii.gz"
-        # metadata = "/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/subjects/{sub}/ses{ses}_recognition/run0{run}/{sub}_0{run}_preprocessed_behavData.csv"
-        # anat = "$TO_BE_FILLED"
-    else:
-        funcdata = "/gpfs/milgram/project/turk-browne/projects/rtTest/searchout/feat/{sub}_pre.nii.gz"
-        metadata = "/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/data/features/recog/metadata_{sub}_V1_{phase}.csv"
-        anat = "$TO_BE_FILLED"
-
+    funcdata = cfg.recognition_dir + "brain_run{run}.npy"
+    metadata = cfg.recognition_dir + "behav_run{run}.csv"
 
     workingDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition"
 
