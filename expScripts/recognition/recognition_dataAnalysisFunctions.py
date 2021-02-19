@@ -605,18 +605,26 @@ def morphingTarget(cfg):
     X = FEAT[A_ID]
 
     # evidence_floor is C evidence for AC_CD BC_CD CD_CD classifier(can also be D evidence for CD classifier)
-    Y = ['table'] * X.shape[0]
-    CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-    CD_C_evidence = classifierEvidence(CD_clf,X,Y)
-    evidence_floor = np.mean(CD_C_evidence)
-    print(f"evidence_floor={evidence_floor}")
+    # Y = ['table'] * X.shape[0]
+    # CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    # CD_C_evidence = classifierEvidence(CD_clf,X,Y)
+    # evidence_floor = np.mean(CD_C_evidence)
+    # print(f"evidence_floor={evidence_floor}")
 
+
+    #try out other forms of floor: C evidence in AC and D evidence for AD
     Y = ['bench'] * X.shape[0]
-    CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-    CD_D_evidence = classifierEvidence(CD_clf,X,Y)
-    evidence_floor = np.mean(CD_D_evidence)
-    print(f"evidence_floor={evidence_floor}")
+    AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+    AD_D_evidence = classifierEvidence(AD_clf,X,Y)
+    evidence_floor2 = AD_D_evidence
+    print(f"evidence_floor2={np.mean(evidence_floor2)}")
 
+    # # floor
+    # Y = ['bench'] * X.shape[0]
+    # CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    # CD_D_evidence = classifierEvidence(CD_clf,X,Y)
+    # evidence_floor = np.mean(CD_D_evidence)
+    # print(f"evidence_floor={evidence_floor}")
 
     # evidence_ceil  is A evidence in AC and AD classifier
     Y = ['bed'] * X.shape[0]
