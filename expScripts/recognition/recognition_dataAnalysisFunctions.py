@@ -454,12 +454,15 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
     # here you are assuming that the first run is a good run
     run_asTemplate=str(run_asTemplate).zfill(6)
     tmp=glob(f"{tmp_dir}001_{run_asTemplate}*.nii") ; tmp.sort()
+    print(f"all nii files: {tmp}")
     # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.recognition_dir}t.nii", shell=True)
 
     # convert cfg.templateFunctionalVolume to the previous template volume space 
-    call(f"flirt -ref {cfg.templateFunctionalVolume} \
+    cmd=f"flirt -ref {cfg.templateFunctionalVolume} \
         -in {tmp[int(len(tmp)/2)]} \
-        -out {cfg.templateFunctionalVolume_converted}",shell=True) 
+        -out {cfg.templateFunctionalVolume_converted}"
+    print(cmd)
+    call(cmd,shell=True) 
         
     # align every other functional volume with templateFunctionalVolume (3dvolreg)
     allTRs=glob(f"{tmp_dir}001_*.nii") ; allTRs.sort()
