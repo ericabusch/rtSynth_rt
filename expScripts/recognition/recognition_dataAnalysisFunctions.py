@@ -616,7 +616,7 @@ def morphingTarget(cfg):
     Y = ['bench'] * X.shape[0]
     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
-    evidence_floor = AD_D_evidence
+    evidence_floor = np.mean(AD_D_evidence)
     print(f"evidence_floor2={np.mean(evidence_floor)}")
 
     # # floor
