@@ -1,0 +1,37 @@
+# Config file for rtSynth_rt project
+# we have a seperate file for each subject and 
+# for 8 recognition runs on day1; 
+
+# for 2 x 2 recognition run on day2 ; 
+# for 1 feedback session on day2 ; 
+
+# for 2 x 2 recognition run on day3 ; 
+# for 1 feedback session on day3 ; 
+
+# for 2 x 2 recognition run on day4 ; 
+# for 1 feedback session on day4 ; 
+
+# for 8 recognition run on day5 ; 
+
+# subject Yuexuan Li,
+# 
+title = 'Sample Project'
+session=2 # which session is this? which day is this on? could be 1 2 3 4 5 
+runNum = [1] # This is the list of unique run, e.g. when the recognition1 is repeated twice, this can be 1 and 2
+scanNum = [1] # This is a list of scan(or runs that might be repetitive)
+
+
+subjectName = "sub001" # subject folder name in the rtSynth_rt/subjects folder
+LASTNAME="rtSynth_sub001"
+subjectIDforxnat="rtSynth_sub001_ses2" #PATIENTID has to be unique for each subject
+
+
+realtimeFolder_subjectName="rtSynth_sub001"
+preDay_YYYYMMDD="20210114" # can be "0" if there is no previous day for this session
+YYYYMMDD="20210114" #note that 20210114 is for simulation should actually be "20210122"
+num_total_TRs=174 # number of total TRs in feedback session
+
+TrialNumber= 12 # feedback trial number for a feedback run.
+
+dicomNamePattern = "001_0000{}_000{}.dcm"
+minExpectedDicomSize = 300000
