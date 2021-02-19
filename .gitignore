@@ -127,3 +127,5 @@ venv.bak/
 *.joblib
 *.pkl
 !subjects/sub*/ses*/recognition/choose.npy
+web/*
+*.mat
