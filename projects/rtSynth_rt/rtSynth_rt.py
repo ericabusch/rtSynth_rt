@@ -371,7 +371,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         BD_B_evidence = classifierEvidence(BD_clf,X,Y)[0]
         print(f"BC_B_evidence={BC_B_evidence}")
         print(f"BD_B_evidence={BD_B_evidence}")
-        B_evidence = (BC_B_evidence+BD_B_evidence)/2
+        B_evidence = float((BC_B_evidence+BD_B_evidence)/2)
         print(f"B_evidence={B_evidence}")
         print(f"mu={mu}, sig={sig}")
         morphParam=int(gaussian(B_evidence, mu, sig))
