@@ -356,9 +356,9 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         _maskedData = normalize(maskedData)
 
         print(f"_maskedData.shape={_maskedData.shape}")
-        print(f"X.shape={X.shape}")
+        # print(f"X.shape={X.shape}")
         X = np.expand_dims(_maskedData[-1], axis=0)
-        print(f"X.shape={X.shape}")
+        # print(f"X.shape={X.shape}")
         # print(f"X={X}")
         
         Y = ['chair'] * X.shape[0]
