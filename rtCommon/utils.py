@@ -75,6 +75,7 @@ def loadConfigFile(filename):
         #   json.dump(cfg, fd, indent=2)
     elif file_suffix == '.toml':
         # load toml
+        print(f"toml filename={filename}")
         cfg_dict = toml.load(filename)
         # to write out config
         # with open('t1.toml', 'w+') as fd:

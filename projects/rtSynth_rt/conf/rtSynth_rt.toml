@@ -1,25 +1,36 @@
-# sample.toml -> tProject.toml
-# # Config file for sample.py project
+# Config file for rtSynth_rt project
+# we have a seperate file for each subject and 
+# for 8 recognition runs on day1; 
+
+# for 2 x 2 recognition run on day2 ; 
+# for 1 feedback session on day2 ; 
+
+# for 2 x 2 recognition run on day3 ; 
+# for 1 feedback session on day3 ; 
+
+# for 2 x 2 recognition run on day4 ; 
+# for 1 feedback session on day4 ; 
+
+# for 8 recognition run on day5 ; 
+
+# subject Yuexuan Li,
+# 
 title = 'Sample Project'
-sessionId = "20180310T123000"
+session=2 # which session is this? which day is this on? could be 1 2 3 4 5 
+runNum = [1] # This is the list of unique run, e.g. when the recognition1 is repeated twice, this can be 1 and 2
+scanNum = [2] # This is a list of scan(or runs that might be repetitive)
 
 
-subjectNum = 101
-subjectDay = 1
-sessionNum = 1
-runNum = [1]
-scanNum = [1]
+subjectName = "sub001" # subject folder name in the rtSynth_rt/subjects folder
+LASTNAME="rtSynth_sub001"
+subjectIDforxnat="rtSynth_sub001_ses2" #PATIENTID has to be unique for each subject
 
-## important variables about the dicom files
-dicomNamePattern = "001_0000{}_000{}.dcm"
-minExpectedDicomSize = 300000
 
-## design myself for feedback parameters.
-realtimeFolder_subjectName="rtSynth_pilot001_2"
-subjectName = "pilot_sub001"
-#YYYYMMDD="20201009"
-YYYYMMDD="20201019"
-session=2
-whichRun=1
-whichScan=3
-num_total_TRs=150
+realtimeFolder_subjectName="rtSynth_sub001"
+preDay_YYYYMMDD="20210114" # can be "0" if there is no previous day for this session
+YYYYMMDD="20210122" #note that 20210114 is for simulation should actually be "20210118"
+num_total_TRs=174 # number of total TRs in feedback session
+
+TrialNumber= 12 # feedback trial number for a feedback run.
+
+minExpectedDicomSize = 3000
