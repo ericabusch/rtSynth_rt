@@ -242,7 +242,12 @@ def minimalClass(cfg):
     else: 
         actualRuns_preDay = []
 
-    assert len(actualRuns_preDay)+len(actualRuns)==8 
+    # assert len(actualRuns_preDay)+len(actualRuns)==8 
+    if len(actualRuns_preDay)+len(actualRuns)<8:
+        runRecording_prepreDay = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/../runRecording.csv")
+        actualRuns_prepreDay = list(runRecording_prepreDay['run'].iloc[list(np.where(1==1*(runRecording_prepreDay['type']=='recognition'))[0])])[-(8-len(actualRuns)-len(actualRuns_preDay)):] # might be [5,6,7,8]
+    else:
+        actualRuns_prepreDay = []
 
     objects = ['bed', 'bench', 'chair', 'table']
 
@@ -264,6 +269,16 @@ def minimalClass(cfg):
         brain_data = np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/behav_run{run}.csv")
+        behav_data = pd.concat([behav_data,t])
+
+    for ii,run in enumerate(actualRuns_prepreDay): # load behavior and brain data for previous session
+        t = np.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/brain_run{run}.npy")
+        mask = np.load(f"{cfg.chosenMask}")
+        t = t[:,mask==1]
+        t = normalize(t)
+        brain_data = np.concatenate((brain_data,t), axis=0)
+
+        t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/behav_run{run}.csv")
         behav_data = pd.concat([behav_data,t])
 
     FEAT=brain_data.reshape(brain_data.shape[0],-1)
@@ -787,7 +802,12 @@ def greedyMask(cfg,N=25): # N used to be 31
     else: 
         actualRuns_preDay = []
 
-    assert len(actualRuns_preDay)+len(actualRuns)==8 
+    # assert len(actualRuns_preDay)+len(actualRuns)==8 
+    if len(actualRuns_preDay)+len(actualRuns)<8:
+        runRecording_prepreDay = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/../runRecording.csv")
+        actualRuns_prepreDay = list(runRecording_prepreDay['run'].iloc[list(np.where(1==1*(runRecording_prepreDay['type']=='recognition'))[0])])[-(8-len(actualRuns)-len(actualRuns_preDay)):] # might be [5,6,7,8]
+    else:
+        actualRuns_prepreDay = []
 
     objects = ['bed', 'bench', 'chair', 'table']
 
@@ -808,6 +828,14 @@ def greedyMask(cfg,N=25): # N used to be 31
         brain_data.append(t)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/behav_run{run}.csv")
+        t=list(t['Item'])
+        behav_data.append(t)
+    for ii,run in enumerate(actualRuns_prepreDay): # load behavior and brain data for previous session
+        t = np.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/brain_run{run}.npy")
+        t = normalize(t)
+        brain_data.append(t)
+
+        t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/behav_run{run}.csv")
         t=list(t['Item'])
         behav_data.append(t)
 
