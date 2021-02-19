@@ -252,11 +252,17 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     #     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (1-(X@clf.coef_.T+clf.intercept_))
     #     Evidence = 1/(1+np.exp(-Evidence))
     #     return np.asarray(Evidence)
+
+    # def classifierEvidence(clf,X,Y):
+    #     ID=np.where((clf.classes_==Y[0])*1==1)
+    #     p = clf.predict_proba(X)[:,ID]
+    #     BX=np.log(p/(1-p))
+    #     return BX
+
     def classifierEvidence(clf,X,Y):
-        ID=np.where((clf.classes_==Y[0])*1==1)
-        p = clf.predict_proba(X)[:,ID]
-        BX=np.log(p/(1-p))
-        return BX
+        ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+        Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
+        return np.asarray(Evidence)
 
     BC_clf=joblib.load(cfg.usingModel_dir +'benchchair_chairtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
     BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib

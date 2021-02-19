@@ -570,16 +570,21 @@ def morphingTarget(cfg):
     #     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
     #     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
     #     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-    #     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (1-(X@clf.coef_.T+clf.intercept_))
+    #     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (-(X@clf.coef_.T+clf.intercept_))
     #     Evidence = 1/(1+np.exp(-Evidence))
     #     return np.asarray(Evidence)
 
-    def classifierEvidence(clf,X,Y):
-        ID=np.where((clf.classes_==Y[0])*1==1)
-        p = clf.predict_proba(X)[:,ID]
-        BX=np.log(p/(1-p))
-        return BX
+    # def classifierEvidence(clf,X,Y):
+    #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+    #     p = clf.predict_proba(X)[:,ID]
+    #     BX=np.log(p/(1-p))
+    #     return BX
 
+    def classifierEvidence(clf,X,Y):
+        ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+        Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
+        return np.asarray(Evidence)
+        
     A_ID = (META['label']=='bed')
     X = FEAT[A_ID]
 
@@ -592,7 +597,7 @@ def morphingTarget(cfg):
 
     # evidence_ceil  is A evidence in AC and AD classifier
     Y = ['bed'] * X.shape[0]
-    AC_clf=joblib.load(cfg.usingModel_dir +'bedbench_bedtable.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
+    AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
     AC_A_evidence = classifierEvidence(AC_clf,X,Y)
     evidence_ceil1 = AC_A_evidence
 
@@ -602,8 +607,8 @@ def morphingTarget(cfg):
     evidence_ceil2 = AD_A_evidence
 
     # evidence_ceil = np.mean(evidence_ceil1)
-    evidence_ceil = np.mean(evidence_ceil2)
-    # evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
+    # evidence_ceil = np.mean(evidence_ceil2)
+    evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
     print(f"evidence_ceil={evidence_ceil}")
 
     return evidence_floor, evidence_ceil
