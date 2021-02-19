@@ -611,6 +611,13 @@ def morphingTarget(cfg):
     evidence_floor = np.mean(CD_C_evidence)
     print(f"evidence_floor={evidence_floor}")
 
+    Y = ['bench'] * X.shape[0]
+    CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    CD_D_evidence = classifierEvidence(CD_clf,X,Y)
+    evidence_floor = np.mean(CD_D_evidence)
+    print(f"evidence_floor={evidence_floor}")
+
+
     # evidence_ceil  is A evidence in AC and AD classifier
     Y = ['bed'] * X.shape[0]
     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
