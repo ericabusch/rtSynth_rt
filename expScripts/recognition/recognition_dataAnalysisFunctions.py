@@ -597,7 +597,7 @@ def morphingTarget(cfg):
 
     def classifierEvidence(clf,X,Y):
         ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-        Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
+        Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
         return np.asarray(Evidence)
 
     A_ID = (META['label']=='bed')

@@ -77,16 +77,16 @@ args = argParser.parse_args()
 
 
 
-if trying:
-    scanmode = 'Scan'  # 'Scan' or 'Test' or None
-    screenmode = True  # fullscr True or False
-    monitor_name = "scanner"
-    prange=20
-else:
+if args.trying:
     scanmode = 'Test'  # 'Scan' or 'Test' or None
     screenmode = False  # fullscr True or False
     monitor_name = "testMonitor" #"testMonitor"
     prange=11
+else:
+    scanmode = 'Scan'  # 'Scan' or 'Test' or None
+    screenmode = True  # fullscr True or False
+    monitor_name = "scanner"
+    prange=20
 
 if not re.match(r'.*:\d+', args.server):
     print("Error: Expecting server address in the form <servername:port>")
@@ -458,6 +458,9 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             trialClock=core.Clock()
             trialTime=trialClock.getTime()
             # update the image list to be shown based on the fetched parameter
+            if args.trying:
+                if parameter>9:
+                    parameter=9
             imagePaths=imageLists[parameter] #list(imageLists[parameter])
             # calculated how long each image should last.
             eachTime=ParameterUpdateDuration/len(imagePaths)
