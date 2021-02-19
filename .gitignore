@@ -124,4 +124,4 @@ venv.bak/
 *checkpoint.ipynb
 *.joblib
 *.pkl
-
+!subjects/sub*/ses*/recognition/choose.npy
