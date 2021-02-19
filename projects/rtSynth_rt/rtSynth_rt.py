@@ -440,13 +440,13 @@ def main(argv=None):
     # Some additional parameters only used for this sample project
     argParser.add_argument('--useInitWatch', '-w', default=False, action='store_true',
                            help='use initWatch() functions instead of stream functions')
-    argParser.add_argument('--noVerbose', '-nv', default=False, action='store_true',
+    argParser.add_argument('--Verbose', '-v', default=False, action='store_true',
                            help='print verbose output')
 
     args = argParser.parse_args(argv)
 
     useInitWatch = args.useInitWatch
-    verbose = not args.noVerbose
+    verbose = args.Verbose
 
     # load the experiment configuration file
     print(f"rtSynth_rt: args.config={args.config}")
