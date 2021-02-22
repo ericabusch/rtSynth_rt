@@ -454,7 +454,7 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
     # here you are assuming that the first run is a good run
     run_asTemplate=str(run_asTemplate).zfill(6)
     tmp=glob(f"{tmp_dir}001_{run_asTemplate}*.nii") ; tmp.sort()
-    print(f"all nii files: {tmp}")
+    # print(f"all nii files: {tmp}")
     # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.recognition_dir}t.nii", shell=True)
 
     # convert cfg.templateFunctionalVolume to the previous template volume space 
