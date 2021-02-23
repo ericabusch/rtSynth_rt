@@ -1035,7 +1035,7 @@ def greedyMask(cfg,N=25): # N used to be 31
     # when every mask has run, find the best mask and save as the chosenMask
     roiloc="schaefer2018"
     dataSource="realtime"
-    subjects=cfg.subjectName
+    subjects=[cfg.subjectName]
     N=N
     GreedyBestAcc=np.zeros((len(subjects),N+1))
     GreedyBestAcc[GreedyBestAcc==0]=None
