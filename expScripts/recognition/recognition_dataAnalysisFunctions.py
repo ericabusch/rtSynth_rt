@@ -413,12 +413,22 @@ def behaviorDataLoading(cfg,curr_run):
 
     # extract the labels which is selected by the subject and coresponding TR and time
     behav_data = behav_data[['TR', 'image_on', 'Resp',  'Item']] # the TR, the real time it was presented, 
+
+    # this for loop is to deal with the situation where Resp is late for 1 TR, or two buttons are pressed. 
+    # when Resp is late for 1 TR, set the current Resp as the later Response.
+    # when two buttons are pressed, set the current Resp as the later Response because the later one should be the real choice
+    for curr_trial in range(behav_data.shape[0]):
+        if behav_data['Item'].iloc[curr_trial]  in ["A","B","C","D"]:
+            if behav_data['Resp'].iloc[curr_trial+1] in [1.0,2.0]:
+                behav_data['Resp'].iloc[curr_trial]=behav_data['Resp'].iloc[curr_trial+1]
+
     behav_data=behav_data.dropna(subset=['Item'])
 
     # check if the subject's response is correct. When Item is A,bed, response should be 1, or it is wrong
     isCorrect=[]
     for curr_trial in range(behav_data.shape[0]):
         isCorrect.append(correctResponseDict[behav_data['Item'].iloc[curr_trial]]==behav_data['Resp'].iloc[curr_trial])
+    print(f"accuracy for run {curr_run} = {np.mean(isCorrect)}")
 
     behav_data['isCorrect']=isCorrect # merge the isCorrect clumne with the data dataframe
     behav_data['subj']=[cfg.subjectName for i in range(len(behav_data))]
