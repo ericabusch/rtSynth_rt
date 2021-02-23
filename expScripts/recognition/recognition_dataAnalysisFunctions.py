@@ -281,8 +281,11 @@ def minimalClass(cfg):
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/behav_run{run}.csv")
         behav_data = pd.concat([behav_data,t])
 
-    FEAT=brain_data.reshape(brain_data.shape[0],-1)
+    # FEAT=brain_data.reshape(brain_data.shape[0],-1)
+
+    FEAT=brain_data
     print(f"FEAT.shape={FEAT.shape}")
+    assert len(FEAT.shape)==2
     # FEAT_mean=np.mean(FEAT,axis=1)
     # FEAT=(FEAT.T-FEAT_mean).T
     # FEAT_mean=np.mean(FEAT,axis=0)
@@ -564,7 +567,10 @@ def morphingTarget(cfg):
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
         behav_data=t if ii==0 else pd.concat([behav_data,t])
 
-    FEAT=brain_data.reshape(brain_data.shape[0],-1)
+    # FEAT=brain_data.reshape(brain_data.shape[0],-1)
+    FEAT=brain_data
+    print("FEAT.shape=",FEAT.shape)
+    assert len(FEAT.shape)==2
     # FEAT_mean=np.mean(FEAT,axis=1)
     # FEAT=(FEAT.T-FEAT_mean).T
     # FEAT_mean=np.mean(FEAT,axis=0)
@@ -621,14 +627,14 @@ def morphingTarget(cfg):
     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
     evidence_floor = np.mean(AD_D_evidence)
-    print(f"D evidence for AD_clf when A is presented={np.mean(evidence_floor)}")
+    print(f"D evidence for AD_clf when A is presented={evidence_floor}")
 
     # C evidence for AC_clf when A is presented.
     Y = ['table'] * X.shape[0]
     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
     AC_C_evidence = classifierEvidence(AC_clf,X,Y)
     evidence_floor = np.mean(AC_C_evidence)
-    print(f"C evidence for AC_clf when A is presented={np.mean(evidence_floor)}")
+    print(f"C evidence for AC_clf when A is presented={evidence_floor}")
 
 
     # D evidence for CD_clf when A is presented.
