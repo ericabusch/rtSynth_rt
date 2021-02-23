@@ -129,3 +129,4 @@ venv.bak/
 !subjects/sub*/ses*/recognition/choose.npy
 web/*
 *.mat
+!subjects/sub*/ses*/recognition/sub*.csv

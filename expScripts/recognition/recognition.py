@@ -40,6 +40,7 @@ alpha = string.ascii_uppercase
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
+argParser.add_argument('--test', '-t', default='0', type=str, help='test or not aka whether is on Mac')
 args = argParser.parse_args()
 
 cfg = cfg_loading(args.config)
@@ -47,14 +48,14 @@ sub = cfg.subjectName
 run = int(args.run)  # 1
 TR=cfg.TR
 
-if True:
-    scanmode = 'Scan'  # 'Scan' or 'Test' or None
-    screenmode = True  # fullscr True or False
-    monitor_name = "scanner" #"scanner" "testMonitor"
-else:
+if int(args.test):
     scanmode = 'Test'  # 'Scan' or 'Test' or None
     screenmode = False  # fullscr True or False
     monitor_name = "testMonitor" #"scanner" "testMonitor"
+else:
+    scanmode = 'Scan'  # 'Scan' or 'Test' or None
+    screenmode = True  # fullscr True or False
+    monitor_name = "scanner" #"scanner" "testMonitor"
 
 gui = True if screenmode == False else False
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
@@ -134,7 +135,17 @@ time_list = list(np.arange(0, (TR * maxTR), TR))
 imgPaths = list(trial_list['imgPath'])
 button_lefts = list(trial_list['button_left'])
 button_rights = list(trial_list['button_right'])
-
+ims = list(trial_list['imcode'])
+imcodeDict={
+'A': 'bed',
+'B': 'chair',
+'C': 'table',
+'D': 'bench'}
+correctResponseDict={
+'A': 1,
+'B': 2,
+'C': 1,
+'D': 2}
 # Initialize two blank lists -
 trials = [] # 'trials' to develop a list of indices pointing to images (for drawing from preloaded images)
 changes = [] # 'changes' to develop a list of 1s or 0s to indicate whether there should or should not be a red fixation
@@ -282,8 +293,10 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
                 button_left = button_lefts[0]
                 button_right = button_rights[0]
                 imgPaths.pop(0)
+                img=ims[0]
                 button_lefts.pop(0)
                 button_rights.pop(0)
+                ims.pop(0)
 
                 button_left_.setText(button_left)
                 button_right_.setText(button_right)
@@ -300,12 +313,14 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
             print('button_on', button_on_persist)
             # Print output to the screen so we can monitor performance
             print()
-            qual = 'Correctly' if changes[0] == 1 else 'Incorrectly'
-            if changes[0] == 1:
+
+            
+            qual = 'Correctly' if correctResponseDict[img]==int(resp) else 'Incorrectly'
+            if correctResponseDict[img]==int(resp):
                 hits += 1
             else:
                 falses += 1
-            # print('- {} pressed {} after {} s. {} hits, {} FA. -'.format(qual, resp, np.around(resp_time,2), hits, falses))
+            print('- {} pressed {} after {} s. {} hits, {} FA. -'.format(qual, resp, np.around(resp_time,2), hits, falses))
             event.clearEvents()
 
     if len(onsets) != 0:  # if there are still trials remaining, draw the trial
