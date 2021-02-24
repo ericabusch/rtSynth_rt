@@ -193,7 +193,7 @@ def minimalClass(cfg):
         
         # Main classifier on 5 runs, testing on 6th
         clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                 multi_class='multinomial').fit(trainX, trainY)
+                                    multi_class='multinomial').fit(trainX, trainY)
         B = clf.coef_[0]  # pull betas
 
         # retrieve only the first object, then only the second object
@@ -219,7 +219,7 @@ def minimalClass(cfg):
         # add to a dictionary for later use
         inds[clf.classes_[0]] = sortmult1X
         inds[clf.classes_[1]] = sortmult2X
-                 
+                    
         return inds
 
     if 'milgram' in os.getcwd():
@@ -309,7 +309,6 @@ def minimalClass(cfg):
     testRun = 2 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
 
     # Decide on the proportion of crescent data to use for classification
-    include = 1
     allpairs = itertools.combinations(objects,2)
     accs={}
     # Iterate over all the possible target pairs of objects
@@ -377,7 +376,7 @@ def minimalClass(cfg):
                 
                 # Train your classifier
                 clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                         multi_class='multinomial').fit(trainX, trainY)
+                                            multi_class='multinomial').fit(trainX, trainY)
                 
                 model_folder = cfg.trainingModel_dir
                 # Save it for later use
@@ -387,6 +386,85 @@ def minimalClass(cfg):
                 acc = clf.score(testX, testY)
                 print(naming, acc)
                 accs[naming]=acc
+
+
+    def evidence(trainX,trainY):
+        def classifierEvidence(clf,X,Y):
+            ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+            Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
+            # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
+            return np.asarray(Evidence)
+        FEAT=trainX
+        META=trainY
+        
+        A_ID = META['label']=='bed'
+        X = FEAT[A_ID]
+
+        print("floor")
+        # D evidence for AD_clf when A is presented.
+        Y = ['bench'] * X.shape[0]
+        AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+        AD_D_evidence = classifierEvidence(AD_clf,X,Y)
+        evidence_floor = np.mean(AD_D_evidence)
+        print(f"D evidence for AD_clf when A is presented={evidence_floor}")
+
+        # C evidence for AC_clf when A is presented.
+        Y = ['table'] * X.shape[0]
+        AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
+        AC_C_evidence = classifierEvidence(AC_clf,X,Y)
+        evidence_floor = np.mean(AC_C_evidence)
+        print(f"C evidence for AC_clf when A is presented={evidence_floor}")
+
+
+        # D evidence for CD_clf when A is presented.
+        Y = ['bench'] * X.shape[0]
+        CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+        CD_D_evidence = classifierEvidence(CD_clf,X,Y)
+        evidence_floor = np.mean(CD_D_evidence)
+        print(f"D evidence for CD_clf when A is presented={evidence_floor}")
+
+        # C evidence for CD_clf when A is presented.
+        Y = ['table'] * X.shape[0]
+        CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+        CD_C_evidence = classifierEvidence(CD_clf,X,Y)
+        evidence_floor = np.mean(CD_C_evidence)
+        print(f"C evidence for CD_clf when A is presented={evidence_floor}")
+
+
+
+
+
+        print("ceil")
+        # evidence_ceil  is A evidence in AC and AD classifier
+        Y = ['bed'] * X.shape[0]
+        AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
+        AC_A_evidence = classifierEvidence(AC_clf,X,Y)
+        evidence_ceil1 = AC_A_evidence
+        print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
+
+        Y = ['bed'] * X.shape[0]
+        AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+        AD_A_evidence = classifierEvidence(AD_clf,X,Y)
+        evidence_ceil2 = AD_A_evidence
+        print(f"A evidence in AD_clf when A is presented={np.mean(evidence_ceil2)}")
+
+        # evidence_ceil = np.mean(evidence_ceil1)
+        # evidence_ceil = np.mean(evidence_ceil2)
+        evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
+        print(f"evidence_ceil={evidence_ceil}")
+
+        mu = (ceil+floor)/2
+        sig = (ceil-floor)/2.3548
+        print(f"floor={floor}, ceil={ceil}")
+        print(f"mu={mu}, sig={sig}")
+
+
+    # print the evidence using model training data
+
+    # print the evidence using model testing data
+
+    evidence(FEAT,META)
+
     return accs
                 
 
