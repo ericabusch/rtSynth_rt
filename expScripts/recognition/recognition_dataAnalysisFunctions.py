@@ -453,9 +453,9 @@ def minimalClass(cfg):
         evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
         print(f"evidence_ceil={evidence_ceil}")
 
-        mu = (ceil+floor)/2
-        sig = (ceil-floor)/2.3548
-        print(f"floor={floor}, ceil={ceil}")
+        mu = (evidence_ceil+evidence_floor)/2
+        sig = (evidence_ceil-evidence_floor)/2.3548
+        print(f"floor={evidence_floor}, ceil={evidence_ceil}")
         print(f"mu={mu}, sig={sig}")
 
 
