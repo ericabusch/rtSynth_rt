@@ -430,6 +430,8 @@ def minimalClass(cfg):
         evidence_floor = np.mean(CD_C_evidence)
         print(f"C evidence for CD_clf when A is presented={evidence_floor}")
 
+        # since this subject has CD_clf C evidence systematically too high(sometimes higher than AC_clf A evidence or AD_clf A evidence), I choose to use 0 as the floor
+        evidence_floor = 0
 
 
 
