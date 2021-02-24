@@ -418,8 +418,22 @@ installLoggers(logging.INFO, logging.INFO, filename=f'{cfg.feedback_dir}SubjectS
 
 subjectService = SubjectService(args)
 subjectService.runDetached()
-
+global CurrBestParameter, parameter, points
+points=0
+CurrBestParameter=19
+history=pd.DataFrame(columns=['TR', 'parameter', 'states',"points"])
 default_parameter=19
+
+
+message = visual.TextStim(mywin, text=f'{points}',pos=(0.5, 0.4))
+def display(points,message):    
+    message.setAutoDraw(False)
+    message = visual.TextStim(mywin, text=f'{points}',pos=(0.5, 0.4))
+    message.setAutoDraw(True)
+    return message
+
+
+
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -429,6 +443,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         core.quit()
     if len(keys):
         TR.pop(0)
+        old_state=states[0]
         states.pop(0)
         newWobble.pop(0)
         print(states[0])
@@ -442,7 +457,8 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                 parameter = default_parameter
             else:
                 parameter = int(value)
-
+            if args.trying:
+                parameter = int(parameter/2)+1
             # print('feedbackParameterFileName=',feedbackParameterFileName)
             # parameters=pd.read_csv(feedbackParameterFileName)
             # if curr_parameter>(len(parameters['value'])-1):
@@ -478,6 +494,34 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                                 'imageTime':imagePaths[0].image,
                                 'eachTime':eachTime},
                                ignore_index=True)
+
+            history = history.append({
+                "TR":TR[0],
+                "parameter":parameter,
+                "points":points,
+                "states":states[0]
+            },
+            ignore_index=True)
+
+            # history = history.append({
+            #     "TR":TR[0],
+            #     "CurrBestParameter":CurrBestParameter,
+            #     "points":points,
+            #     "states":states[0]
+            # },
+            # ignore_index=True)
+
+            data.to_csv(newfile)
+            history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)))
+
+            if CurrBestParameter>parameter:
+                CurrBestParameter = parameter
+                print(f"CurrBestParameter={CurrBestParameter}")
+                points = points + 1
+
+            message=display(points,message)
+
+
             oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
             # print('curr morph=',oldMorphParameter)
             remainImageNumber.append(0)
@@ -510,15 +554,27 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     elif states[0] == 'ITI':
         backgroundImage.setAutoDraw(True)
         fix.draw()
+        if len(states)>4:
+            if states[4]=='ITI':
+                message=display(points,message)
+        
+
     elif states[0] == 'waiting':
         backgroundImage.setAutoDraw(False)
         image.setAutoDraw(True)
+        if len(states)>2:
+            if states[1]=='feedback':
+                message=display(points,message)
+                CurrBestParameter=19
+
+
+
+
     # refresh the screen
     mywin.flip()
 
 
 # write data out!
-data.to_csv(newfile)
 mywin.close()
 core.quit()
 
