@@ -698,6 +698,13 @@ def morphingTarget(cfg):
         # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
         return np.asarray(Evidence)
 
+    def clf_score(obj,altobj,clf,FEAT,META): # obj is A, altobj is B, clf is AC_clf
+        ID = (META['label']==imcodeDict[obj]) + (META['label']==imcodeDict[altobj])
+        X = FEAT[ID]
+        Y = META['label'][ID]
+        acc = clf.score(X, Y)
+        print(f"{obj}{altobj}_clf accuracy = {acc}")
+
     A_ID = (META['label']=='bed')
     X = FEAT[A_ID]
 
@@ -713,6 +720,7 @@ def morphingTarget(cfg):
     # D evidence for AD_clf when A is presented.
     Y = ['bench'] * X.shape[0]
     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+    clf_score("A","D",AD_clf,FEAT,META)
     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
     evidence_floor = np.mean(AD_D_evidence)
     print(f"D evidence for AD_clf when A is presented={evidence_floor}")
@@ -720,6 +728,7 @@ def morphingTarget(cfg):
     # C evidence for AC_clf when A is presented.
     Y = ['table'] * X.shape[0]
     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
+    clf_score("A","C",AC_clf,FEAT,META)
     AC_C_evidence = classifierEvidence(AC_clf,X,Y)
     evidence_floor = np.mean(AC_C_evidence)
     print(f"C evidence for AC_clf when A is presented={evidence_floor}")
@@ -728,6 +737,7 @@ def morphingTarget(cfg):
     # D evidence for CD_clf when A is presented.
     Y = ['bench'] * X.shape[0]
     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    clf_score("C","D",CD_clf,FEAT,META)
     CD_D_evidence = classifierEvidence(CD_clf,X,Y)
     evidence_floor = np.mean(CD_D_evidence)
     print(f"D evidence for CD_clf when A is presented={evidence_floor}")
@@ -735,6 +745,7 @@ def morphingTarget(cfg):
     # C evidence for CD_clf when A is presented.
     Y = ['table'] * X.shape[0]
     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
+    clf_score("C","D",CD_clf,FEAT,META)
     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
     evidence_floor = np.mean(CD_C_evidence)
     print(f"C evidence for CD_clf when A is presented={evidence_floor}")
@@ -747,12 +758,14 @@ def morphingTarget(cfg):
     # evidence_ceil  is A evidence in AC and AD classifier
     Y = ['bed'] * X.shape[0]
     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
+    clf_score("A","C",AC_clf,FEAT,META)
     AC_A_evidence = classifierEvidence(AC_clf,X,Y)
     evidence_ceil1 = AC_A_evidence
     print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
 
     Y = ['bed'] * X.shape[0]
     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+    clf_score("A","D",AD_clf,FEAT,META)
     AD_A_evidence = classifierEvidence(AD_clf,X,Y)
     evidence_ceil2 = AD_A_evidence
     print(f"A evidence in AD_clf when A is presented={np.mean(evidence_ceil2)}")
