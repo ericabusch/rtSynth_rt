@@ -356,17 +356,17 @@ def minimalClass(cfg):
                     trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
                     testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
                 else:
-                    trainIX = ((META['label']==obj) + (META['label']==altobj))
-                    testIX = ((META['label']==obj) + (META['label']==altobj))
+                    trainIX = ((META['label']==obj) | (META['label']==altobj))
+                    testIX = ((META['label']==obj) | (META['label']==altobj))
                 # pull training and test data
                 trainX = FEAT[trainIX]
                 testX = FEAT[testIX]
                 trainY = META.iloc[np.asarray(trainIX)].label
                 testY = META.iloc[np.asarray(testIX)].label
 
-                print(f"obj={obj},altobj={altobj}")
-                print(f"unique(trainY)={np.unique(trainY)}")
-                print(f"unique(testY)={np.unique(testY)}")
+                # print(f"obj={obj},altobj={altobj}")
+                # print(f"unique(trainY)={np.unique(trainY)}")
+                # print(f"unique(testY)={np.unique(testY)}")
                 assert len(np.unique(trainY))==2
 
                 # # If you're selecting high-importance features, this bit handles that
@@ -699,7 +699,7 @@ def morphingTarget(cfg):
         return np.asarray(Evidence)
 
     def clf_score(obj,altobj,clf,FEAT,META): # obj is A, altobj is B, clf is AC_clf
-        ID = (META['label']==imcodeDict[obj]) + (META['label']==imcodeDict[altobj])
+        ID = (META['label']==imcodeDict[obj]) | (META['label']==imcodeDict[altobj])
         X = FEAT[ID]
         Y = META['label'][ID]
         acc = clf.score(X, Y)

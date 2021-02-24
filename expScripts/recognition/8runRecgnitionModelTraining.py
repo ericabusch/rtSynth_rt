@@ -86,6 +86,7 @@ if cfg.session==1:
 
 # train the classifiers
 accs = minimalClass(cfg)
+print("\n\n")
 print(f"minimalClass accs={accs}")
 save_obj(accs,f"{cfg.recognition_dir}minimalClass_accs")
 # '''
