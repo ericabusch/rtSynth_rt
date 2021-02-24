@@ -751,7 +751,7 @@ def morphingTarget(cfg):
     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
     evidence_floor = np.mean(CD_C_evidence)
     print(f"C evidence for CD_clf when A is presented={evidence_floor}")
-
+    evidence_floor = 0
 
 
 
