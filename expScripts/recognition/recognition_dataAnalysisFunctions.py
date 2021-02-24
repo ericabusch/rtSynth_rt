@@ -306,7 +306,7 @@ def minimalClass(cfg):
     META['label']=label # merge the label column with the data dataframe
 
     # Which run to use as test data (leave as None to not have test data)
-    testRun = 2 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
+    testRun = 0 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
 
     # Decide on the proportion of crescent data to use for classification
     allpairs = itertools.combinations(objects,2)
