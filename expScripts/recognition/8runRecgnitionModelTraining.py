@@ -50,7 +50,7 @@ from rtCommon.cfg_loading import mkdir,cfg_loading
 cfg = cfg_loading(args.config)
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,greedyMask,normalize
+from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,greedyMask,normalize,classifierEvidence
 def wait(waitfor, delay=1):
     while not os.path.exists(waitfor):
         time.sleep(delay)

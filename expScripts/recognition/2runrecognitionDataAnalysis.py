@@ -38,7 +38,7 @@ from rtCommon.cfg_loading import mkdir,cfg_loading
 cfg = cfg_loading(args.config)
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,recognition_preprocess_2run,morphingTarget
+from recognition_dataAnalysisFunctions import recognition_preprocess,minimalClass,behaviorDataLoading,recognition_preprocess_2run,morphingTarget,classifierEvidence
 
 
 '''

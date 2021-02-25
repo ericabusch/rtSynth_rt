@@ -389,11 +389,11 @@ def minimalClass(cfg):
 
 
     def evidence(trainX,trainY):
-        def classifierEvidence(clf,X,Y):
-            ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-            Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-            # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
-            return np.asarray(Evidence)
+        # def classifierEvidence(clf,X,Y):
+        #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+        #     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
+        #     # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
+        #     return np.asarray(Evidence)
         FEAT=trainX
         META=trainY
         
@@ -402,14 +402,14 @@ def minimalClass(cfg):
 
         print("floor")
         # D evidence for AD_clf when A is presented.
-        Y = ['bench'] * X.shape[0]
+        Y = 'bench'
         AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
         AD_D_evidence = classifierEvidence(AD_clf,X,Y)
         evidence_floor = np.mean(AD_D_evidence)
         print(f"D evidence for AD_clf when A is presented={evidence_floor}")
 
         # C evidence for AC_clf when A is presented.
-        Y = ['table'] * X.shape[0]
+        Y = 'table'
         AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
         AC_C_evidence = classifierEvidence(AC_clf,X,Y)
         evidence_floor = np.mean(AC_C_evidence)
@@ -417,14 +417,14 @@ def minimalClass(cfg):
 
 
         # D evidence for CD_clf when A is presented.
-        Y = ['bench'] * X.shape[0]
+        Y = 'bench'
         CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
         CD_D_evidence = classifierEvidence(CD_clf,X,Y)
         evidence_floor = np.mean(CD_D_evidence)
         print(f"D evidence for CD_clf when A is presented={evidence_floor}")
 
         # C evidence for CD_clf when A is presented.
-        Y = ['table'] * X.shape[0]
+        Y = 'table'
         CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
         CD_C_evidence = classifierEvidence(CD_clf,X,Y)
         evidence_floor = np.mean(CD_C_evidence)
@@ -438,13 +438,13 @@ def minimalClass(cfg):
 
         print("ceil")
         # evidence_ceil  is A evidence in AC and AD classifier
-        Y = ['bed'] * X.shape[0]
+        Y = 'bed'
         AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
         AC_A_evidence = classifierEvidence(AC_clf,X,Y)
         evidence_ceil1 = AC_A_evidence
         print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
 
-        Y = ['bed'] * X.shape[0]
+        Y = 'bed'
         AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
         AD_A_evidence = classifierEvidence(AD_clf,X,Y)
         evidence_ceil2 = AD_A_evidence
@@ -612,7 +612,25 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
 
 
+# def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
+#     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+#     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+#     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
+#     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (-(X@clf.coef_.T+clf.intercept_))
+#     Evidence = 1/(1+np.exp(-Evidence))
+#     return np.asarray(Evidence)
 
+# def classifierEvidence(clf,X,Y):
+#     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+#     p = clf.predict_proba(X)[:,ID]
+#     BX=np.log(p/(1-p))
+#     return BX
+
+def classifierEvidence(clf,X,Y):
+    ID=np.where((clf.classes_==Y)*1==1)[0][0]
+    Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
+    # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
+    return np.asarray(Evidence)
 
 def morphingTarget(cfg):
     '''
@@ -681,25 +699,7 @@ def morphingTarget(cfg):
     META['label']=label # merge the label column with the data dataframe
 
 
-    # def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
-    #     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
-    #     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-    #     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-    #     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (-(X@clf.coef_.T+clf.intercept_))
-    #     Evidence = 1/(1+np.exp(-Evidence))
-    #     return np.asarray(Evidence)
 
-    # def classifierEvidence(clf,X,Y):
-    #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-    #     p = clf.predict_proba(X)[:,ID]
-    #     BX=np.log(p/(1-p))
-    #     return BX
-
-    def classifierEvidence(clf,X,Y):
-        ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-        Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-        # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
-        return np.asarray(Evidence)
 
     def clf_score(obj,altobj,clf,FEAT,META): # obj is A, altobj is B, clf is AC_clf
         ID = (META['label']==imcodeDict[obj]) | (META['label']==imcodeDict[altobj])
@@ -718,10 +718,32 @@ def morphingTarget(cfg):
 
     #try out other forms of floor: C evidence in AC and D evidence for AD
 
+    # imcodeDict={
+    # 'A': 'bed',
+    # 'B': 'chair',
+    # 'C': 'table',
+    # 'D': 'bench'}
+
+    # this part is to know the performance of BC and BD clf on current day to judge whether to use both clf in realtime.
+    print("BC_clf BD_clf accuracy")
+
+    BC_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairtable.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+    clf_score("B","C",BC_clf,FEAT,META)
+    B_ID = (META['label']=='chair')
+    BC_B_evidence = np.mean(classifierEvidence(BC_clf,FEAT[B_ID],'chair'))
+    print(f"B evidence for BC_clf when B is presented={BC_B_evidence}")
+
+    BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
+    clf_score("B","D",BD_clf,FEAT,META)
+    B_ID = (META['label']=='chair')
+    BD_B_evidence = np.mean(classifierEvidence(BD_clf,FEAT[B_ID],'chair'))
+    print(f"B evidence for BD_clf when B is presented={BC_B_evidence}")
+    
+    print()
 
     print("floor")
     # D evidence for AD_clf when A is presented.
-    Y = ['bench'] * X.shape[0]
+    Y = 'bench'
     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
     clf_score("A","D",AD_clf,FEAT,META)
     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
@@ -729,7 +751,7 @@ def morphingTarget(cfg):
     print(f"D evidence for AD_clf when A is presented={evidence_floor}")
 
     # C evidence for AC_clf when A is presented.
-    Y = ['table'] * X.shape[0]
+    Y = 'table'
     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
     clf_score("A","C",AC_clf,FEAT,META)
     AC_C_evidence = classifierEvidence(AC_clf,X,Y)
@@ -738,7 +760,7 @@ def morphingTarget(cfg):
 
 
     # D evidence for CD_clf when A is presented.
-    Y = ['bench'] * X.shape[0]
+    Y = 'bench'
     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
     clf_score("C","D",CD_clf,FEAT,META)
     CD_D_evidence = classifierEvidence(CD_clf,X,Y)
@@ -746,7 +768,7 @@ def morphingTarget(cfg):
     print(f"D evidence for CD_clf when A is presented={evidence_floor}")
 
     # C evidence for CD_clf when A is presented.
-    Y = ['table'] * X.shape[0]
+    Y = 'table'
     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
     clf_score("C","D",CD_clf,FEAT,META)
     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
@@ -759,14 +781,14 @@ def morphingTarget(cfg):
 
     print("ceil")
     # evidence_ceil  is A evidence in AC and AD classifier
-    Y = ['bed'] * X.shape[0]
+    Y = 'bed'
     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
     clf_score("A","C",AC_clf,FEAT,META)
     AC_A_evidence = classifierEvidence(AC_clf,X,Y)
     evidence_ceil1 = AC_A_evidence
     print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
 
-    Y = ['bed'] * X.shape[0]
+    Y = 'bed'
     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
     clf_score("A","D",AD_clf,FEAT,META)
     AD_A_evidence = classifierEvidence(AD_clf,X,Y)
