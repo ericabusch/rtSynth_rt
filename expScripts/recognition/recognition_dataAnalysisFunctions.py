@@ -564,21 +564,22 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])[:2]
     for curr_run in actualRuns:
-        outputFileNames=[]
-        runTRs=glob(f"{tmp_dir}001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
-        for curr_TR in runTRs:
-            command = f"3dvolreg \
-                -base {cfg.templateFunctionalVolume_converted} \
-                -prefix  {curr_TR[0:-4]}_aligned.nii \
-                {curr_TR}"
-            call(command,shell=True)
-            outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
-        files=''
-        for f in outputFileNames:
-            files=files+' '+f
-        command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
-        print('running',command)
-        call(command, shell=True)
+        if not (os.path.exists(f"{cfg.recognition_dir}run{curr_run}.nii.gz") and os.path.exists(f"{cfg.recognition_dir}run{curr_run}.nii")):
+            outputFileNames=[]
+            runTRs=glob(f"{tmp_dir}001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
+            for curr_TR in runTRs:
+                command = f"3dvolreg \
+                    -base {cfg.templateFunctionalVolume_converted} \
+                    -prefix  {curr_TR[0:-4]}_aligned.nii \
+                    {curr_TR}"
+                call(command,shell=True)
+                outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
+            files=''
+            for f in outputFileNames:
+                files=files+' '+f
+            command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
+            print('running',command)
+            call(command, shell=True)
 
     # remove the tmp folder
     shutil.rmtree(tmp_dir)
