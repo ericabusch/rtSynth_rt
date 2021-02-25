@@ -737,8 +737,8 @@ def morphingTarget(cfg):
     clf_score("B","D",BD_clf,FEAT,META)
     B_ID = (META['label']=='chair')
     BD_B_evidence = np.mean(classifierEvidence(BD_clf,FEAT[B_ID],'chair'))
-    print(f"B evidence for BD_clf when B is presented={BC_B_evidence}")
-    
+    print(f"B evidence for BD_clf when B is presented={BD_B_evidence}")
+
     print()
 
     print("floor")
