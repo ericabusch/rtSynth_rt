@@ -311,8 +311,9 @@ def preloadimages(parameterRange=np.arange(1,20),tune=1):
     print("preload image duration=", end - start)
     return imageLists
 
+_=time.time()
 imageLists=preloadimages(parameterRange=parameterRange,tune=tune)
-
+print(f"time passed {(time.time()-_)/60} min")
 # Open data file for eye tracking
 # datadir = "./data/feedback/"
 datadir = main_dir + f"subjects/{sub}/ses{sess}/feedback/"
