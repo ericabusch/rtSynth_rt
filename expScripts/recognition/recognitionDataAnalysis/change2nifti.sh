@@ -15,6 +15,17 @@ cd $dcm_dir
 for k in *
 do
     if [ -d "${k}" ]; then
-        dcm2niix -o $output_dir -f %i_%t_%f $dcm_dir/$k
+        dcm2niix -o $output_dir -f %i_%t_%f ${dcm_dir}/$k
     fi
+done
+
+cd ${output_dir}
+for k in *.nii ; do
+    echo $k
+    fslinfo $k  | grep dim4
+done
+
+for k in *.nii ; do
+    echo $k
+    fslinfo $k  | grep dim1
 done
