@@ -621,7 +621,7 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
 #     return np.asarray(Evidence)
 
 # def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+#     ID=np.where((clf.classes_==Y)*1==1)[0][0]
 #     p = clf.predict_proba(X)[:,ID]
 #     BX=np.log(p/(1-p))
 #     return BX
