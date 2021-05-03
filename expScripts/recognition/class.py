@@ -1,6 +1,7 @@
 import os
 print(f"conda env={os.environ['CONDA_DEFAULT_ENV']}") 
-import sys,pickle
+import sys
+import pickle5 as pickle
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import nibabel as nib
@@ -41,9 +42,9 @@ def Class(brain_data,behav_data):
     
     return np.mean(accs)
 
-def getMask(topN, subject):
+def getMask(topN, cfg):
     for pn, parc in enumerate(topN):
-        _mask = nib.load(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/{subject}/ses1/recognition/mask/schaefer_{parc}")
+        _mask = nib.load(f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/{subject}/ses1/recognition/mask/GMschaefer_{parc}")
         # schaefer_56.nii.gz
         aff = _mask.affine
         _mask = _mask.get_data()
@@ -53,11 +54,10 @@ def getMask(topN, subject):
         mask[mask>0] = 1
     return mask
 
-
-tmpFile = sys.argv[1]
+tmpFile = f"{sys.argv[1]}{int(sys.argv[2])-1}"
 print(f"tmpFile={tmpFile}")
 [_topN,subject,dataSource,roiloc,N] = load_obj(tmpFile)
-[brain_data,behav_data] = load_obj(f"./tmp_folder/{subject}_{dataSource}_{roiloc}_{N}") 
+[brain_data,behav_data] = load_obj(f"./tmp__folder/{subject}_{dataSource}_{roiloc}_{N}") 
 _mask=getMask(_topN,subject) ; print('mask dimensions: {}'. format(_mask.shape)) ; print('number of voxels in mask: {}'.format(np.sum(_mask)))
 brain_data = [t[:,_mask==1] for t in brain_data]
 print("Runs shape", [t.shape for t in brain_data])

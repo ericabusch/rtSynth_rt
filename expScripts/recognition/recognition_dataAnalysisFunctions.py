@@ -1085,65 +1085,75 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         if len(topN)==1:
             return None
         else:
-            try:
-                allpairs = itertools.combinations(topN,len(topN)-1)
-                topNs=[]
-                sl_results=[]
-                tmpFiles=[]
-                while os.path.exists(f"{cfg.projectDir}tmp_folder/holdon.npy"):
-                    time.sleep(10)
-                    print("sleep for 10s ; waiting for ./tmp_folder/holdon.npy to be deleted")
-                np.save(f"{cfg.projectDir}tmp_folder/holdon",1)
+            allpairs = itertools.combinations(topN,len(topN)-1)
+            topNs=[]
+            sl_results=[]
+            tmpFiles=[]
+            while os.path.exists(f"{cfg.projectDir}tmp__folder/holdon.npy"):
+                time.sleep(10)
+                print("sleep for 10s ; waiting for ./tmp__folder/holdon.npy to be deleted")
+            np.save(f"{cfg.projectDir}tmp__folder/holdon",1)
 
-                for i,_topN in enumerate(allpairs):
-                    tmpFile=f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_{i}"
-                    print(f"tmpFile={tmpFile}")
-                    topNs.append(_topN)
-                    tmpFiles.append(tmpFile)
+            # 对于每一个round，提交一个job array，然后等待这个job array完成之后再进行下一轮
+            # 具体的方法是首先保存需要的input，也就是这一轮需要用到的tmpFile，然后再将tmpFile除了之外的字符串输入
+            skip_flag=0
+            for i,_topN in enumerate(allpairs):
+                tmpFile=f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_{i}"
+                print(f"tmpFile={tmpFile}")
+                topNs.append(_topN)
+                tmpFiles.append(tmpFile)
 
-                    if not os.path.exists(tmpFile+'_result.npy'):
-                        # prepare brain data(runs) mask and behavior data(bcvar) 
+                if not os.path.exists(tmpFile+'_result.npy'):
+                    # prepare brain data(runs) mask and behavior data(bcvar) 
 
-                        save_obj([_topN,subject,dataSource,roiloc,N], tmpFile)
+                    save_obj([_topN,subject,dataSource,roiloc,N], tmpFile)
 
-                        print("kp2")
-                        numberOfJobsRunning = numOfRunningJobs()
-                        print("kp3")
-                        while numberOfJobsRunning > 400: # 300 is not filling it up
-                            print("kp4 300")
-                            print("waiting 10, too many jobs running") ; time.sleep(10)
-                            numberOfJobsRunning = numOfRunningJobs()
-                            print("kp5")
+                    # print("kp2")
+                    # numberOfJobsRunning = numOfRunningJobs()
+                    # print("kp3")
+                    # while numberOfJobsRunning > 400: # 300 is not filling it up
+                    #     print("kp4 300")
+                    #     print("waiting 10, too many jobs running") ; time.sleep(10)
+                    #     numberOfJobsRunning = numOfRunningJobs()
+                    #     print("kp5")
 
-                        # get the evidence for the current mask
-                        cmd=f'sbatch --requeue {cfg.recognition_expScripts_dir}class.sh {tmpFile}'
-                        print(cmd)
-                        proc = subprocess.Popen([cmd],shell=True) # sl_result = Class(_runs, bcvar) 
-                        print("kp6")
-                    else:
-                        print(tmpFile+'_result.npy exists!')
-                os.remove(f"{cfg.projectDir}tmp_folder/holdon.npy")
+                    # get the evidence for the current mask
+                    # cmd=f'sbatch --requeue {cfg.recognition_expScripts_dir}class.sh {tmpFile}'
+                    # print(cmd)
+                    # proc = subprocess.Popen([cmd],shell=True) # sl_result = Class(_runs, bcvar) 
+                    # print("kp6")
+                else:
+                    print(tmpFile+'_result.npy exists!')
+                    skip_flag+=1
 
-                # wait for everything to be finished and make a summary to find the best performed megaROI
-                sl_results=[]
-                for tmpFile in tmpFiles:
-                    sl_result=wait(tmpFile)
-                    sl_results.append(sl_result)
-                print(f"sl_results={sl_results}")
-                print(f"max(sl_results)=={max(sl_results)}")
-                maxID=np.where(sl_results==max(sl_results))[0][0]
-                save_obj({"subject":subject,
-                "startFromN":N,
-                "currNumberOfROI":len(topN)-1,
-                "bestAcc":max(sl_results),
-                "bestROIs":topNs[maxID]},
-                f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}"
-                )
-                print(f"bestAcc={max(sl_results)} For {len(topN)-1} = {cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}")
-                tmpFiles=next(topNs[maxID])
-                return 0
-            except:
-                return tmpFiles
+            if skip_flag!=(i+1): # 如果有一个不存在，就需要跑一跑
+                command=f'sbatch --array=1-{ii+1} {cfg.recognition_expScripts_dir}class.sh ./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_'
+                print(command)
+                proc = subprocess.Popen([command], shell=True) # sl_result = Class(_runs, bcvar) 
+            else:
+                command=f'sbatch --array=1-{ii+1} {cfg.recognition_expScripts_dir}class.sh ./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_'
+                print(f"skip {command}")
+
+            os.remove(f"{cfg.projectDir}tmp_folder/holdon.npy")
+
+            # wait for everything to be finished and make a summary to find the best performed megaROI
+            sl_results=[]
+            for tmpFile in tmpFiles:
+                sl_result=wait(tmpFile)
+                sl_results.append(sl_result)
+            print(f"sl_results={sl_results}")
+            print(f"max(sl_results)=={max(sl_results)}")
+            maxID=np.where(sl_results==max(sl_results))[0][0]
+            save_obj({"subject":subject,
+            "startFromN":N,
+            "currNumberOfROI":len(topN)-1,
+            "bestAcc":max(sl_results),
+            "bestROIs":topNs[maxID]},
+            f"{cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}"
+            )
+            print(f"bestAcc={max(sl_results)} For {len(topN)-1} = {cfg.projectDir}tmp_folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}")
+            tmpFiles=next(topNs[maxID])
+            return 0
     tmpFiles=next(topN)
 
 
