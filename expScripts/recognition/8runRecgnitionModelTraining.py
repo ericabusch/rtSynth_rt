@@ -73,10 +73,10 @@ run the mask selection
 '''
 # make ROIs
 if cfg.session==1:
-    if not os.path.exists(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz"):
+    if not os.path.exists(f"{cfg.recognition_dir}mask/GMschaefer_300.nii.gz"):
         print(f"running sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
         subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
-        wait(f"{cfg.recognition_dir}mask/schaefer_300.nii.gz")
+        wait(f"{cfg.recognition_dir}mask/GMschaefer_300.nii.gz")
 
     # when this is the first session, you need to select the chosenMask
     # python expScripts/recognition/greedyMask.py

@@ -68,7 +68,7 @@ def cfg_loading(toml=''):
     cfg.dicomNamePattern  = "001_{SCAN:06d}_{TR:06d}.dcm" # "001_0000{}_000{}.dcm"
     cfg.mask_dir          = f"{cfg.recognition_dir}mask/"
     cfg.chosenMask = f"{cfg.subjects_dir}{cfg.subjectName}/ses1/recognition/chosenMask.npy"
-
+    cfg.GMINFUNC=f"{cfg.subjects_dir}{cfg.subjectName}/ses1/anat/gm_func.nii.gz"
     # prepare folder structure
     mkdir(f"{cfg.subjects_dir}{cfg.subjectName}") # mkdir subject folder
     for curr_ses in [1,5]:

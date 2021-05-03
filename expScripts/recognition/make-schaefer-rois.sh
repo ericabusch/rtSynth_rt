@@ -25,8 +25,8 @@ source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
 set -e #stop immediately encountering error
 mkdir -p ./logs/
-sub=$1 #sub001
-recognition_dir=$2 #/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition/
+sub=$1 #sub=sub001
+recognition_dir=$2 #recognition_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition/
 mask_dir=${recognition_dir}mask/
 mkdir -p ${mask_dir} # save the output files in the current folder
 
@@ -39,18 +39,18 @@ ROIpath=/gpfs/milgram/scratch/turk-browne/tsy6/CBIG/stable_projects/brain_parcel
 #register deskulled roi to individual subject t1
 WANG2FUNC=${recognition_dir}wang2func.mat
 TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
-TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii     
+TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii.gz
 if [ -f "$TEMPLATE_bet" ]; then
-    echo "TEMPLATE_bet mat exists"
+    echo "TEMPLATE_bet exists"
 else 
-    echo "TEMPLATE_bet mat does not exist"
+    echo "TEMPLATE_bet does not exist"
     bet ${TEMPLATE} ${TEMPLATE_bet}
 fi
 WANGINFUNC=${recognition_dir}wanginfunc.nii.gz
 if [ -f "$WANG2FUNC" ]; then
-    echo "xfm mat exists"
+    echo "WANGINFUNC exists"
 else 
-    echo "xfm mat does not exist"
+    echo "WANGINFUNC does not exist"
     flirt -ref $TEMPLATE_bet -in $STAND -omat $WANG2FUNC -out $WANGINFUNC
 fi
 
@@ -58,10 +58,34 @@ atlas=Schaefer2018_300Parcels_7Networks_order_FSLMNI152_1mm.nii.gz
 
 # using saved transformation matrix, convert schaefer ROIs from wang2014 standard space to individual T1 space
 for ROI in {1..300}; do
-  INPUT=$ROIpath/$atlas # schaefer2018 standard space
-  OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz #individual T1 space ROI outputs
-  fslmaths $INPUT -thr $ROI -uthr $ROI -bin $OUTPUT
-  flirt -ref $TEMPLATE_bet -in $OUTPUT -out $OUTPUT -applyxfm -init $WANG2FUNC
-  fslmaths $OUTPUT -thr 0.5 -bin $OUTPUT
+    INPUT=$ROIpath/$atlas # schaefer2018 standard space
+    OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz #individual T1 space ROI outputs
+    fslmaths ${INPUT} -thr ${ROI} -uthr ${ROI} -bin ${OUTPUT}
+    flirt -ref ${TEMPLATE_bet} -in ${OUTPUT} -out ${OUTPUT} -applyxfm -init ${WANG2FUNC}  
+    fslmaths ${OUTPUT} -thr 0.5 -bin ${OUTPUT}
 done
-  
+
+# GMINFUNC=${recognition_dir}../anat/gm_func.nii.gz
+GMINFUNC=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${sub}/ses1/anat/gm_func.nii.gz
+for ROI in {1..300}; do  
+    OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz
+    GMmasked_OUTPUT=${mask_dir}/GMschaefer_${ROI}.nii.gz
+    fslmaths ${OUTPUT} -add ${GMINFUNC} ${GMmasked_OUTPUT}
+    fslmaths ${GMmasked_OUTPUT} -thr 1.5 -bin ${GMmasked_OUTPUT}
+done
+
+
+# 验证GM mask是成功的：
+# for ROI in {1..300}; do  
+#     temp=${mask_dir}/tmp.nii.gz
+#     OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz
+#     fslmaths ${OUTPUT} -add ${temp} ${temp}
+# done
+
+# for ROI in {1..300}; do  
+#     GMtemp=${mask_dir}/GM_tmp.nii.gz
+#     GMmasked_OUTPUT=${mask_dir}/GMschaefer_${ROI}.nii.gz
+#     fslmaths ${GMmasked_OUTPUT} -add ${GMtemp} ${GMtemp}
+# done
+
+# fslview_deprecated $GMtemp $temp
