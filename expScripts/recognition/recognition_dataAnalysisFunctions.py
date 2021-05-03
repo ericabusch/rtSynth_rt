@@ -1173,7 +1173,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         for len_topN_1 in range(N-1,0,-1):
             try:
                 # print(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
-                di = load_obj(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
+                di = load_obj(f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
                 GreedyBestAcc[ii,len_topN_1-1] = di['bestAcc']
             except:
                 pass
