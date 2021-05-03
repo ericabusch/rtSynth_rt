@@ -37,7 +37,7 @@ SUMA_result=${SUMA_dir}${subject}_SurfVol+orig
 # gm+orig.BRIK		   lh_gm+orig.HEAD
 '''
 #去除T1的颅骨
-3dSkullStrip -input ../anat/anat_reorien.nii.gz -prefix anat_stripped+orig
+3dSkullStrip -input ../anat/T1.nii -prefix anat_stripped+orig
 
 #去除皮层的颅骨
 3dSkullStrip -input ${subject}_SurfVol+orig -prefix ${subject}_SurfVol_stripped 
@@ -63,12 +63,25 @@ align_epi_anat.py -dset1 anat_stripped+orig -dset2 ${subject}_SurfVol_stripped_s
 # 将已经搞好的在T1 space的灰质mask转移到functional space里面去
 # processedEPI=/gpfs/milgram/project/turk-browne/projects/rtTest/wang2014/${subject}/neurosketch_recognition_run_1_bet.nii.gz # processedEPI+orig 是一个处理好的functional 数据
 processedEPI=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${subject}/ses1/recognition/templateFunctionalVolume.nii 
-3dresample -master ${processedEPI} -prefix gm_shft_aligned_smooth_resamp+orig -input gm_shft_aligned_smooth+orig
+processedEPI_bet=../anat/functional_bet.nii
+bet ${processedEPI} ${processedEPI_bet}
+3dresample -master ${processedEPI_bet} -prefix gm_shft_aligned_smooth_resamp+orig -input gm_shft_aligned_smooth+orig
+3dresample -input gm_shft_aligned_smooth_resamp+orig -prefix gm_resamp.nii.gz # 将afni的数据转化成为nifti的数据格式
 
 # 最终的functional的灰质mask是 gm_shft_aligned_smooth_resamp+orig
 
-# 将afni的数据转化成为nifti的数据格式
-3dresample -input gm_shft_aligned_smooth_resamp+orig -prefix gm.nii.gz
 
+
+3dresample -master ../anat/T1.nii -prefix gm_anat+orig -input gm_shft_aligned_smooth+orig
+3dresample -input gm_anat+orig -prefix gm_anat.nii.gz #gm_anat.nii.gz 是在anat空间里面的gm mask
+# 将T1.nii去掉颅骨
+bet ../anat/T1.nii ../anat/T1_bet.nii
+# 制造T1.nii到processedEPI的投射
+flirt -ref ${processedEPI_bet} -in ../anat/T1_bet.nii -out ../anat/T1inFunc.nii -omat ../anat/T1inFunc.mat
+# fslview_deprecated ../anat/T1inFunc.nii ${processedEPI_bet}
+# 用T1.nii到processedEPI的投射 将gm转移到processedEPI空间里面
+flirt -ref ${processedEPI_bet} -in gm_anat.nii.gz -out ../anat/gm_func.nii.gz -applyxfm -init ../anat/T1inFunc.mat
+fslview_deprecated ${processedEPI_bet} ../anat/gm_func.nii.gz
 # 查看效果，产生的gm是否在functional space里面。
 # fslview_deprecated ${functionGreyMatter} ${processedEPI}
+# fslview_deprecated gm.nii.gz ${processedEPI}

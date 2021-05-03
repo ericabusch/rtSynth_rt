@@ -875,7 +875,7 @@ def fetchXnat(sess_ID):
 
     # furthur work need to be done with this resulting nifti folder
 
-def greedyMask(cfg,N=25): # N used to be 31
+def greedyMask(cfg,N=78): # N used to be 31, 25
     '''
     purpose:
         starting from N ROIs, get the best performed ROI combination in a greedy way
@@ -952,7 +952,7 @@ def greedyMask(cfg,N=25): # N used to be 31
 
     def getMask(topN, cfg):
         for pn, parc in enumerate(topN):
-            _mask = nib.load(cfg.recognition_dir+"mask/schaefer_{}".format(parc))
+            _mask = nib.load(cfg.recognition_dir+"mask/GMschaefer_{}".format(parc))
             # schaefer_56.nii.gz
             aff = _mask.affine
             _mask = _mask.get_data()
