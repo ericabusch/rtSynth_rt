@@ -138,7 +138,7 @@ def normalize(X):
     _X[np.isnan(_X)]=0
     return _X
 
-def minimalClass(cfg):
+def minimalClass(cfg,testRun=None):
     '''
     purpose: 
         train offline models
@@ -147,7 +147,6 @@ def minimalClass(cfg):
         load preprocessed and aligned behavior and brain data 
         select data with the wanted pattern like AB AC AD BC BD CD 
         train correspondng classifier and save the classifier performance and the classifiers themselves.
-
     '''
 
     import os
@@ -306,7 +305,7 @@ def minimalClass(cfg):
     META['label']=label # merge the label column with the data dataframe
 
     # Which run to use as test data (leave as None to not have test data)
-    testRun = 0 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
+    # testRun = 0 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
 
     # Decide on the proportion of crescent data to use for classification
     allpairs = itertools.combinations(objects,2)
@@ -461,12 +460,10 @@ def minimalClass(cfg):
         print(f"mu={mu}, sig={sig}")
 
 
-    # print the evidence using model training data
-
+    # # print the evidence using model training data
+    # evidence(FEAT,META)
     # print the evidence using model testing data
-
-    evidence(FEAT,META)
-
+    
     return accs
                 
 
