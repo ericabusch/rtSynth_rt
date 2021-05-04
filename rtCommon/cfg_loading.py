@@ -54,7 +54,7 @@ def cfg_loading(toml=''):
     cfg.recognition_expScripts_dir = f"{cfg.projectDir}expScripts/recognition/"
     cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
 
-    cfg.TR=2
+    cfg.TR=2 #每一个TR有2s
 
     cfg.preDay_dicom_dir  = findDir(f"{cfg.dicom_folder}{cfg.preDay_YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  #e.g. /gpfs/milgram/project/realtime/DICOM/20201009.rtSynth_pilot001.rtSynth_pilot001/  # cfg.preDay_YYYYMMDD is "0" when there is no previous day
     cfg.dicom_dir         = findDir(f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  # YYYYMMDD.$LASTNAME.$PATIENTID  e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm
@@ -69,6 +69,7 @@ def cfg_loading(toml=''):
     cfg.mask_dir          = f"{cfg.recognition_dir}mask/"
     cfg.chosenMask = f"{cfg.subjects_dir}{cfg.subjectName}/ses1/recognition/chosenMask.npy"
     cfg.GMINFUNC=f"{cfg.subjects_dir}{cfg.subjectName}/ses1/anat/gm_func.nii.gz"
+    cfg.adaptiveThreshold=f"{cfg.subjects_dir}{cfg.subjectName}/adaptiveThreshold"
     # prepare folder structure
     mkdir(f"{cfg.subjects_dir}{cfg.subjectName}") # mkdir subject folder
     for curr_ses in [1,5]:

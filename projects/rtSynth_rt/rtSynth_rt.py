@@ -51,6 +51,7 @@ import scipy.io as sio
 from rtCommon.cfg_loading import mkdir,cfg_loading
 from subprocess import call
 import joblib
+import pandas as pd
 from scipy.stats import zscore
 if verbose:
     print(''
@@ -78,7 +79,7 @@ from rtCommon.clientInterface import ClientInterface
 from rtCommon.imageHandling import readRetryDicomFromDataInterface, convertDicomImgToNifti
 from rtCommon.dataInterface import DataInterface #added by QL
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-from recognition_dataAnalysisFunctions import normalize,classifierEvidence
+from recognition_dataAnalysisFunctions import normalize,classifierProb
 
 # def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
 #     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
@@ -258,8 +259,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     mask=np.load(cfg.chosenMask)
 
     # load clf
-    [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
-    print(f"mu={mu},sig={sig}")
+    # [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
+    # print(f"mu={mu},sig={sig}")
     def sigmoid(z):
         return 1.0 / (1.0 + np.exp(-z))
     # getting MorphingParameter: 
@@ -274,10 +275,13 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     # where the morphParams are saved
     output_textFilename = f'{cfg.feedback_dir}morphParam_{scanNum}.txt'
     output_matFilename = os.path.join(f'{cfg.feedback_dir}morphParam_{scanNum}.mat')
+    
+    
 
-    num_total_TRs = cfg.num_total_TRs  # number of TRs to use for example 1
+    num_total_trials=12
+    num_total_TRs = int((12*28+12)/2)  # number of TRs to use for example 1
     morphParams = np.zeros((num_total_TRs, 1))
-    B_evidences=[]
+    B_probs=[]
     maskedData=0
     for this_TR in np.arange(1,num_total_TRs):
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
@@ -327,7 +331,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         if dicomData is None:
             print('Error: getImageData returned None')
             return
-   
+                    
         dicomData.convert_pixel_data()
 
         # use 'dicomreaders.mosaic_to_nii' to convert the dicom data into a nifti
@@ -369,21 +373,23 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # 'B': 'chair',
         # 'C': 'table',
         # 'D': 'bench'}
-        print(f"classifierEvidence(BC_clf,X,Y)={classifierEvidence(BC_clf,X,Y)}")
-        print(f"classifierEvidence(BD_clf,X,Y)={classifierEvidence(BD_clf,X,Y)}")
-        BC_B_evidence = classifierEvidence(BC_clf,X,Y)[0]
-        BD_B_evidence = classifierEvidence(BD_clf,X,Y)[0]
-        print(f"BC_B_evidence={BC_B_evidence}")
-        print(f"BD_B_evidence={BD_B_evidence}")
-        B_evidence = float((BC_B_evidence+BD_B_evidence)/2)
-        print(f"B_evidence={B_evidence}")
-        print(f"mu={mu}, sig={sig}")
-        morphParam=int(gaussian(B_evidence, mu, sig))
-        B_evidences.append(B_evidence)
+        print(f"classifierProb(BC_clf,X,Y)={classifierProb(BC_clf,X,Y)}")
+        print(f"classifierProb(BD_clf,X,Y)={classifierProb(BD_clf,X,Y)}")
+        BC_B_prob = classifierProb(BC_clf,X,Y)[0]
+        BD_B_prob = classifierProb(BD_clf,X,Y)[0]
+        print(f"BC_B_evidence={BC_B_prob}")
+        print(f"BD_B_evidence={BD_B_prob}")
+        B_prob = float((BC_B_prob+BD_B_prob)/2)
+        print(f"B_prob={B_prob}")
+        # print(f"mu={mu}, sig={sig}")
+        # morphParam=int(gaussian(B_evidence, mu, sig))
+
+        
+        B_probs.append(B_prob)
         print(f"morphParam={morphParam}")
 
 
-        print("| morphParam for TR %d is %f" %(this_TR, morphParam))
+        print("| morphParam for TR %d is %f" %(this_TR, B_prob))
 
         # use 'sendResultToWeb' from 'projectUtils.py' to send the result to the
         #   web browser to be plotted in the --Data Plots-- tab.
@@ -391,17 +397,18 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         if verbose:
             print("| send result to the presentation computer for provide subject feedback")
-        subjInterface.setResult(runNum, int(this_TR), morphParam)
+        
+        subjInterface.setResult(runNum, int(this_TR), B_prob)
 
         if verbose:
             print("| send result to the web, plotted in the 'Data Plots' tab")
-        webInterface.plotDataPoint(runNum, int(this_TR), B_evidence)
+        webInterface.plotDataPoint(runNum, int(this_TR), B_prob)
 
         # save the activations value info into a vector that can be saved later
-        morphParams[this_TR] = morphParam
+        # morphParams[this_TR] = morphParam
 
-        dataInterface.putFile(output_textFilename,str(morphParams))
-        np.save(f'{cfg.feedback_dir}B_evidences_{scanNum}',B_evidences)
+        dataInterface.putFile(output_textFilename,str(B_prob))
+        np.save(f'{cfg.feedback_dir}B_evidences_{scanNum}',B_prob)
         
 
         

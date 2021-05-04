@@ -131,3 +131,4 @@ web/*
 *.mat
 !subjects/sub*/ses*/recognition/sub*.csv
 !subjects/sub*/ses*/feedback/*
+!subjects/sub*/*.csv

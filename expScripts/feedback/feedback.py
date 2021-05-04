@@ -27,6 +27,8 @@ from rtCommon.subjectInterface import SubjectInterface
 from rtCommon.wsRemoteService import WsRemoteService, parseConnectionArgs
 from rtCommon.utils import installLoggers
 from rtCommon.cfg_loading import mkdir,cfg_loading
+sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
+from recognition_dataAnalysisFunctions import AdaptiveThreshold
 
 
 
@@ -104,6 +106,7 @@ if checkSSLCertAltName(certFile, addr) is False:
 cfg = cfg_loading(args.config)
 sub = cfg.subjectName
 run = int(args.run)  # 1
+cfg.run = run
 sess = int(cfg.session)
 
 cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
@@ -193,46 +196,44 @@ for i in range(6): # should be 6TR=12s
                                 ignore_index=True)
     curTime=curTime+TRduration
     curTR=curTR+1
-
-# for currTrial in range(1,1+TrialNumber):
-#     for i in range(1): # should be 6TR=12s
-#         trial_list=trial_list.append({'Trial':currTrial,
-#                                     'time':curTime,
-#                                     'TR':curTR,
-#                                     'state':'ITI',
-#                                     'newWobble':0},
-#                                     ignore_index=True)
-#         curTime=curTime+TR
-#         curTR=curTR+1
-#     for i in range(1): # should be 3TR=6s
-#         trial_list=trial_list.append({'Trial':currTrial,
-#                                     'time':curTime,
-#                                     'TR':curTR,
-#                                     'state':'waiting',
-#                                     'newWobble':0},
-#                                     ignore_index=True)
-#         curTime=curTime+TR
-#         curTR=curTR+1
-#     for i in range(5): #5TR=10s
-#         trial_list=trial_list.append({'Trial':currTrial,
-#                                     'time':curTime,
-#                                     'TR':curTR,
-#                                     'state':'feedback',
-#                                     'newWobble':1},
-#                                     ignore_index=True)
-#         curTime=curTime+TR
-#         curTR=curTR+1
-# for i in range(1): # should be 6TR=12s
-#     trial_list=trial_list.append({'Trial':currTrial,
-#                                 'time':curTime,
-#                                 'TR':curTR,
-#                                 'state':'ITI',
-#                                 'newWobble':0},
-#                                 ignore_index=True)
-#     curTime=curTime+TR
-#     curTR=curTR+1
-
-
+# old
+    # for currTrial in range(1,1+TrialNumber):
+    #     for i in range(1): # should be 6TR=12s
+    #         trial_list=trial_list.append({'Trial':currTrial,
+    #                                     'time':curTime,
+    #                                     'TR':curTR,
+    #                                     'state':'ITI',
+    #                                     'newWobble':0},
+    #                                     ignore_index=True)
+    #         curTime=curTime+TR
+    #         curTR=curTR+1
+    #     for i in range(1): # should be 3TR=6s
+    #         trial_list=trial_list.append({'Trial':currTrial,
+    #                                     'time':curTime,
+    #                                     'TR':curTR,
+    #                                     'state':'waiting',
+    #                                     'newWobble':0},
+    #                                     ignore_index=True)
+    #         curTime=curTime+TR
+    #         curTR=curTR+1
+    #     for i in range(5): #5TR=10s
+    #         trial_list=trial_list.append({'Trial':currTrial,
+    #                                     'time':curTime,
+    #                                     'TR':curTR,
+    #                                     'state':'feedback',
+    #                                     'newWobble':1},
+    #                                     ignore_index=True)
+    #         curTime=curTime+TR
+    #         curTR=curTR+1
+    # for i in range(1): # should be 6TR=12s
+    #     trial_list=trial_list.append({'Trial':currTrial,
+    #                                 'time':curTime,
+    #                                 'TR':curTR,
+    #                                 'state':'ITI',
+    #                                 'newWobble':0},
+    #                                 ignore_index=True)
+    #     curTime=curTime+TR
+    #     curTR=curTR+1
 
 # parameters = np.arange(1,step*(sum((trial_list['newWobble']==1)*1)),step) #[1,2,3,4,5,6,7,8]
 
@@ -257,7 +258,8 @@ def sample(L,num=10):
 
 
 # preload image list for parameter from 1 to 19.
-def preloadimages(parameterRange=np.arange(1,20),tune=1):
+# def preloadimages(parameterRange=np.arange(1,20),tune=1):
+def preloadimages(parameterRange=[1,5,9,13],tune=1):
     '''
     purpose:
         preload images into image object sequences corrresponding too each parameter
@@ -422,7 +424,7 @@ subjectService.runDetached()
 global CurrBestParameter, parameter, points
 points=0
 CurrBestParameter=19
-history=pd.DataFrame(columns=['TR', 'parameter', 'states',"points"])
+history=pd.DataFrame(columns=['TR', 'morphParam', 'states',"points"])
 default_parameter=19
 
 
@@ -433,8 +435,20 @@ def display(points,message):
     message.setAutoDraw(True)
     return message
 
+if cfg.session == 1 and cfg.run == 1:
+    ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful trials', 'perfect trials'])
+else:
+    ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
 
+ThresholdLog = AdaptiveThreshold(ThresholdLog)
+ThresholdLog.to_csv(cfg.adaptiveThreshold)
 
+threshold = ThresholdLog['threshold'].iloc[-1]
+
+initialMorphParam=13
+morphParam=initialMorphParam
+perfect_trials=0
+successful_trials=0
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -455,11 +469,21 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             runId,trID,value,timestamp=feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
 
             if value==None:
-                parameter = default_parameter
+                B_prob = default_parameter
             else:
-                parameter = int(value)
-            if args.trying:
-                parameter = int(parameter/2)+1
+                B_prob = float(value)
+            
+            if B_prob >= threshold:
+                morphParam = morphParam - 4
+                successful_TR=successful_TR+1
+            if B_prob < threshold:
+                morphParam = morphParam + 4
+            # 不要越界了：[1,5,9,13]
+            if morphParam>13:
+                morphParam=13
+            if morphParam<1:
+                morphParam=1
+
             # print('feedbackParameterFileName=',feedbackParameterFileName)
             # parameters=pd.read_csv(feedbackParameterFileName)
             # if curr_parameter>(len(parameters['value'])-1):
@@ -468,17 +492,15 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # parameter=parameters['value'].iloc[curr_parameter]
             # print('curr_parameter=',curr_parameter)
             # print('parameter=',parameter)
-            print(f'TR[0]={TR[0]},trID={trID},parameter={parameter},timestamp={timestamp},runId={runId}')
+            print(f'TR[0]={TR[0]},trID={trID},parameter={morphParam},timestamp={timestamp},runId={runId}')
 
             # curr_parameter=curr_parameter+1
             # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
             trialClock=core.Clock()
             trialTime=trialClock.getTime()
             # update the image list to be shown based on the fetched parameter
-            if args.trying:
-                if parameter>9:
-                    parameter=9
-            imagePaths=imageLists[parameter] #list(imageLists[parameter])
+
+            imagePaths=imageLists[morphParam] #list(imageLists[parameter])
             # calculated how long each image should last.
             eachTime=ParameterUpdateDuration/len(imagePaths)
             # update the image
@@ -498,7 +520,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 
             history = history.append({
                 "TR":TR[0],
-                "parameter":parameter,
+                "morphParam":morphParam,
                 "points":points,
                 "states":states[0]
             },
@@ -515,18 +537,23 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             data.to_csv(newfile)
             history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)))
 
-            if CurrBestParameter>parameter:
-                CurrBestParameter = parameter
-                print(f"CurrBestParameter={CurrBestParameter}")
-                points = points + 1
+            # if CurrBestParameter>morphParam:
+            #     CurrBestParameter = morphParam
+            #     print(f"CurrBestParameter={CurrBestParameter}")
+            #     points = points + 1
 
-            message=display(points,message)
-
+            if successful_TR >= 3:
+                message=display("Perfect!",message)
+            elif successful_TR > 0:
+                message=display("Good job!",message)
+            else:
+                message=display("Failed",message)
 
             oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
             # print('curr morph=',oldMorphParameter)
             remainImageNumber.append(0)
             currImage=1
+            ITIFlag=1 #这个flag用来避免ITI的时候多次计数
             # # discard the first image since it has been used.
             # imagePaths.pop(0)
     if (states[0] == 'feedback') and (trialTime>currImage*eachTime):
@@ -555,25 +582,41 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     elif states[0] == 'ITI':
         backgroundImage.setAutoDraw(True)
         fix.draw()
-        if len(states)>4:
-            if states[4]=='ITI':
-                message=display(points,message)
-        
+        if len(states)>4: #保证了当前的ITI不是这个run最后一个TR
+            if states[4]=='ITI': #保证了当前的ITI是连续6个ITI当中的不是后面的ITI
+                if successful_TR >= 3:
+                    message=display("Perfect!",message)
+                elif successful_TR > 0:
+                    message=display("Good job!",message)
+                else:
+                    message=display("Failed",message)
+
+                if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+                    if successful_TR >= 3:
+                        perfect_trials+=1
+                    elif successful_TR > 0:
+                        successful_trials+=1
+                    else:
+                        pass
+                    ITIFlag = 0 
 
     elif states[0] == 'waiting':
+        morphParam=13 #每一个trial结束之后将morphing parameter重置
+        successful_TR=0 #每一个trial结束之后将successful_TR(在这个trial中成功的TR数)重置
         backgroundImage.setAutoDraw(False)
         image.setAutoDraw(True)
         if len(states)>2:
             if states[1]=='feedback':
-                message=display(points,message)
+                # message=display(points,message)
                 CurrBestParameter=19
-
-
-
 
     # refresh the screen
     mywin.flip()
 
+# 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
+ThresholdLog["successful trials",-1] = successful_trials
+ThresholdLog["perfect_trials",-1] = perfect_trials
+ThresholdLog.to_csv(cfg.adaptiveThreshold)
 
 # write data out!
 mywin.close()
