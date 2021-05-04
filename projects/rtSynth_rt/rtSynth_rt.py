@@ -346,8 +346,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # save(f"{tmp_dir}niftiObject")
         # niiFileName=f"{tmp_dir}{fileName.split('/')[-1].split('.')[0]}.nii"
         niiFileName= tmp_dir+cfg.dicomNamePattern.format(SCAN=scanNum,TR=this_TR).split('.')[0]
-        print(f"niiFileName={niiFileName}")
-        nib.save(niftiObject, niiFileName)  
+        print(f"niiFileName={niiFileName}.nii")
+        nib.save(niftiObject, f"{niiFileName}.nii")  
         # align -in f"{tmp_dir}niftiObject" -ref cfg.templateFunctionalVolume_converted -out f"{tmp_dir}niftiObject"
         # 由于遇到了这个bug：Input: A-P R-L I-S
             # Base:  R-L P-A I-S
@@ -356,7 +356,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         call(f"3dresample \
             -master {cfg.templateFunctionalVolume_converted} \
             -prefix {niiFileName}_reorient.nii \
-            {niiFileName}",
+            {niiFileName}.nii",
             shell=True)
         command = f"3dvolreg \
                 -base {cfg.templateFunctionalVolume_converted} \
