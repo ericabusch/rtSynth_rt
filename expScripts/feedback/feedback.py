@@ -438,7 +438,7 @@ if cfg.session == 2 and cfg.run == 1:
 else:
     ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
 
-ThresholdLog = AdaptiveThreshold(ThresholdLog)
+ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 print(f"---------writing ThresholdLog---------")
 ThresholdLog.to_csv(cfg.adaptiveThreshold)
 
