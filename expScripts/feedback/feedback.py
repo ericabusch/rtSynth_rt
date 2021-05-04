@@ -27,7 +27,7 @@ from rtCommon.subjectInterface import SubjectInterface
 from rtCommon.wsRemoteService import WsRemoteService, parseConnectionArgs
 from rtCommon.utils import installLoggers
 from rtCommon.cfg_loading import mkdir,cfg_loading
-sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
+sys.path.append(f'{main_dir}expScripts/recognition/')
 from recognition_dataAnalysisFunctions import AdaptiveThreshold
 
 
