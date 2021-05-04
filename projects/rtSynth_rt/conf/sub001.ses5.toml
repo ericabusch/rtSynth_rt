@@ -31,7 +31,7 @@ subjectIDforxnat="rtSynth_sub001_ses5" #PATIENTID has to be unique for each subj
 realtimeFolder_subjectName="rtSynth_sub001"
 preDay_YYYYMMDD="20210219" # can be "0" if there is no previous day for this session
 YYYYMMDD="20210224" #note that 20210114 is for simulation should actually be "20210122"
-num_total_TRs=174 # number of total TRs in feedback session
+num_total_TRs=174 # number of total TRs in feedback session # 12*14+6=174
 
 TrialNumber= 12 # feedback trial number for a feedback run.
 
