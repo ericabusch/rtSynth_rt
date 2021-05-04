@@ -356,7 +356,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         command=f"3dresample \
             -master {cfg.templateFunctionalVolume_converted} \
             -prefix {niiFileName}_reorient.nii \
-            {niiFileName}.nii"
+            -input {niiFileName}.nii"
         print(command)
         call(command,shell=True)
 
@@ -373,7 +373,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
                 # 3dvolreg -base ref.nii.gz -prefix test 001_000001_000150.nii
                 # 3dresample -master ref.nii.gz -prefix test.nii -input 001_000001_000150.nii
                 # 3dvolreg -base ref.nii.gz -prefix test_aligned.nii.gz test.nii 
-
+        print(command)
         call(command,shell=True)
         niftiObject = nib.load(f"{niiFileName}_aligned.nii")
         nift_data = niftiObject.get_fdata()
