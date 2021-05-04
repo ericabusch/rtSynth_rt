@@ -980,7 +980,7 @@ def AdaptiveThreshold(cfg,ThresholdLog):
 
     # 如果现在是第1个session的第一个feedback training run
     # threshold=0.6
-    if cfg.session == 1 and cfg.run == 1:
+    if cfg.session == 2 and cfg.run == 1:
         threshold=0.6
 
     # 如果现在是第N个session的第一个feedback training run
