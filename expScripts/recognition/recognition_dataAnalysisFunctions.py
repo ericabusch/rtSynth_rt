@@ -505,7 +505,7 @@ def behaviorDataLoading(cfg,curr_run):
     isCorrect=[]
     for curr_trial in range(behav_data.shape[0]):
         isCorrect.append(correctResponseDict[behav_data['Item'].iloc[curr_trial]]==behav_data['Resp'].iloc[curr_trial])
-    print(f"accuracy for run {curr_run} = {np.mean(isCorrect)}")
+    print(f"behavior pressing accuracy for run {curr_run} = {np.mean(isCorrect)}")
 
     behav_data['isCorrect']=isCorrect # merge the isCorrect clumne with the data dataframe
     behav_data['subj']=[cfg.subjectName for i in range(len(behav_data))]
