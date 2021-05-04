@@ -62,12 +62,12 @@ steps:
         evidence_ceil  is A evidence in AC and AD classifier
 '''
 
-floor, ceil = morphingTarget(cfg)
-mu = (ceil+floor)/2
-sig = (ceil-floor)/2.3548
-print(f"floor={floor}, ceil={ceil}")
-print(f"mu={mu}, sig={sig}")
-np.save(f"{cfg.feedback_dir}morphingTarget",[mu,sig])
+# floor, ceil = morphingTarget(cfg)
+# mu = (ceil+floor)/2
+# sig = (ceil-floor)/2.3548
+# print(f"floor={floor}, ceil={ceil}")
+# print(f"mu={mu}, sig={sig}")
+# np.save(f"{cfg.feedback_dir}morphingTarget",[mu,sig])
 # [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
 # y=gaussian(x, mu, sig)
 # plt.plot(x,y)

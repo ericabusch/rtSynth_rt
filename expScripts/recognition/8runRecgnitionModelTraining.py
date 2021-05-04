@@ -85,7 +85,9 @@ if cfg.session==1:
         greedyMask(cfg)
 
 # train the classifiers
-accs = minimalClass(cfg)
+# accs = minimalClass(cfg)
+accs = minimalClass(cfg,testRun=None)
+
 print("\n\n")
 print(f"minimalClass accs={accs}")
 save_obj(accs,f"{cfg.recognition_dir}minimalClass_accs")
