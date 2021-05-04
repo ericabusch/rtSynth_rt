@@ -273,8 +273,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
 
     # where the morphParams are saved
-    output_textFilename = f'{cfg.feedback_dir}morphParam_{scanNum}.txt'
-    output_matFilename = os.path.join(f'{cfg.feedback_dir}morphParam_{scanNum}.mat')
+    output_textFilename = f'{cfg.feedback_dir}B_probs_{scanNum}.txt'
+    output_matFilename = os.path.join(f'{cfg.feedback_dir}B_probs_{scanNum}.mat')
     
     
 
@@ -345,16 +345,35 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         # save(f"{tmp_dir}niftiObject")
         # niiFileName=f"{tmp_dir}{fileName.split('/')[-1].split('.')[0]}.nii"
-        niiFileName= tmp_dir+cfg.dicomNamePattern.format(SCAN=scanNum,TR=this_TR).split('.')[0] + ".nii"
+        niiFileName= tmp_dir+cfg.dicomNamePattern.format(SCAN=scanNum,TR=this_TR).split('.')[0]
         print(f"niiFileName={niiFileName}")
         nib.save(niftiObject, niiFileName)  
         # align -in f"{tmp_dir}niftiObject" -ref cfg.templateFunctionalVolume_converted -out f"{tmp_dir}niftiObject"
+        # 由于遇到了这个bug：Input: A-P R-L I-S
+            # Base:  R-L P-A I-S
+            # ** FATAL ERROR: perhaps you could make your datasets match?
+        # 因此使用3dresample来处理这个bug
+        call(f"3dresample \
+            -master {cfg.templateFunctionalVolume_converted} \
+            -prefix {niiFileName}_reorient.nii \
+            {niiFileName}",
+            shell=True)
         command = f"3dvolreg \
                 -base {cfg.templateFunctionalVolume_converted} \
-                -prefix  {niiFileName} \
-                {niiFileName}"
+                -prefix  {niiFileName}_aligned.nii \
+                {niiFileName}_reorient.nii"
+
+                # 3dvolreg -base /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses2/recognition/templateFunctionalVolume_converted.nii.gz -prefix test 001_000001_000150.nii
+                # fslreorient2std /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses2/recognition/templateFunctionalVolume_converted.nii.gz ref.nii.gz
+                # 001_000001_000150.nii
+                # Input: A-P R-L I-S
+                # Base:  R-L P-A I-S
+                # 3dvolreg -base ref.nii.gz -prefix test 001_000001_000150.nii
+                # 3dresample -master ref.nii.gz -prefix test.nii -input 001_000001_000150.nii
+                # 3dvolreg -base ref.nii.gz -prefix test_aligned.nii.gz test.nii 
+
         call(command,shell=True)
-        niftiObject = nib.load(niiFileName)
+        niftiObject = nib.load(f"{niiFileName}_aligned.nii")
         nift_data = niftiObject.get_fdata()
         
         curr_volume = np.expand_dims(nift_data[mask==1], axis=0)
@@ -377,8 +396,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         print(f"classifierProb(BD_clf,X,Y)={classifierProb(BD_clf,X,Y)}")
         BC_B_prob = classifierProb(BC_clf,X,Y)[0]
         BD_B_prob = classifierProb(BD_clf,X,Y)[0]
-        print(f"BC_B_evidence={BC_B_prob}")
-        print(f"BD_B_evidence={BD_B_prob}")
+        print(f"BC_B_prob={BC_B_prob}")
+        print(f"BD_B_prob={BD_B_prob}")
         B_prob = float((BC_B_prob+BD_B_prob)/2)
         print(f"B_prob={B_prob}")
         # print(f"mu={mu}, sig={sig}")
@@ -407,8 +426,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # save the activations value info into a vector that can be saved later
         # morphParams[this_TR] = morphParam
 
-        dataInterface.putFile(output_textFilename,str(B_prob))
-        np.save(f'{cfg.feedback_dir}B_evidences_{scanNum}',B_prob)
+        dataInterface.putFile(output_textFilename,str(B_probs))
+        np.save(f'{cfg.feedback_dir}B_probs_{scanNum}',B_probs)
         
 
         
@@ -426,12 +445,12 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         print(""
         "-----------------------------------------------------------------------------\n"
         "• save activation value as a text file to tmp folder")
-    dataInterface.putFile(output_textFilename,str(morphParams))
+    dataInterface.putFile(output_textFilename,str(B_probs))
 
     # use sio.save mat from scipy to save the matlab file
     if verbose:
         print("• save activation value as a matlab file to tmp folder")
-    sio.savemat(output_matFilename,{'value':morphParams})
+    sio.savemat(output_matFilename,{'value':B_probs})
 
     if verbose:
         print(""
