@@ -381,7 +381,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         curr_volume = np.expand_dims(nift_data[mask==1], axis=0)
         maskedData=curr_volume if this_TR==1 else np.concatenate((maskedData,curr_volume),axis=0)
         _maskedData = normalize(maskedData)
-
+        
         print(f"_maskedData.shape={_maskedData.shape}")
         # print(f"X.shape={X.shape}")
         X = np.expand_dims(_maskedData[-1], axis=0)
