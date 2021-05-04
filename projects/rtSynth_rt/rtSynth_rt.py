@@ -261,8 +261,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     # load clf
     # [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
     # print(f"mu={mu},sig={sig}")
-    def sigmoid(z):
-        return 1.0 / (1.0 + np.exp(-z))
+    # def sigmoid(z):
+    #     return 1.0 / (1.0 + np.exp(-z))
     # getting MorphingParameter: 
     # which clf to load? 
     # B evidence in BC/BD classifier for currt TR
@@ -279,7 +279,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     
 
     num_total_trials=12
-    num_total_TRs = int((12*28+12)/2)  # number of TRs to use for example 1
+    num_total_TRs = int((num_total_trials*28+12)/2)  # number of TRs to use for example 1
     morphParams = np.zeros((num_total_TRs, 1))
     B_probs=[]
     maskedData=0
@@ -386,7 +386,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         
         B_probs.append(B_prob)
-        print(f"morphParam={morphParam}")
+        # print(f"morphParam={morphParam}")
 
 
         print("| morphParam for TR %d is %f" %(this_TR, B_prob))
