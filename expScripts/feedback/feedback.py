@@ -136,7 +136,7 @@ try:
     # trial_list designing parameters
     parameterRange=[1,5,9,13] #np.arange(1,prange) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
     tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
-    TrialNumber=180 # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
+    TrialNumber=cfg.TrialNumber # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
 
     ## - design the trial list: the sequence of the different types of components: 
     ## - e.g: ITI + waiting for fMRI signal + feedback (receive model output from feedbackReceiver.py)
@@ -333,6 +333,7 @@ try:
     # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
     newfile = datadir+"{}_{}.csv".format(str(sub), str(run))
     if os.path.exists(newfile):
+        print(f'{newfile} exists')
         raise Exception(f'{newfile} exists')
     # create empty dataframe to accumulate data
     data = pd.DataFrame(columns=['Sub', 'Run', 'TR', 'time'])
@@ -428,13 +429,13 @@ try:
     default_parameter=19
 
 
-    message = visual.TextStim(mywin, text=f'{points}',pos=(0.5, 0.4))
-    def display(points,message):    
+    message = visual.TextStim(mywin, text=f'waiting...',pos=(0, 0), depth=-5.0)
+    def display(points,message):
         message.setAutoDraw(False)
-        message = visual.TextStim(mywin, text=f'{points}',pos=(0.5, 0.4))
+        message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
         message.setAutoDraw(True)
         return message
-
+    message.setAutoDraw(False)
     if cfg.session == 2 and cfg.run == 1:
         ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful trials', 'perfect trials'])
     else:
@@ -451,6 +452,7 @@ try:
     successful_trials=0
     successful_TR=0
     ITIFlag=1
+    countdown=12
     # curr_parameter=len(parameters['value'])-1
     while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
         trialTime = trialClock.getTime()
@@ -478,8 +480,8 @@ try:
                 if B_prob >= threshold:
                     morphParam = morphParam - 4
                     successful_TR=successful_TR+1
-                if B_prob < threshold:
-                    morphParam = morphParam + 4
+                # if B_prob < threshold: # 单方面递减
+                    # morphParam = morphParam + 4
                 # 不要越界了：[1,5,9,13]
                 if morphParam>13:
                     morphParam=13
@@ -507,6 +509,7 @@ try:
                 eachTime=ParameterUpdateDuration/len(imagePaths)
                 # update the image
                 # image.image=imagePaths[0]
+                message.setAutoDraw(False)
                 image.setAutoDraw(False)
                 imagePaths[0].setAutoDraw(True)
                 # currImage*eachTime is used in the calculation of the start time of next image in the list.
@@ -544,12 +547,12 @@ try:
                 #     print(f"CurrBestParameter={CurrBestParameter}")
                 #     points = points + 1
 
-                if successful_TR >= 3:
-                    message=display("Perfect!",message)
-                elif successful_TR > 0:
-                    message=display("Good job!",message)
-                else:
-                    message=display("Failed",message)
+                # if successful_TR >= 3:
+                #     message=display("Perfect!",message)
+                # elif successful_TR > 0:
+                #     message=display("Good job!",message)
+                # else:
+                #     message=display("Failed",message)
 
                 oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
                 # print('curr morph=',oldMorphParameter)
@@ -562,6 +565,7 @@ try:
                 try: # sometimes the trialTime accidentally surpasses the maximum time, in this case just do nothing, pass
                     imagePaths[currImage-1].setAutoDraw(False)
                     imagePaths[currImage].setAutoDraw(True)
+                    message.setAutoDraw(False)
                     # print('currImage=',imagePaths[currImage],end='\n\n')
                     remainImageNumber.append(currImage)
 
@@ -584,14 +588,21 @@ try:
         elif states[0] == 'ITI':
             backgroundImage.setAutoDraw(True)
             fix.draw()
+            if len(TR)>174-10:
+                message=display(f"Waiting for {countdown} s",message)
+                if '5' in keys:
+                    countdown-=2
             if len(states)>4: #保证了当前的ITI不是这个run最后一个TR
                 if states[4]=='ITI': #保证了当前的ITI是连续6个ITI当中的不是后面的ITI
-                    if successful_TR >= 3:
-                        message=display("Perfect!",message)
-                    elif successful_TR > 0:
-                        message=display("Good job!",message)
+                    if len(TR)>174-10:
+                        pass        
                     else:
-                        message=display("Failed",message)
+                        if successful_TR >= 3:
+                            message=display("Perfect!",message)
+                        elif successful_TR > 0:
+                            message=display("Good job!",message)
+                        else:
+                            message=display("Failed",message)
 
                     if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
                         if successful_TR >= 3:
@@ -607,6 +618,8 @@ try:
             successful_TR=0 #每一个trial结束之后将successful_TR(在这个trial中成功的TR数)重置
             backgroundImage.setAutoDraw(False)
             image.setAutoDraw(True)
+            message.setAutoDraw(False)
+
             if len(states)>2:
                 if states[1]=='feedback':
                     # message=display(points,message)
@@ -657,6 +670,12 @@ try:
     #     parameters.to_csv(parameterFileName)
 
 except Exception as e:
+
+    # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
+    ThresholdLog["successful trials",-1] = successful_trials
+    ThresholdLog["perfect_trials",-1] = perfect_trials
+    ThresholdLog.to_csv(cfg.adaptiveThreshold)
+
     with open(f'./log_{time.time()}.txt', 'a') as f:
         f.write(str(e))
         f.write(traceback.format_exc())
