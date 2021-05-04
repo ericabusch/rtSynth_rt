@@ -353,11 +353,13 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             # Base:  R-L P-A I-S
             # ** FATAL ERROR: perhaps you could make your datasets match?
         # 因此使用3dresample来处理这个bug
-        call(f"3dresample \
+        command=f"3dresample \
             -master {cfg.templateFunctionalVolume_converted} \
             -prefix {niiFileName}_reorient.nii \
-            {niiFileName}.nii",
-            shell=True)
+            {niiFileName}.nii"
+        print(command)
+        call(command,shell=True)
+
         command = f"3dvolreg \
                 -base {cfg.templateFunctionalVolume_converted} \
                 -prefix  {niiFileName}_aligned.nii \
