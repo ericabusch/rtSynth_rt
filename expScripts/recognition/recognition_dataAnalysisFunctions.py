@@ -1028,6 +1028,12 @@ def AdaptiveThreshold(cfg,ThresholdLog):
     else:
         threshold=threshold
 
+    # 不要越界
+    if threshold>0.9:
+        threshold=0.9
+    if threshold<0.4:
+        threshold=0.4
+
 
     ThresholdLog = ThresholdLog.append({
         'sub':cfg.subjectName, 
