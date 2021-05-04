@@ -81,7 +81,7 @@ args = argParser.parse_args()
 
 if args.trying:
     scanmode = 'Test'  # 'Scan' or 'Test' or None
-    screenmode = False  # fullscr True or False
+    screenmode = True  # fullscr True or False
     monitor_name = "testMonitor" #"testMonitor"
 else:
     scanmode = 'Scan'  # 'Scan' or 'Test' or None
@@ -439,7 +439,6 @@ else:
     ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
-print(f"---------writing ThresholdLog---------")
 ThresholdLog.to_csv(cfg.adaptiveThreshold)
 
 threshold = ThresholdLog['threshold'].iloc[-1]
@@ -448,6 +447,8 @@ initialMorphParam=13
 morphParam=initialMorphParam
 perfect_trials=0
 successful_trials=0
+successful_TR=0
+ITIFlag=1
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
