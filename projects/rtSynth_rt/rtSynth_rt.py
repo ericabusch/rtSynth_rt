@@ -280,7 +280,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
     num_total_trials=12
     num_total_TRs = int((num_total_trials*28+12)/2)  # number of TRs to use for example 1
-    morphParams = np.zeros((num_total_TRs, 1))
+    # morphParams = np.zeros((num_total_TRs, 1))
     B_probs=[]
     maskedData=0
     for this_TR in np.arange(1,num_total_TRs):
@@ -389,7 +389,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # print(f"morphParam={morphParam}")
 
 
-        print("| morphParam for TR %d is %f" %(this_TR, B_prob))
+        print("| B_prob for TR %d is %f" %(this_TR, B_prob))
 
         # use 'sendResultToWeb' from 'projectUtils.py' to send the result to the
         #   web browser to be plotted in the --Data Plots-- tab.
