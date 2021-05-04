@@ -386,7 +386,7 @@ def minimalClass(cfg,testRun=None):
                 print(naming, acc)
                 accs[naming]=acc
 
-
+    print(f"average 2 way clf accuracy={np.mean(list(accs.values()))}")
     def evidence(trainX,trainY):
         # def classifierEvidence(clf,X,Y):
         #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
