@@ -985,7 +985,7 @@ def AdaptiveThreshold(cfg,ThresholdLog):
 
     # 如果现在是第N个session的第一个feedback training run
     # threshold=前一天的最后一个threshold
-    if cfg.run == 1:
+    elif cfg.run == 1:
         threshold=ThresholdList[-1]
 
     # 如果之前的1个run的进步是<=1
