@@ -130,6 +130,20 @@ try:
         blendMode='avg', useFBO=True,
         units='height')
 
+    if cfg.session == 2 and cfg.run == 1:
+        ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
+    else:
+        try:
+            ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
+        except:
+            print(f"cannot read {cfg.adaptiveThreshold}")
+            ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
+
+    ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
+    ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
+    threshold = ThresholdLog['threshold'].iloc[-1]
+
     # similation specific
     step=3 #in simulation, how quickly the morph changes ramp up. Note this is only for simulation, has nothing to do with real experiment
 
@@ -256,6 +270,21 @@ try:
         newList.append(L[-1])
         return newList
 
+    def countITI(states):
+        c=0
+        for i in states:
+            if i == "ITI":
+                c+=1
+            else:
+                return c
+        return c
+
+    datadir = main_dir + f"subjects/{sub}/ses{sess}/feedback/"
+    # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
+    newfile = datadir+"{}_{}.csv".format(str(sub), str(run))
+    if os.path.exists(newfile):
+        print(f'{newfile} exists')
+        raise Exception(f'{newfile} exists')
 
     # preload image list for parameter from 1 to 19.
     # def preloadimages(parameterRange=np.arange(1,20),tune=1):
@@ -283,14 +312,14 @@ try:
                         raise Exception('morphing outside limit')
                     curr_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
                     if curr_image!=last_image:
-                        currImage=visual.ImageStim(win=mywin,
+                        currimage=visual.ImageStim(win=mywin,
                                                     name='image',
                                                     image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5), mask=None,
                                                     ori=0, pos=(0, 0), size=(0.5, 0.5),
                                                     color=[1,1,1], colorSpace='rgb', opacity=1,
                                                     flipHoriz=False, flipVert=False,
                                                     texRes=128, interpolate=True, depth=-4.0)
-                    tmp_images.append(currImage)
+                    tmp_images.append(currimage)
                     last_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
                 images=images+sample(tmp_images)
                 tmp_images=[]
@@ -298,14 +327,14 @@ try:
                     currMorph=100-round(currImg/numberOfUpdates+1) if axis=='benchBed' else round(currImg/numberOfUpdates+1)
                     curr_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
                     if curr_image!=last_image:
-                        currImage=visual.ImageStim(win=mywin,
+                        currimage=visual.ImageStim(win=mywin,
                                                     name='image',
                                                     image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5), mask=None,
                                                     ori=0, pos=(0, 0), size=(0.5, 0.5),
                                                     color=[1,1,1], colorSpace='rgb', opacity=1,
                                                     flipHoriz=False, flipVert=False,
                                                     texRes=128, interpolate=True, depth=-4.0)
-                    tmp_images.append(currImage)
+                    tmp_images.append(currimage)
                     last_image=cfg.feedback_expScripts_dir+'carchair_exp_feedback/{}_{}_{}.png'.format(axis,currMorph,5)
                 images=images+sample(tmp_images)
             imageLists.update( {currParameter : images} )
@@ -318,23 +347,12 @@ try:
     print(f"time passed {(time.time()-_)/60} min")
     # Open data file for eye tracking
     # datadir = "./data/feedback/"
-    datadir = main_dir + f"subjects/{sub}/ses{sess}/feedback/"
 
     maxTR=int(trial_list['TR'].iloc[-1])+6
     # Settings for MRI sequence
     MR_settings = {'TR': TRduration, 'volumes': maxTR, 'sync': 5, 'skip': 0, 'sound': True} #{'TR': 2.000, 'volumes': maxTR, 'sync': 5, 'skip': 0, 'sound': True}
 
-    # check if there is a data directory and if there isn't, make one.
-    if not os.path.exists('./data'):
-        os.mkdir('./data')
-    if not os.path.exists('./data/feedback/'):
-        os.mkdir('./data/feedback/')
 
-    # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
-    newfile = datadir+"{}_{}.csv".format(str(sub), str(run))
-    if os.path.exists(newfile):
-        print(f'{newfile} exists')
-        raise Exception(f'{newfile} exists')
     # create empty dataframe to accumulate data
     data = pd.DataFrame(columns=['Sub', 'Run', 'TR', 'time'])
 
@@ -381,44 +399,7 @@ try:
     curr_parameter=0
     remainImageNumber=[]
 
-
-    # feedbackParameterFileName=main_dir+f"subjects/{sub}/ses{sess}_feedbackParameter/run_{run}.csv"
-    # # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
-    # _=1
-    # while not os.path.exists(feedbackParameterFileName):
-    #     keys = event.getKeys(["5","0"])
-    #     if '0' in keys: # whenever you want to quite, type 0
-    #         mywin.close()
-    #         core.quit()
-    #     time.sleep(0.01)
-    #     if _ % 100==0:
-    #         print(f'waiting {feedbackParameterFileName}')
-    #     _+=1
-    # parameters=pd.read_csv(feedbackParameterFileName)
-    # while np.isnan(parameters['value'].iloc[-1]):
-    #     keys = event.getKeys(["5","0"])
-    #     if '0' in keys: # whenever you want to quite, type 0
-    #         mywin.close()
-    #         core.quit()
-    #     time.sleep(0.01)
-    #     if _ % 100==0:
-    #         print(f'waiting parameters nan')
-    #     _+=1
-    #     parameters=pd.read_csv(feedbackParameterFileName)
-
-    # from rtCommon.feedbackReceiver import WsFeedbackReceiver
-    # WsFeedbackReceiver.startReceiverThread(args.server,
-    #                                     retryInterval=5,
-    #                                     username="kp578",
-    #                                     password="kp578",
-    #                                     testMode=True)
-
     installLoggers(logging.INFO, logging.INFO, filename=f'{cfg.feedback_dir}SubjectService_{run}_{sess}.log')
-
-    # parse connection args
-    # These include: "-s <server>", "-u <username>", "-p <password>", "--test",
-    #   "-i <retry-connection-interval>"
-    # connectionArgs = parseConnectionArgs()
 
     subjectService = SubjectService(args)
     subjectService.runDetached()
@@ -430,22 +411,78 @@ try:
 
 
     message = visual.TextStim(mywin, text=f'waiting...',pos=(0, 0), depth=-5.0)
-    def display(points,message):
+    def display(text,message): #endMorphing can be [1,5,9,13]
         message.setAutoDraw(False)
-        message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
+        message = visual.TextStim(mywin, text=f'{text}',pos=(0, 0), depth=-5.0)
         message.setAutoDraw(True)
         return message
-    message.setAutoDraw(False)
-    if cfg.session == 2 and cfg.run == 1:
-        ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful trials', 'perfect trials'])
-    else:
-        ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
 
-    ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
-    ThresholdLog.to_csv(cfg.adaptiveThreshold)
+    emoji1 = visual.ImageStim(
+        win=mywin,
+        name='emoji1',
+        image=cfg.feedback_expScripts_dir + './emoji1.png', mask=None,
+        ori=0, pos=(0, 0), size=(0.25, 0.25),
+        color=[1,1,1], colorSpace='rgb', opacity=1,
+        flipHoriz=False, flipVert=False,
+        texRes=128, interpolate=True, depth=-5.0)
+    emoji5 = visual.ImageStim(
+        win=mywin,
+        name='emoji5',
+        image=cfg.feedback_expScripts_dir + './emoji5.png', mask=None,
+        ori=0, pos=(0, 0), size=(0.25, 0.25),
+        color=[1,1,1], colorSpace='rgb', opacity=1,
+        flipHoriz=False, flipVert=False,
+        texRes=128, interpolate=True, depth=-5.0)
+    emoji9 = visual.ImageStim(
+        win=mywin,
+        name='emoji9',
+        image=cfg.feedback_expScripts_dir + './emoji9.png', mask=None,
+        ori=0, pos=(0, 0), size=(0.25, 0.25),
+        color=[1,1,1], colorSpace='rgb', opacity=1,
+        flipHoriz=False, flipVert=False,
+        texRes=128, interpolate=True, depth=-5.0)
+    emoji13 = visual.ImageStim(
+        win=mywin,
+        name='emoji13',
+        image=cfg.feedback_expScripts_dir + './emoji13.png', mask=None,
+        ori=0, pos=(0, 0), size=(0.25, 0.25),
+        color=[1,1,1], colorSpace='rgb', opacity=1,
+        flipHoriz=False, flipVert=False,
+        texRes=128, interpolate=True, depth=-5.0)
+    def emoji(endMorphing): #endMorphing can be [1,5,9,13]
+        if endMorphing ==1:
+            emoji1.setAutoDraw(True)
+            emoji5.setAutoDraw(False)
+            emoji9.setAutoDraw(False)
+            emoji13.setAutoDraw(False)
+        elif endMorphing ==5:
+            emoji1.setAutoDraw(False)
+            emoji5.setAutoDraw(True)
+            emoji9.setAutoDraw(False)
+            emoji13.setAutoDraw(False)
+        elif endMorphing ==9:
+            emoji1.setAutoDraw(False)
+            emoji5.setAutoDraw(False)
+            emoji9.setAutoDraw(True)
+            emoji13.setAutoDraw(False)
+        elif endMorphing ==13:
+            emoji1.setAutoDraw(False)
+            emoji5.setAutoDraw(False)
+            emoji9.setAutoDraw(False)
+            emoji13.setAutoDraw(True)
+        elif endMorphing == "OFF":
+            emoji1.setAutoDraw(False)
+            emoji5.setAutoDraw(False)
+            emoji9.setAutoDraw(False)
+            emoji13.setAutoDraw(False)
+        # message.setAutoDraw(False)
+        # message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
+        # message.setAutoDraw(True)
 
-    threshold = ThresholdLog['threshold'].iloc[-1]
+    # message.setAutoDraw(False)
 
+
+    
     initialMorphParam=13
     morphParam=initialMorphParam
     perfect_trials=0
@@ -458,8 +495,9 @@ try:
         trialTime = trialClock.getTime()
         keys = event.getKeys(["5","0"])  # check for triggers
         if '0' in keys: # whenever you want to quite, type 0
-            mywin.close()
-            core.quit()
+            break
+            # mywin.close()
+            # core.quit()
         if len(keys):
             TR.pop(0)
             old_state=states[0]
@@ -539,8 +577,8 @@ try:
                 # },
                 # ignore_index=True)
 
-                data.to_csv(newfile)
-                history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)))
+                data.to_csv(newfile, index=False)
+                history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
 
                 # if CurrBestParameter>morphParam:
                 #     CurrBestParameter = morphParam
@@ -554,7 +592,7 @@ try:
                 # else:
                 #     message=display("Failed",message)
 
-                oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
+                # oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
                 # print('curr morph=',oldMorphParameter)
                 remainImageNumber.append(0)
                 currImage=1
@@ -577,41 +615,55 @@ try:
                                         'imageTime':imagePaths[currImage].image,
                                         'eachTime':eachTime},
                                         ignore_index=True)
-                    currMorphParameter=re.findall(r"_\w+_",imagePaths[currImage].image)[1]
-                    if currMorphParameter!=oldMorphParameter:
-                        pass
-                        # print('curr morph=',currMorphParameter)
-                    oldMorphParameter=currMorphParameter
+                    # currMorphParameter=re.findall(r"_\w+_",imagePaths[currImage].image)[1]
+                    # if currMorphParameter!=oldMorphParameter:
+                    #     pass
+                    # oldMorphParameter=currMorphParameter
                     currImage=currImage+1        
                 except:
                     pass
         elif states[0] == 'ITI':
             backgroundImage.setAutoDraw(True)
             fix.draw()
-            if len(TR)>174-10:
+            _countITI = countITI(states)
+            if len(TR)>174-10: #如果是最开始的6个TR，就只需要countdown
+                emoji("OFF")
                 message=display(f"Waiting for {countdown} s",message)
                 if '5' in keys:
                     countdown-=2
-            if len(states)>4: #保证了当前的ITI不是这个run最后一个TR
-                if states[4]=='ITI': #保证了当前的ITI是连续6个ITI当中的不是后面的ITI
-                    if len(TR)>174-10:
-                        pass        
-                    else:
-                        if successful_TR >= 3:
-                            message=display("Perfect!",message)
-                        elif successful_TR > 0:
-                            message=display("Good job!",message)
-                        else:
-                            message=display("Failed",message)
+            elif _countITI in [6,5,4]: # 如果不是最开始的6个TR，并且state又是ITI，那么如果是第1，2，3个TR，就展示message；
+                if successful_TR >= 3:
+                    emoji(1)
+                    # message=display("Perfect!",message)
+                elif successful_TR ==2:
+                    emoji(5)
+                    # message=display("Good job!",message)
+                elif successful_TR ==1:
+                    emoji(9)
+                elif successful_TR ==0:
+                    emoji(13)
+                    # message=display("Failed",message)
+            elif _countITI in [3,2,1]: # 如果是第4，5，6个TR，就展示 countdown
+                emoji("OFF")
+                message=display(f"Waiting for {2*_countITI} s",message)
+                
+            if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+                if successful_TR >= 3:
+                    perfect_trials+=1
+                elif successful_TR > 0:
+                    successful_trials+=1
+                else:
+                    pass
+                print(f"successful_trials={successful_trials}")
+                print(f"perfect_trials={perfect_trials}")
 
-                    if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
-                        if successful_TR >= 3:
-                            perfect_trials+=1
-                        elif successful_TR > 0:
-                            successful_trials+=1
-                        else:
-                            pass
-                        ITIFlag = 0 
+                # 保存
+                ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+                print(f"saving successful_trials = {successful_trials}")
+                ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+                ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
+                ITIFlag = 0 
 
         elif states[0] == 'waiting':
             morphParam=13 #每一个trial结束之后将morphing parameter重置
@@ -619,63 +671,38 @@ try:
             backgroundImage.setAutoDraw(False)
             image.setAutoDraw(True)
             message.setAutoDraw(False)
+            
 
-            if len(states)>2:
-                if states[1]=='feedback':
-                    # message=display(points,message)
-                    CurrBestParameter=19
+            # if len(states)>2:
+            #     if states[1]=='feedback':
+            #         # message=display(points,message)
+            #         CurrBestParameter=19
 
         # refresh the screen
         mywin.flip()
 
-    # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
-    ThresholdLog["successful trials",-1] = successful_trials
-    ThresholdLog["perfect_trials",-1] = perfect_trials
-    ThresholdLog.to_csv(cfg.adaptiveThreshold)
+    # # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
+    # ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+    # print(f"saving successful_trials = {successful_trials}")
+    # ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+    # ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
 
     # write data out!
     mywin.close()
     core.quit()
     # env.close()
 
-    # ##############################################################################
-    # ##############################################################################
-    # ##############################################################################
-    # ####################### simmulated data forparameters#########################
-    # ##############################################################################
-    # ##############################################################################
-    # ##############################################################################
-    # parameters = pd.DataFrame(columns=['runId','trId','value','timestamp'])
-    # main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
-    # parameterWriteFolder=main_dir+'./subjects/pilot_sub001/ses1_feedbackParameter/'
-    # if not os.path.isdir(parameterWriteFolder):
-    #     os.mkdir(parameterWriteFolder)
-
-    # for i in range(20):
-
-    #     runId=1
-    #     trId=int(np.random.uniform(1,20,1))
-    #     value=int(np.random.uniform(1,20,1))
-    #     timestamp=int(np.random.uniform(0,10,1))
-    #     parameterFileName=f"{parameterWriteFolder}run_{runId}.csv"
-    #     print("Dequeue run: {}, tr: {}, value: {}, timestamp: {}".
-    #           format(runId,trId,value,timestamp))
-
-    #     parameters = parameters.append({'runId':runId,
-    #                         'trId':trId,
-    #                         'value':value,
-    #                         'timestamp':timestamp},
-    #                         ignore_index=True)
-    #     print('parameters=',parameters)
-    #     parameters.to_csv(parameterFileName)
 
 except Exception as e:
-
+    print(f"error {e}")
     # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
-    ThresholdLog["successful trials",-1] = successful_trials
-    ThresholdLog["perfect_trials",-1] = perfect_trials
-    ThresholdLog.to_csv(cfg.adaptiveThreshold)
+    print(f"saving successful_trials = {successful_trials}")
+    ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+    ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+    ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
     with open(f'./log_{time.time()}.txt', 'a') as f:
         f.write(str(e))
         f.write(traceback.format_exc())
+    
