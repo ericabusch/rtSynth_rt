@@ -103,9 +103,9 @@ from recognition_dataAnalysisFunctions import normalize,classifierProb
 
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
 
-def gaussian(x, mu, sig):
-    # mu and sig is determined before each neurofeedback session using 2 recognition runs.
-    return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
+# def gaussian(x, mu, sig):
+#     # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+#     return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
 
 
 
@@ -381,7 +381,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         curr_volume = np.expand_dims(nift_data[mask==1], axis=0)
         maskedData=curr_volume if this_TR==1 else np.concatenate((maskedData,curr_volume),axis=0)
         _maskedData = normalize(maskedData)
-        
+
         print(f"_maskedData.shape={_maskedData.shape}")
         # print(f"X.shape={X.shape}")
         X = np.expand_dims(_maskedData[-1], axis=0)
