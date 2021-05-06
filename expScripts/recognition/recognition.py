@@ -40,7 +40,8 @@ alpha = string.ascii_uppercase
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--run', '-r', default='1', type=str, help='current run')
-argParser.add_argument('--test', '-t', default='0', type=str, help='test or not aka whether is on Mac')
+argParser.add_argument('--trying', default=False, action='store_true',
+                        help='Use unsecure non-encrypted connection')
 args = argParser.parse_args()
 
 cfg = cfg_loading(args.config)
@@ -48,7 +49,7 @@ sub = cfg.subjectName
 run = int(args.run)  # 1
 TR=cfg.TR
 
-if int(args.test):
+if args.trying:
     scanmode = 'Test'  # 'Scan' or 'Test' or None
     screenmode = False  # fullscr True or False
     monitor_name = "testMonitor" #"scanner" "testMonitor"
