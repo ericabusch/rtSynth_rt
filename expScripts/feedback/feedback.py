@@ -184,7 +184,7 @@ try:
                                         'time':curTime,
                                         'TR':curTR,
                                         'state':'waiting',
-                                        'newWobble':0},
+                                        'newWobble':1},
                                         ignore_index=True)
             curTime=curTime+TRduration
             curTR=curTR+1
@@ -343,7 +343,9 @@ try:
         return imageLists
 
     _=time.time()
+    # if not args.trying:
     imageLists=preloadimages(parameterRange=parameterRange,tune=tune)
+
     print(f"time passed {(time.time()-_)/60} min")
     # Open data file for eye tracking
     # datadir = "./data/feedback/"
@@ -366,15 +368,15 @@ try:
     vol = launchScan(mywin, MR_settings, simResponses=None, mode=scanmode,
                     esc_key='escape', instr='select Scan or Test, press enter',
                     wait_msg='waiting for scanner...', wait_timeout=300, log=True)
-
-    image = visual.ImageStim(
-        win=mywin,
-        name='image',
-        image=cfg.feedback_expScripts_dir + './carchair_exp_feedback/bedChair_1_5.png', mask=None,
-        ori=0, pos=(0, 0), size=(0.5, 0.5),
-        color=[1,1,1], colorSpace='rgb', opacity=1,
-        flipHoriz=False, flipVert=False,
-        texRes=128, interpolate=True, depth=-4.0)
+    # image
+        # image = visual.ImageStim(
+        #     win=mywin,
+        #     name='image',
+        #     image=cfg.feedback_expScripts_dir + './carchair_exp_feedback/bedChair_1_5.png', mask=None,
+        #     ori=0, pos=(0, 0), size=(0.5, 0.5),
+        #     color=[1,1,1], colorSpace='rgb', opacity=1,
+        #     flipHoriz=False, flipVert=False,
+        #     texRes=128, interpolate=True, depth=-4.0)
 
     backgroundImage = visual.ImageStim(
         win=mywin,
@@ -410,10 +412,10 @@ try:
     default_parameter=19
 
 
-    message = visual.TextStim(mywin, text=f'waiting...',pos=(0, 0), depth=-5.0)
+    message = visual.TextStim(mywin, text=f'Waiting...',pos=(0, 0), depth=-5.0, height=32,units='pix')
     def display(text,message): #endMorphing can be [1,5,9,13]
         message.setAutoDraw(False)
-        message = visual.TextStim(mywin, text=f'{text}',pos=(0, 0), depth=-5.0)
+        message = visual.TextStim(mywin, text=f'{text}',pos=(0, 0), depth=-5.0, height=32,units='pix')
         message.setAutoDraw(True)
         return message
 
@@ -479,10 +481,7 @@ try:
         # message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
         # message.setAutoDraw(True)
 
-    # message.setAutoDraw(False)
 
-
-    
     initialMorphParam=13
     morphParam=initialMorphParam
     perfect_trials=0
@@ -490,21 +489,26 @@ try:
     successful_TR=0
     ITIFlag=1
     countdown=12
+    imagePaths13=imageLists[13]
+    eachTime13=ParameterUpdateDuration/len(imagePaths13)
     # curr_parameter=len(parameters['value'])-1
     while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
         trialTime = trialClock.getTime()
         keys = event.getKeys(["5","0"])  # check for triggers
         if '0' in keys: # whenever you want to quite, type 0
             break
-            # mywin.close()
-            # core.quit()
         if len(keys):
             TR.pop(0)
             old_state=states[0]
             states.pop(0)
             newWobble.pop(0)
             print(states[0])
-            if states[0] == 'feedback' and newWobble[0]==1:
+            if newWobble[0]==1: #trialTime 会在feedback以及waiting当中使用
+                # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
+                trialClock=core.Clock()
+                trialTime=trialClock.getTime()
+                currImage = 1
+            if states[0] == 'feedback':
                 # fetch parameter from preprocessing process on Milgram       
                 # feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
                 feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=None)
@@ -537,9 +541,7 @@ try:
                 print(f'TR[0]={TR[0]},trID={trID},parameter={morphParam},timestamp={timestamp},runId={runId}')
 
                 # curr_parameter=curr_parameter+1
-                # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
-                trialClock=core.Clock()
-                trialTime=trialClock.getTime()
+
                 # update the image list to be shown based on the fetched parameter
 
                 imagePaths=imageLists[morphParam] #list(imageLists[parameter])
@@ -547,8 +549,11 @@ try:
                 eachTime=ParameterUpdateDuration/len(imagePaths)
                 # update the image
                 # image.image=imagePaths[0]
-                message.setAutoDraw(False)
-                image.setAutoDraw(False)
+                # message.setAutoDraw(False)
+                # image.setAutoDraw(False)
+                imagePaths13[-1].setAutoDraw(False)
+                # imagePaths13[-1].setAutoDraw(False)
+                
                 imagePaths[0].setAutoDraw(True)
                 # currImage*eachTime is used in the calculation of the start time of next image in the list.
                 
@@ -580,30 +585,19 @@ try:
                 data.to_csv(newfile, index=False)
                 history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
 
-                # if CurrBestParameter>morphParam:
-                #     CurrBestParameter = morphParam
-                #     print(f"CurrBestParameter={CurrBestParameter}")
-                #     points = points + 1
-
-                # if successful_TR >= 3:
-                #     message=display("Perfect!",message)
-                # elif successful_TR > 0:
-                #     message=display("Good job!",message)
-                # else:
-                #     message=display("Failed",message)
-
                 # oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
                 # print('curr morph=',oldMorphParameter)
                 remainImageNumber.append(0)
-                currImage=1
+                # currImage=1
                 ITIFlag=1 #这个flag用来避免ITI的时候多次计数
                 # # discard the first image since it has been used.
                 # imagePaths.pop(0)
+
         if (states[0] == 'feedback') and (trialTime>currImage*eachTime):
                 try: # sometimes the trialTime accidentally surpasses the maximum time, in this case just do nothing, pass
                     imagePaths[currImage-1].setAutoDraw(False)
                     imagePaths[currImage].setAutoDraw(True)
-                    message.setAutoDraw(False)
+                    
                     # print('currImage=',imagePaths[currImage],end='\n\n')
                     remainImageNumber.append(currImage)
 
@@ -615,6 +609,7 @@ try:
                                         'imageTime':imagePaths[currImage].image,
                                         'eachTime':eachTime},
                                         ignore_index=True)
+                    
                     # currMorphParameter=re.findall(r"_\w+_",imagePaths[currImage].image)[1]
                     # if currMorphParameter!=oldMorphParameter:
                     #     pass
@@ -628,24 +623,24 @@ try:
             _countITI = countITI(states)
             if len(TR)>174-10: #如果是最开始的6个TR，就只需要countdown
                 emoji("OFF")
-                message=display(f"Waiting for {countdown} s",message)
-                if '5' in keys:
-                    countdown-=2
+                # message=display(f"Waiting for {countdown} s",message)
+                # if '5' in keys:
+                #     countdown-=2
             elif _countITI in [6,5,4]: # 如果不是最开始的6个TR，并且state又是ITI，那么如果是第1，2，3个TR，就展示message；
                 if successful_TR >= 3:
-                    emoji(1)
-                    # message=display("Perfect!",message)
+                    emoji(1) # Perfect
                 elif successful_TR ==2:
-                    emoji(5)
-                    # message=display("Good job!",message)
+                    emoji(5) # Good job
                 elif successful_TR ==1:
-                    emoji(9)
+                    emoji(9) # Good job
                 elif successful_TR ==0:
-                    emoji(13)
-                    # message=display("Failed",message)
-            elif _countITI in [3,2,1]: # 如果是第4，5，6个TR，就展示 countdown
+                    emoji(13) # Failed
+
+            if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
                 emoji("OFF")
-                message=display(f"Waiting for {2*_countITI} s",message)
+                message=display(f"Get ready...",message)
+                # message=display(f"Waiting for {2*_countITI} s",message)
+
                 
             if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
                 if successful_TR >= 3:
@@ -664,14 +659,16 @@ try:
                 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
                 ITIFlag = 0 
-
-        elif states[0] == 'waiting':
+        elif states[0] == 'waiting' and (trialTime>currImage*eachTime13):
             morphParam=13 #每一个trial结束之后将morphing parameter重置
             successful_TR=0 #每一个trial结束之后将successful_TR(在这个trial中成功的TR数)重置
             backgroundImage.setAutoDraw(False)
-            image.setAutoDraw(True)
+            # image.setAutoDraw(True)
             message.setAutoDraw(False)
             
+            imagePaths13[currImage-1].setAutoDraw(False)
+            imagePaths13[currImage].setAutoDraw(True)
+            currImage=currImage+1
 
             # if len(states)>2:
             #     if states[1]=='feedback':
