@@ -1,6 +1,6 @@
 # This code should be run in console room computer to display the feedback morphings
 from __future__ import print_function, division
-import traceback
+import traceback,time
 try:
     import os
     if 'watts' in os.getcwd():
@@ -19,7 +19,6 @@ try:
     import pandas as pd
     import pylink   
     from tqdm import tqdm
-    import time
     import re
     import logging
     import threading
@@ -419,6 +418,15 @@ try:
         message.setAutoDraw(True)
         return message
 
+    monetaryReward = visual.TextStim(mywin, text=f'',pos=(0, 0), depth=-5.0, height=32,units='pix')
+    def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
+        monetaryReward.setAutoDraw(False)
+        monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(-10, 0), depth=-5.0, 
+                                        height=25,units='pix',
+                                        color=(0, 1, 0), colorSpace='rgb') #green color
+        monetaryReward.setAutoDraw(True)
+        return monetaryReward
+
     emoji1 = visual.ImageStim(
         win=mywin,
         name='emoji1',
@@ -457,16 +465,19 @@ try:
             emoji5.setAutoDraw(False)
             emoji9.setAutoDraw(False)
             emoji13.setAutoDraw(False)
+            monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
         elif endMorphing ==5:
             emoji1.setAutoDraw(False)
             emoji5.setAutoDraw(True)
             emoji9.setAutoDraw(False)
             emoji13.setAutoDraw(False)
+            monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
         elif endMorphing ==9:
             emoji1.setAutoDraw(False)
             emoji5.setAutoDraw(False)
             emoji9.setAutoDraw(True)
             emoji13.setAutoDraw(False)
+            monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
         elif endMorphing ==13:
             emoji1.setAutoDraw(False)
             emoji5.setAutoDraw(False)
