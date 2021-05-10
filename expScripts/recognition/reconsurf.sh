@@ -12,7 +12,7 @@ module load FreeSurfer/6.0.0
 #module load nilearn
 module load AFNI
 
-subject=$1
+subject=$1 # sub001
 source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 
 anatPath=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${subject}/ses1/anat/
@@ -27,3 +27,5 @@ recon-all -autorecon2 -subjid ${subject} -sd ${subjectFolder};
 
 # process stages 24-31
 recon-all -autorecon3 -subjid ${subject} -sd ${subjectFolder};
+
+echo $subject > ${anatPath}done_${subject}.txt

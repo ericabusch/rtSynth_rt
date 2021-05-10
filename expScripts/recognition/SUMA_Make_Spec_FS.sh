@@ -15,3 +15,5 @@ subjectFolder=${anatPath}freesurfer/${subject}/
 
 cd ${subjectFolder}
 @SUMA_Make_Spec_FS -sid ${subject}
+
+echo $subject > ${anatPath}SUMAdone_${subject}.txt
