@@ -116,7 +116,7 @@ if __name__ == "__main__":
     argParser.add_argument('--test', '-t', default=False, action='store_true',
                            help='start webServer in test mode, unsecure')
     args = argParser.parse_args()
-    args.port=7777
+    args.port=6666 #7777
 
     if args.projectName is None:
         raise InvocationError('Must specify project name using -p parameter')
