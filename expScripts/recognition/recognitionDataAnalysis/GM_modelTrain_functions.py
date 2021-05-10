@@ -10,7 +10,7 @@ def find_ABCD_T1w_MPR_vNav(sub):
         d = f.read()
         t = d.split("ABCD_T1w_MPR_vNav")[3]
         t = int(t.split("\n")[1])
-        f = open(raw_dir+"ABCD_T1w_MPR_vNav.txt","w")
+        f = open(f"{raw_dir}{sub}_ABCD_T1w_MPR_vNav.txt","w")
         f.write(f"T1_ID={t}")
         f.close()
 

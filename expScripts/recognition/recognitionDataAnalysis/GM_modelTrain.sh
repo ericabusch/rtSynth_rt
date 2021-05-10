@@ -9,6 +9,7 @@ module load FreeSurfer/6.0.0
 module load FSL
 . ${FSLDIR}/etc/fslconf/fsl.sh
 code_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/
+raw_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/
 cd ${code_dir}
 
 sub=$1 # rtSynth_sub001 rtSynth_sub001_ses5 rtSynth_sub001 rtSynth_sub002_ses1
@@ -20,11 +21,11 @@ bash ${code_dir}fetchXNAT.sh ${sub}
 
 # 通过对{sub}_run_name.txt的处理获得第二个 ABCD_T1w_MPR_vNav   usable 前面的数字
 python -u -c "from GM_modelTrain_functions import find_ABCD_T1w_MPR_vNav; find_ABCD_T1w_MPR_vNav('$sub')"
-source ABCD_T1w_MPR_vNav.txt # 加载 T1_ID 由find_ABCD_T1w_MPR_vNav 产生
+source ${raw_dir}${sub}_ABCD_T1w_MPR_vNav.txt # 加载 T1_ID 由find_ABCD_T1w_MPR_vNav 产生
 echo T1_ID=${T1_ID}
 
 # 等到zip file完成
-python -u -c "from GM_modelTrain_functions import wait; wait(${sub}.zip)"
+python -u -c "from GM_modelTrain_functions import wait; wait('${raw_dir}${sub}.zip')"
 
 # unzip
 unzip ${sub}.zip
@@ -54,8 +55,10 @@ python -u -c "from GM_modelTrain_functions import wait; wait('${anatPath}SUMAdon
 sbatch makeGreyMatterMask.sh ${subjectName}
 
 # 产生的mask 类似 /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/anat/gm_func.nii.gz
+python -u -c "from GM_modelTrain_functions import wait; wait('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${subjectName}/ses${ses}/anat/gm_func.nii.gz')"
 
 # 下一步是 greedy 以及 训练模型
+cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/
 python -u expScripts/recognition/8runRecgnitionModelTraining.py -c ${subjectName}.ses${ses}.toml
 
 
