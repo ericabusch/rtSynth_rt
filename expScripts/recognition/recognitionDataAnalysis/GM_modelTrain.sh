@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#SBATCH --output=GM_modelTrain-%j.out
+#SBATCH -p day
+#SBATCH -t 24:00:00
+#SBATCH --mem 20GB
+#SBATCH -n 1
+module load AFNI
+module load FreeSurfer/6.0.0
+module load FSL
+. ${FSLDIR}/etc/fslconf/fsl.sh
+code_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/
+cd ${code_dir}
+
+sub=$1 # rtSynth_sub001 rtSynth_sub001_ses5 rtSynth_sub001 rtSynth_sub002_ses1
+python -u -c "from GM_modelTrain_functions import _split ; _split('${sub}')"
+source subjectName.txt # so you have subjactName and ses
+
+
+if [ -f "$FILE" ]; then
+    echo "$FILE exists."
+fi
+
+bash ${code_dir}fetchXNAT.sh ${sub}
+    
+# 输入第二个ABCD_T1w_MPR_vNav   usable 前面的数字
+python -u -c "from GM_modelTrain_functions import find_ABCD_T1w_MPR_vNav; find_ABCD_T1w_MPR_vNav()"
+source ABCD_T1w_MPR_vNav.txt # 加载 T1_ID 由find_ABCD_T1w_MPR_vNav 产生
+
+# 等到zip file完成
+python -u -c "from GM_modelTrain_functions import wait; wait(${sub}.zip)"
+
+# unzip
+unzip ${sub}.zip
+
+# 把dcm变成nii
+bash ${code_dir}change2nifti.sh ${sub}
+
+# 根据找到的第二个T1 图像，移动到subject folder里面对应的ses的anat folder。
+python -u -c "from GM_modelTrain_functions import find_T1_in_niiFolder ; find_T1_in_niiFolder(${T1_ID},'${sub}')"
+
+# 运行freesurfer
+cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/
+sbatch reconsurf.sh ${subjectName}
+
+# 等待 freesurfer 完成
+anatPath=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${subjectName}/ses1/anat/
+python -u -c "from GM_modelTrain_functions import wait; wait('${anatPath}done_${subjectName}.txt')"
+
+# SUMA_Make_Spec_FS.sh
+cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/
+sbatch SUMA_Make_Spec_FS.sh ${subjectName}
+
+# 等待 SUMA_Make_Spec_FS 完成
+python -u -c "from GM_modelTrain_functions import wait; wait('${anatPath}SUMAdone_${subjectName}.txt')"
+
+# 获得mask
+sbatch makeGreyMatterMask.sh ${subjectName}
+
+# 产生的mask 类似 /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/anat/gm_func.nii.gz
+
+# 下一步是 greedy 以及 训练模型
+python -u expScripts/recognition/8runRecgnitionModelTraining.py -c ${subjectName}.ses${ses}.toml
