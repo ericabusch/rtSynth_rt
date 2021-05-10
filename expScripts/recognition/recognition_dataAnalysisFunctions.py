@@ -119,8 +119,8 @@ def recognition_preprocess(cfg):
         # brain data is first aligned by pushed back 2TR(4s)
         brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))
         Brain_TR=np.arange(brain_data.shape[0])
-        Brain_TR = Brain_TR+2
-
+        Brain_TR = Brain_TR + 2
+        
         # select volumes of brain_data by counting which TR is left in behav_data
         Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
         if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
