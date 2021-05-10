@@ -14,8 +14,9 @@ cd ${code_dir}
 
 sub=$1 # rtSynth_sub001 rtSynth_sub001_ses5 rtSynth_sub001 rtSynth_sub002_ses1
 python -u -c "from GM_modelTrain_functions import _split ; _split('${sub}')"
-source subjectName.txt # so you have subjectName and ses
+source ${code_dir}${sub}_subjectName.txt # so you have subjectName and ses
 echo subjactName=${subjectName} ses=${ses}
+
 # 下载dcm数据。并且在raw_dir 里面产生{sub}_run_name.txt 用于储存每一个run分别对应什么。举例来说比如 尾数为8的代表T1 数据。
 bash ${code_dir}fetchXNAT.sh ${sub}
 
@@ -60,9 +61,3 @@ python -u -c "from GM_modelTrain_functions import wait; wait('/gpfs/milgram/proj
 # 下一步是 greedy 以及 训练模型
 cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/
 python -u expScripts/recognition/8runRecgnitionModelTraining.py -c ${subjectName}.ses${ses}.toml
-
-
-
-# if [ -f "$FILE" ]; then
-#     echo "$FILE exists."
-# fi

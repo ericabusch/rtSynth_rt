@@ -49,7 +49,7 @@ def _split(sub):
     else:
         ses=1
 
-    tmp_dir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/"
-    f = open(tmp_dir+"subjectName.txt","w")
+    code_dir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/"
+    f = open(f"{code_dir}{sub}_subjectName.txt","w")
     f.write(f"subjectName={subjectName} ; ses={ses}")
     f.close()
