@@ -13,18 +13,15 @@ cd ${code_dir}
 
 sub=$1 # rtSynth_sub001 rtSynth_sub001_ses5 rtSynth_sub001 rtSynth_sub002_ses1
 python -u -c "from GM_modelTrain_functions import _split ; _split('${sub}')"
-source subjectName.txt # so you have subjactName and ses
-
-
-if [ -f "$FILE" ]; then
-    echo "$FILE exists."
-fi
-
+source subjectName.txt # so you have subjectName and ses
+echo subjactName=${subjectName} ses=${ses}
+# 下载dcm数据。并且在raw_dir 里面产生{sub}_run_name.txt 用于储存每一个run分别对应什么。举例来说比如 尾数为8的代表T1 数据。
 bash ${code_dir}fetchXNAT.sh ${sub}
-    
-# 输入第二个ABCD_T1w_MPR_vNav   usable 前面的数字
-python -u -c "from GM_modelTrain_functions import find_ABCD_T1w_MPR_vNav; find_ABCD_T1w_MPR_vNav()"
+
+# 通过对{sub}_run_name.txt的处理获得第二个 ABCD_T1w_MPR_vNav   usable 前面的数字
+python -u -c "from GM_modelTrain_functions import find_ABCD_T1w_MPR_vNav; find_ABCD_T1w_MPR_vNav('$sub')"
 source ABCD_T1w_MPR_vNav.txt # 加载 T1_ID 由find_ABCD_T1w_MPR_vNav 产生
+echo T1_ID=${T1_ID}
 
 # 等到zip file完成
 python -u -c "from GM_modelTrain_functions import wait; wait(${sub}.zip)"
@@ -60,3 +57,9 @@ sbatch makeGreyMatterMask.sh ${subjectName}
 
 # 下一步是 greedy 以及 训练模型
 python -u expScripts/recognition/8runRecgnitionModelTraining.py -c ${subjectName}.ses${ses}.toml
+
+
+
+# if [ -f "$FILE" ]; then
+#     echo "$FILE exists."
+# fi

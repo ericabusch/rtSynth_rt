@@ -1,16 +1,16 @@
 import os,time,shutil
 import numpy as np
 from glob import glob
-def find_ABCD_T1w_MPR_vNav():
+def find_ABCD_T1w_MPR_vNav(sub):
         #这个函数的功能是找到第二个ABCD_T1w_MPR_vNav   usable的前面的数字，保存在ABCD_T1w_MPR_vNav.txt里面
         
-        tmp_dir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/"
-        os.chdir(tmp_dir)
-        f = open("./run_name.txt", "r") # print(f.read())
+        raw_dir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/"
+        os.chdir(raw_dir)
+        f = open(f"{raw_dir}{sub}_run_name.txt", "r") # print(f.read())
         d = f.read()
         t = d.split("ABCD_T1w_MPR_vNav")[3]
         t = int(t.split("\n")[1])
-        f = open(tmp_dir+"ABCD_T1w_MPR_vNav.txt","w")
+        f = open(raw_dir+"ABCD_T1w_MPR_vNav.txt","w")
         f.write(f"T1_ID={t}")
         f.close()
 
