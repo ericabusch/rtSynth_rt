@@ -25,7 +25,7 @@ bash ${code_dir}fetchXNAT.sh ${sub}
 # 通过对{sub}_run_name.txt的处理获得第二个 ABCD_T1w_MPR_vNav   usable 前面的数字
 python -u -c "from GM_modelTrain_functions import find_ABCD_T1w_MPR_vNav; find_ABCD_T1w_MPR_vNav('$sub')"
 source ${raw_dir}${sub}_ABCD_T1w_MPR_vNav.txt # 加载 T1_ID 由find_ABCD_T1w_MPR_vNav 产生
-echo T1_ID=${T1_ID}
+echo T1_ID=${T1_ID} T2_ID=${T2_ID}
 
 # 等到zip file完成
 python -u -c "from GM_modelTrain_functions import wait; wait('${raw_dir}${sub}.zip')"
@@ -39,7 +39,7 @@ cd ${code_dir}
 bash ${code_dir}change2nifti.sh ${sub}
 
 # 根据找到的第二个T1 图像，移动到subject folder里面对应的ses的anat folder。
-python -u -c "from GM_modelTrain_functions import find_T1_in_niiFolder ; find_T1_in_niiFolder(${T1_ID},'${sub}')"
+python -u -c "from GM_modelTrain_functions import find_T1_in_niiFolder ; find_T1_in_niiFolder(${T1_ID},${T2_ID},'${sub}')"
 
 # 运行freesurfer
 cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/
