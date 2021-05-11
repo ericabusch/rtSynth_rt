@@ -162,67 +162,12 @@ def minimalClass(cfg,testRun=None):
     import itertools
     from sklearn.linear_model import LogisticRegression
 
-    # def gaussian(x, mu, sig):
-    #     # mu and sig is determined before each neurofeedback session using 2 recognition runs.
-    #     return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
-
-    # def jitter(size,const=0):
-    #     jit = np.random.normal(0+const, 0.05, size)
-    #     X = np.zeros((size))
-    #     X = X + jit
-    #     return X
-
     def other(target):
         other_objs = [i for i in ['bed', 'bench', 'chair', 'table'] if i not in target]
         return other_objs
 
     def red_vox(n_vox, prop=0.1):
         return int(np.ceil(n_vox * prop))
-
-    def get_inds(X, Y, pair, testRun=None):
-        
-        inds = {}
-        
-        # return relative indices
-        if testRun:
-            trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(testRun))]
-        else:
-            trainIX = Y.index[(Y['label'].isin(pair))]
-
-        # pull training and test data
-        trainX = X[trainIX]
-        trainY = Y.iloc[trainIX].label
-        
-        # Main classifier on 5 runs, testing on 6th
-        clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                    multi_class='multinomial').fit(trainX, trainY)
-        B = clf.coef_[0]  # pull betas
-
-        # retrieve only the first object, then only the second object
-        if testRun:
-            obj1IX = Y.index[(Y['label'] == pair[0]) & (Y['run_num'] != int(testRun))]
-            obj2IX = Y.index[(Y['label'] == pair[1]) & (Y['run_num'] != int(testRun))]
-        else:
-            obj1IX = Y.index[(Y['label'] == pair[0])]
-            obj2IX = Y.index[(Y['label'] == pair[1])]
-
-        # Get the average of the first object, then the second object
-        obj1X = np.mean(X[obj1IX], 0)
-        obj2X = np.mean(X[obj2IX], 0)
-
-        # Build the importance map
-        mult1X = obj1X * B
-        mult2X = obj2X * B
-
-        # Sort these so that they are from least to most important for a given category.
-        sortmult1X = mult1X.argsort()[::-1]
-        sortmult2X = mult2X.argsort()
-
-        # add to a dictionary for later use
-        inds[clf.classes_[0]] = sortmult1X
-        inds[clf.classes_[1]] = sortmult2X
-                    
-        return inds
 
     if 'milgram' in os.getcwd():
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/'
@@ -309,7 +254,35 @@ def minimalClass(cfg,testRun=None):
 
     # Which run to use as test data (leave as None to not have test data)
     # testRun = 0 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
+    def train4wayClf(META, FEAT):
+        runList = np.unique(list(META['run_num']))
+        print(f"runList={runList}")
+        accList={}
+        for testRun in runList:
+            trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
+            testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
 
+            # pull training and test data
+            trainX = FEAT[trainIX]
+            testX = FEAT[testIX]
+            trainY = META.iloc[np.asarray(trainIX)].label
+            testY = META.iloc[np.asarray(testIX)].label
+
+            # Train your classifier
+            clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                        multi_class='multinomial').fit(trainX, trainY)
+            
+            model_folder = cfg.trainingModel_dir
+            # Save it for later use
+            # joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
+            
+            # Monitor progress by printing accuracy (only useful if you're running a test set)
+            acc = clf.score(testX, testY)
+            print("acc=", acc)
+            accList[testRun] = acc
+        print(f"new trained full rotation 4 way accuracy mean={np.mean(list(accList.values()))}")
+        return accList
+    accList = train4wayClf(META, FEAT)
     # Decide on the proportion of crescent data to use for classification
     allpairs = itertools.combinations(objects,2)
     accs={}
@@ -390,83 +363,7 @@ def minimalClass(cfg,testRun=None):
                 accs[naming]=acc
 
     print(f"average 2 way clf accuracy={np.mean(list(accs.values()))}")
-    # def evidence(trainX,trainY):
-    #     # def classifierEvidence(clf,X,Y):
-    #     #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-    #     #     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-    #     #     # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
-    #     #     return np.asarray(Evidence)
-    #     FEAT=trainX
-    #     META=trainY
-        
-    #     A_ID = META['label']=='bed'
-    #     X = FEAT[A_ID]
 
-    #     print("floor")
-    #     # D evidence for AD_clf when A is presented.
-    #     Y = 'bench'
-    #     AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-    #     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
-    #     evidence_floor = np.mean(AD_D_evidence)
-    #     print(f"D evidence for AD_clf when A is presented={evidence_floor}")
-
-    #     # C evidence for AC_clf when A is presented.
-    #     Y = 'table'
-    #     AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
-    #     AC_C_evidence = classifierEvidence(AC_clf,X,Y)
-    #     evidence_floor = np.mean(AC_C_evidence)
-    #     print(f"C evidence for AC_clf when A is presented={evidence_floor}")
-
-
-    #     # D evidence for CD_clf when A is presented.
-    #     Y = 'bench'
-    #     CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-    #     CD_D_evidence = classifierEvidence(CD_clf,X,Y)
-    #     evidence_floor = np.mean(CD_D_evidence)
-    #     print(f"D evidence for CD_clf when A is presented={evidence_floor}")
-
-    #     # C evidence for CD_clf when A is presented.
-    #     Y = 'table'
-    #     CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-    #     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
-    #     evidence_floor = np.mean(CD_C_evidence)
-    #     print(f"C evidence for CD_clf when A is presented={evidence_floor}")
-
-    #     # since this subject has CD_clf C evidence systematically too high(sometimes higher than AC_clf A evidence or AD_clf A evidence), I choose to use 0 as the floor
-    #     evidence_floor = 0
-
-
-
-
-    #     print("ceil")
-    #     # evidence_ceil  is A evidence in AC and AD classifier
-    #     Y = 'bed'
-    #     AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
-    #     AC_A_evidence = classifierEvidence(AC_clf,X,Y)
-    #     evidence_ceil1 = AC_A_evidence
-    #     print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
-
-    #     Y = 'bed'
-    #     AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-    #     AD_A_evidence = classifierEvidence(AD_clf,X,Y)
-    #     evidence_ceil2 = AD_A_evidence
-    #     print(f"A evidence in AD_clf when A is presented={np.mean(evidence_ceil2)}")
-
-    #     # evidence_ceil = np.mean(evidence_ceil1)
-    #     # evidence_ceil = np.mean(evidence_ceil2)
-    #     evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
-    #     print(f"evidence_ceil={evidence_ceil}")
-
-    #     mu = (evidence_ceil+evidence_floor)/2
-    #     sig = (evidence_ceil-evidence_floor)/2.3548
-    #     print(f"floor={evidence_floor}, ceil={evidence_ceil}")
-    #     print(f"mu={mu}, sig={sig}")
-
-
-    # # print the evidence using model training data
-    # evidence(FEAT,META)
-    # print the evidence using model testing data
-    
     return accs
                 
 
