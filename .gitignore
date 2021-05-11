@@ -133,3 +133,4 @@ web/*
 !subjects/sub*/ses*/feedback/*
 !subjects/sub*/*.csv
 !expScripts/feedback/*.png
+!subjects/sub*/ses2/feedback/*
