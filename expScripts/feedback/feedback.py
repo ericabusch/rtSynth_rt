@@ -129,14 +129,14 @@ try:
         blendMode='avg', useFBO=True,
         units='height')
 
-    if cfg.session == 2 and cfg.run == 1:
+    # if cfg.session == 2 and cfg.run == 1:
+    #     ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
+    # else:
+    try:
+        ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
+    except:
+        print(f"cannot read {cfg.adaptiveThreshold}")
         ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
-    else:
-        try:
-            ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
-        except:
-            print(f"cannot read {cfg.adaptiveThreshold}")
-            ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
 
     ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)

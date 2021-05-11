@@ -917,6 +917,17 @@ def AdaptiveThreshold(cfg,ThresholdLog):
     if threshold<0.4:
         threshold=0.4
 
+    # 如果这个run已经跑过了，给出这个error提醒。
+    try:
+        print(f"len(ThresholdLog)>=1={len(ThresholdLog)>=1}")
+        print(f"ThresholdLog['sub'].iloc[-1]==cfg.subjectName and ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run={ThresholdLog['sub'].iloc[-1]==cfg.subjectName and ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run}")
+    except:
+        pass
+    if len(ThresholdLog)>=1:
+        if ThresholdLog['sub'].iloc[-1]==cfg.subjectName and ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
+            print(f"this run exists! edit {cfg.adaptiveThreshold}")
+            raise Exception(f"this run exists! edit {cfg.adaptiveThreshold}") 
+
 
     ThresholdLog = ThresholdLog.append({
         'sub':cfg.subjectName, 
@@ -924,4 +935,6 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         'run':cfg.run, 
         'threshold':threshold},
         ignore_index=True)
+
+
     return ThresholdLog
