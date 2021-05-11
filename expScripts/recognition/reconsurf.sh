@@ -20,7 +20,8 @@ subjectFolder=${anatPath}freesurfer/
 mkdir -p ${subjectFolder}
 
 # process steps 1-5 
-recon-all -i ${anatPath}T1.nii -autorecon1 -notal-check -subjid ${subject} -sd ${subjectFolder};
+# recon-all -i ${anatPath}T1.nii -autorecon1 -notal-check -subjid ${subject} -sd ${subjectFolder};
+recon-all -i ${anatPath}T1.nii -T2 ${anatPath}T2.nii -T2pial -autorecon1 -notal-check -subjid ${subject} -sd ${subjectFolder};
 
 # process steps 6-23
 recon-all -autorecon2 -subjid ${subject} -sd ${subjectFolder};
