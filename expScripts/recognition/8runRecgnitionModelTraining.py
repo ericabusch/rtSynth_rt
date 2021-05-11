@@ -88,7 +88,7 @@ if cfg.session==1:
 
 # train the classifiers
 # accs = minimalClass(cfg)
-accs = minimalClass(cfg,testRun=None)
+accs = minimalClass(cfg,testRun=args.testRun)
 
 print("\n\n")
 print(f"minimalClass accs={accs}")
