@@ -259,8 +259,8 @@ def minimalClass(cfg,testRun=None):
         print(f"runList={runList}")
         accList={}
         for testRun in runList:
-            trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
-            testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
+            trainIX = META['run_num']!=int(testRun)
+            testIX = META['run_num']==int(testRun)
 
             # pull training and test data
             trainX = FEAT[trainIX]
@@ -272,7 +272,7 @@ def minimalClass(cfg,testRun=None):
             clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
                                         multi_class='multinomial').fit(trainX, trainY)
             
-            model_folder = cfg.trainingModel_dir
+            # model_folder = cfg.trainingModel_dir
             # Save it for later use
             # joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
             
