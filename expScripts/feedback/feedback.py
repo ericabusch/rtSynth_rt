@@ -300,7 +300,7 @@ try:
         #                                 height=25,units='pix', #norm
         #                                 color=(0, 1, 0), colorSpace='rgb') #green color
         monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-0.25), depth=-5.0, 
-                                        height=25,units='norm', #norm
+                                        height=0.05,units='norm', #norm
                                         color=(0, 1, 0), colorSpace='rgb') #green color
         monetaryReward.setAutoDraw(True)
         return monetaryReward
