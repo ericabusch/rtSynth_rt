@@ -491,13 +491,17 @@ def behaviorDataLoading(cfg,curr_run):
     # extract the labels which is selected by the subject and coresponding TR and time
     behav_data = behav_data[['TR', 'image_on', 'Resp',  'Item']] # the TR, the real time it was presented, 
 
+    # 为了处理 情况 A.被试的反应慢了一个TR，或者 B.两个按钮都被按了(这种情况下按照第二个按钮处理)
+    # 现在的问题是”下一个TR“可能超过了behav_data的长度
     # this for loop is to deal with the situation where Resp is late for 1 TR, or two buttons are pressed. 
     # when Resp is late for 1 TR, set the current Resp as the later Response.
     # when two buttons are pressed, set the current Resp as the later Response because the later one should be the real choice
     for curr_trial in range(behav_data.shape[0]):
         if behav_data['Item'].iloc[curr_trial]  in ["A","B","C","D"]:
-            if behav_data['Resp'].iloc[curr_trial+1] in [1.0,2.0]:
-                behav_data['Resp'].iloc[curr_trial]=behav_data['Resp'].iloc[curr_trial+1]
+            if curr_trial+1<behav_data.shape[0]: # 为了防止”下一个TR“超过behav_data的长度  中文
+                if behav_data['Resp'].iloc[curr_trial+1] in [1.0,2.0]:
+                    behav_data['Resp'].iloc[curr_trial]=behav_data['Resp'].iloc[curr_trial+1]
+
 
     behav_data=behav_data.dropna(subset=['Item'])
 
