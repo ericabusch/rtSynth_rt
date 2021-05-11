@@ -616,26 +616,6 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
 
 
-# def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
-#     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
-#     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-#     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-#     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (-(X@clf.coef_.T+clf.intercept_))
-#     Evidence = 1/(1+np.exp(-Evidence))
-#     return np.asarray(Evidence)
-
-# def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y)*1==1)[0][0]
-#     p = clf.predict_proba(X)[:,ID]
-#     BX=np.log(p/(1-p))
-#     return BX
-
-# def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y)*1==1)[0][0]
-#     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-#     # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
-#     return np.asarray(Evidence)
-
 def classifierProb(clf,X,Y):
     ID=np.where((clf.classes_==Y)*1==1)[0][0]
     p = clf.predict_proba(X)[:,ID]
@@ -730,7 +710,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 
     topN = load_obj(f"{cfg.recognition_expScripts_dir}top{N}ROIs")
     print(f"len(topN)={len(topN)}")
-    print(f"topN={topN}")
+    print(f"GMschaefer_ topN loaded from neurosketch={topN}")
 
     def Wait(waitfor, delay=1):
         while not os.path.exists(waitfor):
@@ -784,7 +764,6 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
         t=list(t['Item'])
         behav_data.append(t)
-
     for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for previous session
         t = np.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/brain_run{run}.npy")
         t = normalize(t)
@@ -955,10 +934,6 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     GreedyBestAcc=np.zeros((len(subjects),N+1))
     GreedyBestAcc[GreedyBestAcc==0]=None
     for ii,subject in enumerate(subjects):
-    #     try:
-    #         GreedyBestAcc[ii,40]=np.load("./{}/{}/output/top{}.npy".format(roiloc, subject, N))
-    #     except:
-    #         pass
         for len_topN_1 in range(N-1,0,-1):
             try:
                 # print(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
@@ -968,6 +943,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
                 pass
     GreedyBestAcc=GreedyBestAcc.T
 
+    # import matplotlib.pyplot as plt
     # plt.imshow(GreedyBestAcc)
     # _=plt.figure()
     # for i in range(GreedyBestAcc.shape[0]):
@@ -977,6 +953,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     performance_mean = np.nanmean(GreedyBestAcc,axis=1)
     bestID=np.where(performance_mean==max(performance_mean))[0][0]
     di = load_obj(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{bestID+1}")
+    print(f"bestID={bestID}; best Acc = {di['bestAcc']}")
     mask = getMask(di['bestROIs'],cfg)
     np.save(cfg.chosenMask,mask)
     return 0
