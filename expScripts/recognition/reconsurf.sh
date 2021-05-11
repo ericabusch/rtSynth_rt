@@ -27,6 +27,4 @@ recon-all -i ${anatPath}T1.nii -T2 ${anatPath}T2.nii -T2pial -autorecon1 -notal-
 recon-all -autorecon2 -subjid ${subject} -sd ${subjectFolder};
 
 # process stages 24-31
-recon-all -autorecon3 -subjid ${subject} -sd ${subjectFolder};
-
-echo $subject > ${anatPath}done_${subject}.txt
+recon-all -autorecon3 -subjid ${subject} -sd ${subjectFolder} -notify ${anatPath}done_${subject}.txt
