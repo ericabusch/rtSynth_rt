@@ -712,8 +712,8 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 
 
     from rtCommon.cfg_loading import mkdir,cfg_loading
-    config="sub001.ses1.toml"
-    cfg = cfg_loading(config)
+    # config="sub001.ses1.toml"
+    # cfg = cfg_loading(config)
 
     subject,dataSource,roiloc,N=cfg.subjectName,"realtime","schaefer2018",N
     # subject,dataSource,roiloc,N=sys.argv[1],sys.argv[2],sys.argv[3],int(sys.argv[4])
