@@ -62,6 +62,7 @@ for ROI in {1..300}; do
     OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz #individual T1 space ROI outputs
     fslmaths ${INPUT} -thr ${ROI} -uthr ${ROI} -bin ${OUTPUT}
     flirt -ref ${TEMPLATE_bet} -in ${OUTPUT} -out ${OUTPUT} -applyxfm -init ${WANG2FUNC}  
+    echo fslmaths ${OUTPUT} -thr 0.5 -bin ${OUTPUT}
     fslmaths ${OUTPUT} -thr 0.5 -bin ${OUTPUT}
 done
 
@@ -71,8 +72,11 @@ for ROI in {1..300}; do
     OUTPUT=${mask_dir}/schaefer_${ROI}.nii.gz
     GMmasked_OUTPUT=${mask_dir}/GMschaefer_${ROI}.nii.gz
     fslmaths ${OUTPUT} -add ${GMINFUNC} ${GMmasked_OUTPUT}
+    echo fslmaths ${GMmasked_OUTPUT} -thr 1.5 -bin ${GMmasked_OUTPUT}
     fslmaths ${GMmasked_OUTPUT} -thr 1.5 -bin ${GMmasked_OUTPUT}
 done
+
+echo make-schaefer-rois.sh done
 
 
 # 验证GM mask是成功的：
