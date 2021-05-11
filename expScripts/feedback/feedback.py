@@ -79,7 +79,6 @@ try:
     args = argParser.parse_args()
 
 
-
     if args.trying:
         scanmode = 'Test'  # 'Scan' or 'Test' or None
         screenmode = False  # fullscr True or False
@@ -287,19 +286,19 @@ try:
 
 
 
-    message = visual.TextStim(mywin, text=f'Waiting...',pos=(0, 0), depth=-5.0, height=32,units='pix')
+    message = visual.TextStim(mywin, text=f'Waiting...',pos=(0, 0), depth=-5.0, height=0.05,units='pix')
     def display(text,message): #endMorphing can be [1,5,9,13]
         message.setAutoDraw(False)
-        message = visual.TextStim(mywin, text=f'{text}',pos=(0, 0), depth=-5.0, height=32,units='pix')
+        message = visual.TextStim(mywin, text=f'{text}',pos=(0, 0), depth=-5.0, height=0.05,units='norm')
         message.setAutoDraw(True)
         return message
-    monetaryReward = visual.TextStim(mywin, text=f'',pos=(0, 0), depth=-5.0, height=32,units='pix')    
+    monetaryReward = visual.TextStim(mywin, text=f'',pos=(0, 0), depth=-5.0, height=0.05,units='norm')    
     def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
         monetaryReward.setAutoDraw(False)
         # monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-120), depth=-5.0, 
         #                                 height=25,units='pix', #norm
         #                                 color=(0, 1, 0), colorSpace='rgb') #green color
-        monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-0.25), depth=-5.0, 
+        monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-0.28), depth=-5.0, 
                                         height=0.05,units='norm', #norm
                                         color=(0, 1, 0), colorSpace='rgb') #green color
         monetaryReward.setAutoDraw(True)
@@ -668,9 +667,9 @@ try:
                 monetaryReward.setAutoDraw(False)
                 
                 # try:
-                emoji("1")
-                display_monetaryReward("text",monetaryReward)
-                # message=display(f"Get ready...",message)
+                # emoji("1")
+                # display_monetaryReward("text",monetaryReward)
+                message=display(f"Get ready...",message)
 
                 # message=display(f"Waiting for {2*_countITI} s",message)
 
