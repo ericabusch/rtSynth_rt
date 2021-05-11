@@ -493,89 +493,6 @@ try:
     history=pd.DataFrame(columns=['TR', 'morphParam', 'states',"points"])
     default_parameter=19
 
-
-    # message = visual.TextStim(mywin, text=f'Waiting...',pos=(0, 0), depth=-5.0, height=32,units='pix')
-    # def display(text,message): #endMorphing can be [1,5,9,13]
-    #     message.setAutoDraw(False)
-    #     message = visual.TextStim(mywin, text=f'{text}',pos=(0, 0), depth=-5.0, height=32,units='pix')
-    #     message.setAutoDraw(True)
-    #     return message
-    # monetaryReward = visual.TextStim(mywin, text=f'',pos=(0, 0), depth=-5.0, height=32,units='pix')    
-    # def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
-    #     monetaryReward.setAutoDraw(False)
-    #     monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(-10, 0), depth=-5.0, 
-    #                                     height=25,units='pix',
-    #                                     color=(0, 1, 0), colorSpace='rgb') #green color
-    #     monetaryReward.setAutoDraw(True)
-    #     return monetaryReward
-
-    # emoji1 = visual.ImageStim(
-    #     win=mywin,
-    #     name='emoji1',
-    #     image=cfg.feedback_expScripts_dir + './emoji1.png', mask=None,
-    #     ori=0, pos=(0, 0), size=(0.25, 0.25),
-    #     color=[1,1,1], colorSpace='rgb', opacity=1,
-    #     flipHoriz=False, flipVert=False,
-    #     texRes=128, interpolate=True, depth=-5.0)
-    # emoji5 = visual.ImageStim(
-    #     win=mywin,
-    #     name='emoji5',
-    #     image=cfg.feedback_expScripts_dir + './emoji5.png', mask=None,
-    #     ori=0, pos=(0, 0), size=(0.25, 0.25),
-    #     color=[1,1,1], colorSpace='rgb', opacity=1,
-    #     flipHoriz=False, flipVert=False,
-    #     texRes=128, interpolate=True, depth=-5.0)
-    # emoji9 = visual.ImageStim(
-    #     win=mywin,
-    #     name='emoji9',
-    #     image=cfg.feedback_expScripts_dir + './emoji9.png', mask=None,
-    #     ori=0, pos=(0, 0), size=(0.25, 0.25),
-    #     color=[1,1,1], colorSpace='rgb', opacity=1,
-    #     flipHoriz=False, flipVert=False,
-    #     texRes=128, interpolate=True, depth=-5.0)
-    # emoji13 = visual.ImageStim(
-    #     win=mywin,
-    #     name='emoji13',
-    #     image=cfg.feedback_expScripts_dir + './emoji13.png', mask=None,
-    #     ori=0, pos=(0, 0), size=(0.25, 0.25),
-    #     color=[1,1,1], colorSpace='rgb', opacity=1,
-    #     flipHoriz=False, flipVert=False,
-    #     texRes=128, interpolate=True, depth=-5.0)
-    # def emoji(endMorphing): #endMorphing can be [1,5,9,13]
-    #     if endMorphing ==1:
-    #         emoji1.setAutoDraw(True)
-    #         emoji5.setAutoDraw(False)
-    #         emoji9.setAutoDraw(False)
-    #         emoji13.setAutoDraw(False)
-    #     elif endMorphing ==5:
-    #         emoji1.setAutoDraw(False)
-    #         emoji5.setAutoDraw(True)
-    #         emoji9.setAutoDraw(False)
-    #         emoji13.setAutoDraw(False)
-    #     elif endMorphing ==9:
-    #         emoji1.setAutoDraw(False)
-    #         emoji5.setAutoDraw(False)
-    #         emoji9.setAutoDraw(True)
-    #         emoji13.setAutoDraw(False)
-    #     elif endMorphing ==13:
-    #         emoji1.setAutoDraw(False)
-    #         emoji5.setAutoDraw(False)
-    #         emoji9.setAutoDraw(False)
-    #         emoji13.setAutoDraw(True)
-    #     elif endMorphing == "OFF":
-    #         emoji1.setAutoDraw(False)
-    #         emoji5.setAutoDraw(False)
-    #         emoji9.setAutoDraw(False)
-    #         emoji13.setAutoDraw(False)
-    #     # message.setAutoDraw(False)
-    #     # message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
-    #     # message.setAutoDraw(True)
-
-    # if args.trying:
-    #     monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
-    #     emoji(1)
-
-
     initialMorphParam=13
     morphParam=initialMorphParam
     perfect_trials=0
@@ -723,16 +640,17 @@ try:
                 #     countdown-=2
             elif _countITI in [6,5,4]: # 如果不是最开始的6个TR，并且state又是ITI，那么如果是第1，2，3个TR，就展示message；
                 if successful_TR >= 3:
-                    emoji(1) # Perfect
-                    monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
+                    emoji(1) # perfect!
+                    monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
                 elif successful_TR ==2:
-                    emoji(5) # Good job
+                    emoji(5) # great job
                     monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
                 elif successful_TR ==1:
-                    emoji(9) # Good job
-                    monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
+                    emoji(9) # good try
+                    monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
                 elif successful_TR ==0:
-                    emoji(13) # Failed
+                    emoji(13) # no luck
+                    monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
 
             if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
                 emoji("OFF")
