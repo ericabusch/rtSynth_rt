@@ -453,7 +453,7 @@ def recognition_preprocess_2run(cfg,run_asTemplate):
 
     # convert cfg.templateFunctionalVolume to the previous template volume space 
     cmd=f"flirt -ref {cfg.templateFunctionalVolume} \
-        -in {tmp[int(len(tmp)/2)]} \
+        -in {tmp[int(len(tmp)/2+20)]} \
         -out {cfg.templateFunctionalVolume_converted}"
     print(cmd)
     call(cmd,shell=True) 
