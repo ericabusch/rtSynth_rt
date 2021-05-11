@@ -44,7 +44,7 @@ argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--skipPre', '-s', default=0, type=int, help='skip preprocess or not')
 argParser.add_argument('--skipGreedy', '-g', default=0, type=int, help='skip greedy or not')
-argParser.add_argument('--testRun', '-t', default=None, type=int, help='testRun, can be ')
+argParser.add_argument('--testRun', '-t', default=None, type=int, help='testRun, can be [None,1,2,3,4,5,6,7,8]')
 
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
