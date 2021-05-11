@@ -136,7 +136,7 @@ try:
         ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
     except:
         print(f"cannot read {cfg.adaptiveThreshold}")
-        ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
+        ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials','monetaryReward1','monetaryReward5','monetaryReward9','monetaryReward13'])
 
     ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
@@ -297,7 +297,7 @@ try:
     def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
         monetaryReward.setAutoDraw(False)
         monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-120), depth=-5.0, 
-                                        height=25,units='pix',
+                                        height=25,units='pix', #norm
                                         color=(0, 1, 0), colorSpace='rgb') #green color
         monetaryReward.setAutoDraw(True)
         return monetaryReward
@@ -363,6 +363,11 @@ try:
         # message.setAutoDraw(False)
         # message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
         # message.setAutoDraw(True)
+
+    monetaryReward1 = 0
+    monetaryReward5 = 0
+    monetaryReward9 = 0
+    monetaryReward13 = 0
 
     # if args.trying:
     #     monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
@@ -642,16 +647,19 @@ try:
                 if successful_TR >= 3:
                     emoji(1) # perfect!
                     monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
+                    monetaryReward1+=1
                 elif successful_TR ==2:
                     emoji(5) # great job
                     monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
+                    monetaryReward5+=1
                 elif successful_TR ==1:
                     emoji(9) # good try
                     monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
+                    monetaryReward9+=1
                 elif successful_TR ==0:
                     emoji(13) # no luck
                     monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
-
+                    monetaryReward13+=1
             if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
                 emoji("OFF")
                 monetaryReward.setAutoDraw(False)
@@ -662,10 +670,10 @@ try:
             if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
                 if successful_TR >= 3:
                     perfect_trials+=1
-                elif successful_TR > 0:
+
+                if successful_TR > 0:
                     successful_trials+=1
-                else:
-                    pass
+                
                 print(f"successful_trials={successful_trials}")
                 print(f"perfect_trials={perfect_trials}")
 
@@ -673,6 +681,10 @@ try:
                 ThresholdLog["successful_trials"].iloc[-1] = successful_trials
                 print(f"saving successful_trials = {successful_trials}")
                 ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+                ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
+                ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
+                ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
+                ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
                 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
                 ITIFlag = 0 
@@ -714,6 +726,12 @@ except Exception as e:
     print(f"saving successful_trials = {successful_trials}")
     ThresholdLog["successful_trials"].iloc[-1] = successful_trials
     ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+
+    ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
+    ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
+    ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
+    ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+
     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
     with open(f'./log_{time.time()}.txt', 'a') as f:
