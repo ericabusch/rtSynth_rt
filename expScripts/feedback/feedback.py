@@ -703,10 +703,10 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         message.setAutoDraw(False)
         
         imagePaths13[currImage-1].setAutoDraw(False)
-        try:
-            imagePaths13[currImage].setAutoDraw(True)
-        except:
-            pass
+        # try:
+        imagePaths13[currImage].setAutoDraw(True)
+        # except:
+        #     pass
         currImage=currImage+1
 
         # if len(states)>2:
