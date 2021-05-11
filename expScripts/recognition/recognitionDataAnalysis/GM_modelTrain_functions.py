@@ -32,7 +32,7 @@ def find_T1_in_niiFolder(T1_ID,sub):
     for curr_file in files:
         runID=curr_file.split("/")[-1].split("_")[-1].split(".nii")[0]
         try:
-            if int(runID)==8:
+            if int(runID)==T1_ID:
                 print(curr_file)
                 T1=curr_file
         except:

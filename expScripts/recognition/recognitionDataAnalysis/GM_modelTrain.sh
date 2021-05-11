@@ -8,6 +8,8 @@ module load AFNI
 module load FreeSurfer/6.0.0
 module load FSL
 . ${FSLDIR}/etc/fslconf/fsl.sh
+set -e
+
 code_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/
 raw_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/
 cd ${code_dir}
@@ -29,9 +31,11 @@ echo T1_ID=${T1_ID}
 python -u -c "from GM_modelTrain_functions import wait; wait('${raw_dir}${sub}.zip')"
 
 # unzip
+cd ${raw_dir}
 unzip ${sub}.zip
 
 # 把dcm变成nii
+cd ${code_dir}
 bash ${code_dir}change2nifti.sh ${sub}
 
 # 根据找到的第二个T1 图像，移动到subject folder里面对应的ses的anat folder。
