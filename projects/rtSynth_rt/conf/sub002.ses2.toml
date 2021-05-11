@@ -26,7 +26,7 @@ scanNum = [1] #[1,2,3,4,5,6,7,8] # This is a list of scan(or runs that might be 
 subjectName = "sub002" # subject folder name in the rtSynth_rt/subjects folder
 LASTNAME="rtSynth_sub002"
 subjectIDforxnat="rtSynth_sub002_ses2" #PATIENTID has to be unique for each subject
-
+studyDescription="rtSynth_rt"
 
 realtimeFolder_subjectName="rtSynth_sub002"
 preDay_YYYYMMDD="20210510" # can be "0" if there is no previous day for this session
