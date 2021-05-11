@@ -296,8 +296,11 @@ try:
     monetaryReward = visual.TextStim(mywin, text=f'',pos=(0, 0), depth=-5.0, height=32,units='pix')    
     def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
         monetaryReward.setAutoDraw(False)
-        monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-120), depth=-5.0, 
-                                        height=25,units='pix', #norm
+        # monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-120), depth=-5.0, 
+        #                                 height=25,units='pix', #norm
+        #                                 color=(0, 1, 0), colorSpace='rgb') #green color
+        monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-0.25), depth=-5.0, 
+                                        height=25,units='norm', #norm
                                         color=(0, 1, 0), colorSpace='rgb') #green color
         monetaryReward.setAutoDraw(True)
         return monetaryReward
@@ -663,7 +666,12 @@ try:
             if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
                 emoji("OFF")
                 monetaryReward.setAutoDraw(False)
-                message=display(f"Get ready...",message)
+                
+                # try:
+                emoji("1")
+                display_monetaryReward("text",monetaryReward)
+                # message=display(f"Get ready...",message)
+
                 # message=display(f"Waiting for {2*_countITI} s",message)
 
                 
