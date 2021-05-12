@@ -510,10 +510,10 @@ countdown=12
 imagePaths13=imageLists[13]
 eachTime13=ParameterUpdateDuration/len(imagePaths13)
 
-# tryKailong
-money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
-message=display(f"You have {successful_trials} successful trials in this run and you just earned {money} cents.",message)
-time.sleep(5)
+# # tryKailong
+# money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
+# message=display(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.",message)
+# time.sleep(5)
 
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
@@ -737,7 +737,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 # ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
 money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
-message=display(f"You have {successful_trials} successful trials in this run and you just earned {money} cents.",message)
+message=display(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.",message)
 time.sleep(5)
 # write data out!
 mywin.close()
