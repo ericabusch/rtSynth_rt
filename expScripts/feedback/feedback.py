@@ -649,19 +649,19 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             if successful_TR >= 3:
                 emoji(1) # perfect!
                 monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
-                monetaryReward1+=1
+                
             elif successful_TR ==2:
                 emoji(5) # great job
                 monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
-                monetaryReward5+=1
+                
             elif successful_TR ==1:
                 emoji(9) # good try
                 monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
-                monetaryReward9+=1
+                
             elif successful_TR ==0:
                 emoji(13) # no luck
                 monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
-                monetaryReward13+=1
+                
         if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
             emoji("OFF")
             monetaryReward.setAutoDraw(False)
@@ -677,10 +677,16 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
             if successful_TR >= 3:
                 perfect_trials+=1
-
+                monetaryReward1+=1
             if successful_TR > 0:
                 successful_trials+=1
-            
+            if successful_TR == 2:
+                monetaryReward5+=1
+            if successful_TR == 1:
+                monetaryReward9+=1
+            if successful_TR == 0:
+                monetaryReward13+=1
+
             print(f"successful_trials={successful_trials}")
             print(f"perfect_trials={perfect_trials}")
 
