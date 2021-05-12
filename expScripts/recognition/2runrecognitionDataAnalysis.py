@@ -52,6 +52,8 @@ if not args.skipPre:
     scan_asTemplate=1 # which run in the realtime folder to select the middle volume as the template volume
     recognition_preprocess_2run(cfg,args.scan_asTemplate)
 
+print(f"fslview_deprecated {cfg.templateFunctionalVolume_converted}")
+
 '''
 purpose:
     get the morphing target function
