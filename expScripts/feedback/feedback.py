@@ -509,6 +509,12 @@ ITIFlag=1
 countdown=12
 imagePaths13=imageLists[13]
 eachTime13=ParameterUpdateDuration/len(imagePaths13)
+
+# tryKailong
+money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
+message=display(f"You have {successful_trials} successful trials in this run and you just earned {money} cents.",message)
+time.sleep(5)
+
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -677,15 +683,16 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
             if successful_TR >= 3:
                 perfect_trials+=1
-                monetaryReward1+=1
+                monetaryReward1+=1 #15cent
             if successful_TR > 0:
-                successful_trials+=1
+                successful_trials+=1 
+
             if successful_TR == 2:
-                monetaryReward5+=1
+                monetaryReward5+=1 #10cent
             if successful_TR == 1:
-                monetaryReward9+=1
+                monetaryReward9+=1 #5cent
             if successful_TR == 0:
-                monetaryReward13+=1
+                monetaryReward13+=1 #0cent
 
             print(f"successful_trials={successful_trials}")
             print(f"perfect_trials={perfect_trials}")
@@ -729,7 +736,9 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 # ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
 # ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
-
+money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
+message=display(f"You have {successful_trials} successful trials in this run and you just earned {money} cents.",message)
+time.sleep(5)
 # write data out!
 mywin.close()
 core.quit()
