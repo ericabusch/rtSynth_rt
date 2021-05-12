@@ -406,7 +406,7 @@ def minimalClass(cfg,testRun=None):
     # 获得full rotation的2way clf的accuracy 平均值 中文
     accs_rotation=[]
     print(f"new_run_indexs={new_run_indexs}")
-    for testRun in new_run_indexs:
+    for testRun in tqdm(new_run_indexs):
         allpairs = itertools.combinations(objects,2)
         accs={}
         # Iterate over all the possible target pairs of objects
@@ -429,8 +429,8 @@ def minimalClass(cfg,testRun=None):
                     naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
 
                     if testRun:
-                        trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
-                        testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
+                        trainIX = ((META['label']==obj) | (META['label']==altobj)) & (META['run_num']!=int(testRun))
+                        testIX = ((META['label']==obj) | (META['label']==altobj)) & (META['run_num']==int(testRun))
                     else:
                         trainIX = ((META['label']==obj) | (META['label']==altobj))
                         testIX = ((META['label']==obj) | (META['label']==altobj))
@@ -610,7 +610,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     import pandas as pd
     from sklearn.linear_model import LogisticRegression
     import itertools
-    # from tqdm import tqdm
+    from tqdm import tqdm
     import pickle5 as pickle
     import subprocess
     from subprocess import call
