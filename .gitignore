@@ -135,7 +135,7 @@ web/*
 !expScripts/feedback/*.png
 !subjects/sub*/ses2/feedback/*
 
-subjects/sub001/*
+
 subjects/sub102/*
 *BRIK
 *HEAD
