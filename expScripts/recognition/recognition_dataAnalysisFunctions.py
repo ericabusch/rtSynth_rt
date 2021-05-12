@@ -306,6 +306,8 @@ def minimalClass(cfg,testRun=None):
 
     objects = ['bed', 'bench', 'chair', 'table']
 
+    new_run_indexs=[]
+    new_run_index=1 #使用新的run 的index，以便于后面的testRun selection的时候不会重复。正常的话 new_run_index 应该是1，2，3，4，5，6，7，8
     for ii,run in enumerate(actualRuns): # load behavior and brain data for current session
         t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
         mask = np.load(f"{cfg.chosenMask}")
@@ -314,6 +316,9 @@ def minimalClass(cfg,testRun=None):
         brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
+        t['run_num'] = new_run_index
+        new_run_indexs.append(new_run_index)
+        new_run_index+=1
         behav_data=t if ii==0 else pd.concat([behav_data,t])
 
     for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for previous session
@@ -324,6 +329,9 @@ def minimalClass(cfg,testRun=None):
         brain_data = np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/behav_run{run}.csv")
+        t['run_num'] = new_run_index
+        new_run_indexs.append(new_run_index)
+        new_run_index+=1
         behav_data = pd.concat([behav_data,t])
 
     for ii,run in enumerate(actualRuns_prepreDay): # load behavior and brain data for previous session
@@ -334,6 +342,9 @@ def minimalClass(cfg,testRun=None):
         brain_data = np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/behav_run{run}.csv")
+        t['run_num'] = new_run_index
+        new_run_indexs.append(new_run_index)
+        new_run_index+=1
         behav_data = pd.concat([behav_data,t])
 
     # FEAT=brain_data.reshape(brain_data.shape[0],-1)
@@ -391,72 +402,89 @@ def minimalClass(cfg,testRun=None):
         print(f"new trained full rotation 4 way accuracy mean={np.mean(list(accList.values()))}")
         return accList
     accList = train4wayClf(META, FEAT)
-    # Decide on the proportion of crescent data to use for classification
+    
+    # 获得full rotation的2way clf的accuracy 平均值 中文
+    accs_rotation=[]
+    print(f"new_run_indexs={new_run_indexs}")
+    for testRun in new_run_indexs:
+        allpairs = itertools.combinations(objects,2)
+        accs={}
+        # Iterate over all the possible target pairs of objects
+        for pair in allpairs:
+            # Find the control (remaining) objects for this pair
+            altpair = other(pair)
+            
+            # pull sorted indices for each of the critical objects, in order of importance (low to high)
+            # inds = get_inds(FEAT, META, pair, testRun=testRun)
+            
+            # Find the number of voxels that will be left given your inclusion parameter above
+            # nvox = red_vox(FEAT.shape[1], include)
+            
+            for obj in pair:
+                # foil = [i for i in pair if i != obj][0]
+                for altobj in altpair:
+                    # establish a naming convention where it is $TARGET_$CLASSIFICATION
+                    # Target is the NF pair (e.g. bed/bench)
+                    # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
+                    naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
+
+                    if testRun:
+                        trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
+                        testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
+                    else:
+                        trainIX = ((META['label']==obj) | (META['label']==altobj))
+                        testIX = ((META['label']==obj) | (META['label']==altobj))
+
+                    # pull training and test data
+                    trainX = FEAT[trainIX]
+                    testX = FEAT[testIX]
+                    trainY = META.iloc[np.asarray(trainIX)].label
+                    testY = META.iloc[np.asarray(testIX)].label
+
+                    assert len(np.unique(trainY))==2
+
+                    # Train your classifier
+                    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                                multi_class='multinomial').fit(trainX, trainY)
+                    
+                    model_folder = cfg.trainingModel_dir
+                    # Save it for later use
+                    # joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
+                    
+                    # Monitor progress by printing accuracy (only useful if you're running a test set)
+                    acc = clf.score(testX, testY)
+                    print(naming, acc)
+                    accs[naming]=acc
+        print(f"testRun = {testRun} : average 2 way clf accuracy={np.mean(list(accs.values()))}")
+        accs_rotation.append(np.mean(list(accs.values())))
+    print(f"mean of 2 way clf acc full rotation = {np.mean(accs_rotation)}")
+
+    # 用所有数据训练要保存并且使用的模型：
     allpairs = itertools.combinations(objects,2)
     accs={}
     # Iterate over all the possible target pairs of objects
     for pair in allpairs:
         # Find the control (remaining) objects for this pair
         altpair = other(pair)
-        
-        # pull sorted indices for each of the critical objects, in order of importance (low to high)
-        # inds = get_inds(FEAT, META, pair, testRun=testRun)
-        
-        # Find the number of voxels that will be left given your inclusion parameter above
-        # nvox = red_vox(FEAT.shape[1], include)
-        
         for obj in pair:
             # foil = [i for i in pair if i != obj][0]
             for altobj in altpair:
-                
                 # establish a naming convention where it is $TARGET_$CLASSIFICATION
                 # Target is the NF pair (e.g. bed/bench)
                 # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
                 naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
-                
-                # Pull the relevant inds from your previously established dictionary 
-                # obj_inds = inds[obj]
-                
-                # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
-                # if testRun:
-                #     trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(testRun))]
-                #     testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(testRun))]
-                # else:
-                #     trainIX = META.index[(META['label'].isin([obj, altobj]))]
-                #     testIX = META.index[(META['label'].isin([obj, altobj]))]
-                # # pull training and test data
-                # trainX = FEAT[trainIX]
-                # testX = FEAT[testIX]
-                # trainY = META.iloc[trainIX].label
-                # testY = META.iloc[testIX].label
-                
-                # print(f"obj={obj},altobj={altobj}")
-                # print(f"unique(trainY)={np.unique(trainY)}")
-                # print(f"unique(testY)={np.unique(testY)}")
-                # assert len(np.unique(trainY))==2
 
-                if testRun:
-                    trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
-                    testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
-                else:
-                    trainIX = ((META['label']==obj) | (META['label']==altobj))
-                    testIX = ((META['label']==obj) | (META['label']==altobj))
+                trainIX = ((META['label']==obj) | (META['label']==altobj))
+                testIX = ((META['label']==obj) | (META['label']==altobj))
+
                 # pull training and test data
                 trainX = FEAT[trainIX]
                 testX = FEAT[testIX]
                 trainY = META.iloc[np.asarray(trainIX)].label
                 testY = META.iloc[np.asarray(testIX)].label
 
-                # print(f"obj={obj},altobj={altobj}")
-                # print(f"unique(trainY)={np.unique(trainY)}")
-                # print(f"unique(testY)={np.unique(testY)}")
                 assert len(np.unique(trainY))==2
 
-                # # If you're selecting high-importance features, this bit handles that
-                # if include < 1:
-                #     trainX = trainX[:, obj_inds[-nvox:]]
-                #     testX = testX[:, obj_inds[-nvox:]]
-                
                 # Train your classifier
                 clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
                                             multi_class='multinomial').fit(trainX, trainY)
@@ -469,7 +497,6 @@ def minimalClass(cfg,testRun=None):
                 acc = clf.score(testX, testY)
                 print(naming, acc)
                 accs[naming]=acc
-
     print(f"average 2 way clf accuracy={np.mean(list(accs.values()))}")
 
     return accs
