@@ -965,7 +965,7 @@ def AdaptiveThreshold(cfg,ThresholdLog):
     except:
         pass
     if len(ThresholdLog)>=1:
-        if ThresholdLog['sub'].iloc[-1]==cfg.subjectName and ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
+        if len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==1)])>cfg.run: #more robust than     # if ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
             print(f"this run exists! edit {cfg.adaptiveThreshold}")
             raise Exception(f"this run exists! edit {cfg.adaptiveThreshold}") 
 
