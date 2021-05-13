@@ -708,12 +708,13 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
             ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
-            morphParam=13 #每一个trial结束之后将morphing parameter重置
-            successful_TR=0 #每一个trial结束之后将successful_TR(在这个trial中成功的TR数)重置
+            
 
 
             ITIFlag = 0 
     elif states[0] == 'waiting' and (trialTime>currImage*eachTime13):
+        morphParam=13 #每一个trial结束之后将morphing parameter重置
+        successful_TR=0 #每一个trial结束之后将successful_TR(在这个trial中成功的TR数)重置
         backgroundImage.setAutoDraw(False)
         # image.setAutoDraw(True)
         message.setAutoDraw(False)
