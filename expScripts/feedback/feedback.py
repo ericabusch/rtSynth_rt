@@ -124,7 +124,7 @@ except Exception as e:
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
-print(f"ThresholdLog={ThresholdLog[['run','threshold','successful_trials']]}")
+print(f"ThresholdLog={ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
 
 threshold = ThresholdLog['threshold'].iloc[-1]
 print(f"threshold={threshold}")
@@ -356,14 +356,11 @@ def preloadimages(parameterRange=[1,5,9,13],tune=1):
             images=images+sample(tmp_images)
         imageLists.update( {currParameter : images} )
     end = time.time()
-    print("preload image duration=", end - start)
+    # print("preload image duration=", end - start)
     return imageLists
 
 _=time.time()
-# if not args.trying:
 imageLists=preloadimages(parameterRange=parameterRange,tune=tune)
-
-print(f"time passed {(time.time()-_)/60} min")
 
 maxTR=int(trial_list['TR'].iloc[-1])+6
 # Settings for MRI sequence
@@ -574,12 +571,15 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # 保存
             ThresholdLog["successful_trials"].iloc[-1] = successful_trials
             print(f"saving successful_trials = {successful_trials}")
-            ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
-            ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
-            ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
-            ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
-            ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+            ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
+            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
+            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
+            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
+            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
             ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
+
+
 
             ITIFlag = 0 
     elif states[0] == 'waiting' and (trialTime>currImage*eachTime13):
@@ -602,11 +602,17 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
 ThresholdLog["successful_trials"].iloc[-1] = successful_trials
 print(f"saving successful_trials = {successful_trials}")
-ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
-ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
-ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
-ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
-ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+# ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+# ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
+# ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
+# ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
+# ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+# ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
 
