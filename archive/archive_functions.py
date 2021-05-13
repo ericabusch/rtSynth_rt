@@ -600,3 +600,11 @@ def recognition_preprocess_2run(cfg,scan_asTemplate):
 #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
 #     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
 #     return np.asarray(Evidence)
+
+
+    # ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+    # ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
+    # ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
+    # ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
+    # ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+    # ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
