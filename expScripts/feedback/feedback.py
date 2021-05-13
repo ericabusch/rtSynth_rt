@@ -1,6 +1,7 @@
 # This code should be run in console room computer to display the feedback morphings
 from __future__ import print_function, division
 import traceback,time
+# try:
 import os
 if 'watts' in os.getcwd():
     main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
@@ -108,6 +109,7 @@ gui = True if screenmode == False else False
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
 TRduration=int(cfg.TR)
+print(f"TRduration={TRduration}")
 
 mywin = visual.Window(
     size=[scnWidth - 100, scnHeight - 100], fullscr=screenmode, screen=1,
@@ -124,7 +126,7 @@ except Exception as e:
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
-print(f"ThresholdLog={ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
+print(f"ThresholdLog = \n{ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
 
 threshold = ThresholdLog['threshold'].iloc[-1]
 print(f"threshold={threshold}")
@@ -136,7 +138,9 @@ step=3 #in simulation, how quickly the morph changes ramp up. Note this is only 
 parameterRange=[1,5,9,13] #np.arange(1,prange) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
 TrialNumber=cfg.TrialNumber # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
-
+if args.trying:
+    TrialNumber=1
+    print("TrialNumber=1")
 ## - design the trial list: the sequence of the different types of components: 
 ## - e.g: ITI + waiting for fMRI signal + feedback (receive model output from feedbackReceiver.py)
 trial_list = pd.DataFrame(columns=['Trial','time','TR','state','newWobble'])
@@ -238,7 +242,7 @@ def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
                                     color=(0, 1, 0), colorSpace='rgb') #green color
     monetaryReward.setAutoDraw(True)
     return monetaryReward
-
+monetaryReward.setAutoDraw(False)
 emoji1 = visual.ImageStim(
     win=mywin,
     name='emoji1',
@@ -297,6 +301,7 @@ def emoji(endMorphing): #endMorphing can be [1,5,9,13]
         emoji5.setAutoDraw(False)
         emoji9.setAutoDraw(False)
         emoji13.setAutoDraw(False)
+emoji("OFF")
 
 monetaryReward1 = 0
 monetaryReward5 = 0
@@ -461,14 +466,13 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                 successful_TR=successful_TR+1
 
             # 不要越界了：[1,5,9,13]
-            if morphParam>13:
-                morphParam=13
             if morphParam<1:
                 morphParam=1
             print("\n=============================================")
-            print(f'TR[0]={TR[0]},trID={trID},parameter={morphParam},timestamp={timestamp},runId={runId}')
+            print(f'Scanner_TR_ID={TR[0]},rtcloud_trID={trID},parameter={morphParam},runId={runId}')
             print(f"{trialTime} passed since received '5' ")
 
+            print(f"timestamp={timestamp}")
             # update the image list to be shown based on the fetched parameter
 
             imagePaths=imageLists[morphParam] #list(imageLists[parameter])
@@ -526,9 +530,8 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         backgroundImage.setAutoDraw(True)
         fix.draw()
         _countITI = countITI(states)
-        if len(TR)>174-10: #如果是最开始的6个TR，就只需要countdown
-            emoji("OFF")
-            monetaryReward.setAutoDraw(False)
+        if len(TR)>(TrialNumber*14+6)-10: #如果是最开始的6个TR，就只需要countdown
+            pass
         elif _countITI in [6,5,4]: # 如果不是最开始的6个TR，并且state又是ITI，那么如果是第1，2，3个TR，就展示message；
             if successful_TR >= 3:
                 emoji(1) # perfect!
@@ -599,12 +602,6 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
 ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
 print(f"saving successful_trials = {successful_trials}")
-# ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
-# ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
-# ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
-# ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
-# ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
-# ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
 ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
 ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
@@ -612,6 +609,7 @@ ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
 ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
+print(f"ThresholdLog = \n{ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
 
 emoji("OFF")
 monetaryReward.setAutoDraw(False)
@@ -623,4 +621,8 @@ time.sleep(5)
 mywin.close()
 core.quit()
 
-
+# except Exception as e:
+#     print(f"error {e}")
+#     with open(f'./log_kp.txt', 'a') as f:
+#         f.write(str(e))
+#         f.write(traceback.format_exc())
