@@ -143,3 +143,4 @@ subjects/sub102/*
 *HEAD
 *1D
 subjects/sub*/ses*/anat/*
+subjects/sub002_changed
