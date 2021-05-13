@@ -469,3 +469,79 @@ def recognition_preprocess_2run(cfg,scan_asTemplate):
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
 
+
+
+# except Exception as e:
+#     print(f"error {e}")
+#     # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
+#     print(f"saving successful_trials = {successful_trials}")
+#     ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+#     ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+
+#     ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
+#     ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
+#     ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
+#     ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+
+#     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
+#     with open(f'./log_{time.time()}.txt', 'a') as f:
+#         f.write(str(e))
+#         f.write(traceback.format_exc())
+    
+# image
+    # image = visual.ImageStim(
+    #     win=mywin,
+    #     name='image',
+    #     image=cfg.feedback_expScripts_dir + './carchair_exp_feedback/bedChair_1_5.png', mask=None,
+    #     ori=0, pos=(0, 0), size=(0.5, 0.5),
+    #     color=[1,1,1], colorSpace='rgb', opacity=1,
+    #     flipHoriz=False, flipVert=False,
+    #     texRes=128, interpolate=True, depth=-4.0)
+
+# old
+    # for currTrial in range(1,1+TrialNumber):
+    #     for i in range(1): # should be 6TR=12s
+    #         trial_list=trial_list.append({'Trial':currTrial,
+    #                                     'time':curTime,
+    #                                     'TR':curTR,
+    #                                     'state':'ITI',
+    #                                     'newWobble':0},
+    #                                     ignore_index=True)
+    #         curTime=curTime+TR
+    #         curTR=curTR+1
+    #     for i in range(1): # should be 3TR=6s
+    #         trial_list=trial_list.append({'Trial':currTrial,
+    #                                     'time':curTime,
+    #                                     'TR':curTR,
+    #                                     'state':'waiting',
+    #                                     'newWobble':0},
+    #                                     ignore_index=True)
+    #         curTime=curTime+TR
+    #         curTR=curTR+1
+    #     for i in range(5): #5TR=10s
+    #         trial_list=trial_list.append({'Trial':currTrial,
+    #                                     'time':curTime,
+    #                                     'TR':curTR,
+    #                                     'state':'feedback',
+    #                                     'newWobble':1},
+    #                                     ignore_index=True)
+    #         curTime=curTime+TR
+    #         curTR=curTR+1
+    # for i in range(1): # should be 6TR=12s
+    #     trial_list=trial_list.append({'Trial':currTrial,
+    #                                 'time':curTime,
+    #                                 'TR':curTR,
+    #                                 'state':'ITI',
+    #                                 'newWobble':0},
+    #                                 ignore_index=True)
+    #     curTime=curTime+TR
+    #     curTR=curTR+1
+
+
+# mywin = visual.Window(
+    # size=[1280, 800], fullscr=screenmode, screen=0,
+    # winType='pyglet', allowGUI=False, allowStencil=False,
+    # monitor=monitor_name, color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
+    # blendMode='avg', useFBO=True,
+    # units='height')

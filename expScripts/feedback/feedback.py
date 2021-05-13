@@ -1,7 +1,6 @@
 # This code should be run in console room computer to display the feedback morphings
 from __future__ import print_function, division
 import traceback,time
-# try:
 import os
 if 'watts' in os.getcwd():
     main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
@@ -30,8 +29,6 @@ from rtCommon.utils import installLoggers
 from rtCommon.cfg_loading import mkdir,cfg_loading
 sys.path.append(f'{main_dir}expScripts/recognition/')
 from recognition_dataAnalysisFunctions import AdaptiveThreshold
-
-
 
 class SubjectService:
     def __init__(self, args, webSocketChannelName='wsSubject'):
@@ -62,10 +59,8 @@ argParser = argparse.ArgumentParser()
 
 argParser.add_argument('-c', '--config', action="store", dest="config", default='sub001.ses2.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('-r', '--run', action="store", dest="run", default='1', type=str, help='current run')
-# argParser.add_argument('-e', '--sess', action="store", dest="sess", default='1', type=str, help='current session')
 argParser.add_argument('-s', action="store", dest="server", default="localhost:7777",
                     help="Server Address with Port [server:port]")
-
 argParser.add_argument('-i', action="store", dest="interval", type=int, default=5,
                     help="Retry connection interval (seconds)")
 argParser.add_argument('-u', '--username', action="store", dest="username", default='kp578',
@@ -103,7 +98,7 @@ if checkSSLCertAltName(certFile, addr) is False:
 
 cfg = cfg_loading(args.config)
 sub = cfg.subjectName
-run = int(args.run)  # 1
+run = int(args.run)
 cfg.run = run
 sess = int(cfg.session)
 
@@ -114,13 +109,6 @@ scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
 TRduration=int(cfg.TR)
 
-# mywin = visual.Window(
-    # size=[1280, 800], fullscr=screenmode, screen=0,
-    # winType='pyglet', allowGUI=False, allowStencil=False,
-    # monitor=monitor_name, color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
-    # blendMode='avg', useFBO=True,
-    # units='height')
-
 mywin = visual.Window(
     size=[scnWidth - 100, scnHeight - 100], fullscr=screenmode, screen=1,
     winType='pyglet', allowGUI=False, allowStencil=False,
@@ -128,13 +116,10 @@ mywin = visual.Window(
     blendMode='avg', useFBO=True,
     units='height')
 
-# if cfg.session == 2 and cfg.run == 1:
-#     ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials'])
-# else:
 try:
     ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
-except:
-    print(f"cannot read {cfg.adaptiveThreshold}")
+except Exception as e:
+    print(f"error: {e}")
     ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials','monetaryReward1','monetaryReward5','monetaryReward9','monetaryReward13'])
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
@@ -209,53 +194,9 @@ for i in range(6): # should be 6TR=12s
                                 ignore_index=True)
     curTime=curTime+TRduration
     curTR=curTR+1
-# old
-    # for currTrial in range(1,1+TrialNumber):
-    #     for i in range(1): # should be 6TR=12s
-    #         trial_list=trial_list.append({'Trial':currTrial,
-    #                                     'time':curTime,
-    #                                     'TR':curTR,
-    #                                     'state':'ITI',
-    #                                     'newWobble':0},
-    #                                     ignore_index=True)
-    #         curTime=curTime+TR
-    #         curTR=curTR+1
-    #     for i in range(1): # should be 3TR=6s
-    #         trial_list=trial_list.append({'Trial':currTrial,
-    #                                     'time':curTime,
-    #                                     'TR':curTR,
-    #                                     'state':'waiting',
-    #                                     'newWobble':0},
-    #                                     ignore_index=True)
-    #         curTime=curTime+TR
-    #         curTR=curTR+1
-    #     for i in range(5): #5TR=10s
-    #         trial_list=trial_list.append({'Trial':currTrial,
-    #                                     'time':curTime,
-    #                                     'TR':curTR,
-    #                                     'state':'feedback',
-    #                                     'newWobble':1},
-    #                                     ignore_index=True)
-    #         curTime=curTime+TR
-    #         curTR=curTR+1
-    # for i in range(1): # should be 6TR=12s
-    #     trial_list=trial_list.append({'Trial':currTrial,
-    #                                 'time':curTime,
-    #                                 'TR':curTR,
-    #                                 'state':'ITI',
-    #                                 'newWobble':0},
-    #                                 ignore_index=True)
-    #     curTime=curTime+TR
-    #     curTR=curTR+1
-
-# parameters = np.arange(1,step*(sum((trial_list['newWobble']==1)*1)),step) #[1,2,3,4,5,6,7,8]
 
 print('total trial number=',TrialNumber)
-# print('neighboring morph difference=',tune)
 print('preloaded parameter range=',parameterRange)
-# print('used parameters=',parameters)
-
-
 
 def sample(L,num=10):
     # This functional uniformly sample the list to be num points
@@ -285,8 +226,6 @@ if os.path.exists(newfile):
     print(f'{newfile} exists')
     raise Exception(f'{newfile} exists')
 
-
-
 message = visual.TextStim(mywin, text=f'Waiting...',pos=(0, 0), depth=-5.0, height=0.05,units='pix')
 def display(text,message): #endMorphing can be [1,5,9,13]
     message.setAutoDraw(False)
@@ -296,10 +235,7 @@ def display(text,message): #endMorphing can be [1,5,9,13]
 monetaryReward = visual.TextStim(mywin, text=f'',pos=(0, 0), depth=-5.0, height=0.05,units='norm')    
 def display_monetaryReward(text,monetaryReward): #endMorphing can be [1,5,9,13]
     monetaryReward.setAutoDraw(False)
-    # monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-120), depth=-5.0, 
-    #                                 height=25,units='pix', #norm
-    #                                 color=(0, 1, 0), colorSpace='rgb') #green color
-    monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-0.28), depth=-5.0, 
+    monetaryReward = visual.TextStim(mywin, text=f'{text}',pos=(0,-0.28), depth=-5.0, #pos=(0,-120), height=25, units='pix'
                                     height=0.05,units='norm', #norm
                                     color=(0, 1, 0), colorSpace='rgb') #green color
     monetaryReward.setAutoDraw(True)
@@ -363,18 +299,11 @@ def emoji(endMorphing): #endMorphing can be [1,5,9,13]
         emoji5.setAutoDraw(False)
         emoji9.setAutoDraw(False)
         emoji13.setAutoDraw(False)
-    # message.setAutoDraw(False)
-    # message = visual.TextStim(mywin, text=f'{points}',pos=(0, 0), depth=-5.0)
-    # message.setAutoDraw(True)
 
 monetaryReward1 = 0
 monetaryReward5 = 0
 monetaryReward9 = 0
 monetaryReward13 = 0
-
-# if args.trying:
-#     monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
-#     emoji(1)
 
 # preload image list for parameter from 1 to 19.
 # def preloadimages(parameterRange=np.arange(1,20),tune=1):
@@ -437,8 +366,6 @@ _=time.time()
 imageLists=preloadimages(parameterRange=parameterRange,tune=tune)
 
 print(f"time passed {(time.time()-_)/60} min")
-# Open data file for eye tracking
-# datadir = "./data/feedback/"
 
 maxTR=int(trial_list['TR'].iloc[-1])+6
 # Settings for MRI sequence
@@ -458,15 +385,6 @@ print('Starting sub {} in run #{}'.format(sub, run))
 vol = launchScan(mywin, MR_settings, simResponses=None, mode=scanmode,
                 esc_key='escape', instr='select Scan or Test, press enter',
                 wait_msg='waiting for scanner...', wait_timeout=300, log=True)
-# image
-    # image = visual.ImageStim(
-    #     win=mywin,
-    #     name='image',
-    #     image=cfg.feedback_expScripts_dir + './carchair_exp_feedback/bedChair_1_5.png', mask=None,
-    #     ori=0, pos=(0, 0), size=(0.5, 0.5),
-    #     color=[1,1,1], colorSpace='rgb', opacity=1,
-    #     flipHoriz=False, flipVert=False,
-    #     texRes=128, interpolate=True, depth=-4.0)
 
 backgroundImage = visual.ImageStim(
     win=mywin,
@@ -485,8 +403,6 @@ TR=list(trial_list['TR'])
 states=list(trial_list['state'])
 newWobble=list(trial_list['newWobble'])
 
-# parameters=np.round(np.random.uniform(0,10,sum((trial_list['newWobble']==1)*1)))
-# parameters = np.arange(1,1+sum((trial_list['newWobble']==1)*1)) #[1,2,3,4,5,6,7,8]
 ParameterUpdateDuration=np.diff(np.where(trial_list['newWobble']==1))[0][0]*TRduration
 curr_parameter=0
 remainImageNumber=[]
@@ -520,7 +436,7 @@ eachTime13=ParameterUpdateDuration/len(imagePaths13)
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
     keys = event.getKeys(["5","0"])  # check for triggers
-    if '0' in keys: # whenever you want to quite, type 0
+    if '0' in keys: # whenever you want to quit, type 0
         break
     if len(keys):
         TR.pop(0)
@@ -528,7 +444,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         states.pop(0)
         newWobble.pop(0)
         print(states[0])
-        if newWobble[0]==1: #trialTime 会在feedback以及waiting当中使用
+        if newWobble[0]==1: #trialTime 会在feedback以及waiting当中使用 中文
             # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
             trialClock=core.Clock()
             trialTime=trialClock.getTime()
@@ -536,52 +452,38 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if states[0] == 'feedback':
             # fetch parameter from preprocessing process on Milgram       
             # feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
-            feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=None)
-            runId,trID,value,timestamp=feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
+            feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=None) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
+            runId,trID,value,timestamp = feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
+            trialTime = trialClock.getTime()
 
             if value==None:
                 B_prob = default_parameter
             else:
                 B_prob = float(value)
             
-            if B_prob >= threshold:
+            if B_prob >= threshold: # 单方面递减，因此没有B_prob < threshold
                 morphParam = morphParam - 4
                 successful_TR=successful_TR+1
-            # if B_prob < threshold: # 单方面递减
-                # morphParam = morphParam + 4
+
             # 不要越界了：[1,5,9,13]
             if morphParam>13:
                 morphParam=13
             if morphParam<1:
                 morphParam=1
-
-            # print('feedbackParameterFileName=',feedbackParameterFileName)
-            # parameters=pd.read_csv(feedbackParameterFileName)
-            # if curr_parameter>(len(parameters['value'])-1):
-                # curr_parameter=curr_parameter-1
-            # curr_parameter=(len(parameters['value'])-1)
-            # parameter=parameters['value'].iloc[curr_parameter]
-            # print('curr_parameter=',curr_parameter)
-            # print('parameter=',parameter)
+            print("\n=============================================")
             print(f'TR[0]={TR[0]},trID={trID},parameter={morphParam},timestamp={timestamp},runId={runId}')
-
-            # curr_parameter=curr_parameter+1
+            print(f"{trialTime} passed since received '5' ")
 
             # update the image list to be shown based on the fetched parameter
 
             imagePaths=imageLists[morphParam] #list(imageLists[parameter])
             # calculated how long each image should last.
             eachTime=ParameterUpdateDuration/len(imagePaths)
-            # update the image
-            # image.image=imagePaths[0]
-            # message.setAutoDraw(False)
-            # image.setAutoDraw(False)
             imagePaths13[-1].setAutoDraw(False)
-            # imagePaths13[-1].setAutoDraw(False)
-            
             imagePaths[0].setAutoDraw(True)
             # currImage*eachTime is used in the calculation of the start time of next image in the list.
-            
+            # currImage*eachTime 被用来计算列表中下一个图片开始的时间 中文
+
             # save when the image is presented and which image is presented.
             data = data.append({'Sub': sub, 
                                 'Run': run, 
@@ -599,31 +501,17 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             },
             ignore_index=True)
 
-            # history = history.append({
-            #     "TR":TR[0],
-            #     "CurrBestParameter":CurrBestParameter,
-            #     "points":points,
-            #     "states":states[0]
-            # },
-            # ignore_index=True)
-
             data.to_csv(newfile, index=False)
             history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
 
-            # oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
-            # print('curr morph=',oldMorphParameter)
             remainImageNumber.append(0)
-            # currImage=1
             ITIFlag=1 #这个flag用来避免ITI的时候多次计数
-            # # discard the first image since it has been used.
-            # imagePaths.pop(0)
 
     if (states[0] == 'feedback') and (trialTime>currImage*eachTime):
             try: # sometimes the trialTime accidentally surpasses the maximum time, in this case just do nothing, pass
                 imagePaths[currImage-1].setAutoDraw(False)
                 imagePaths[currImage].setAutoDraw(True)
                 
-                # print('currImage=',imagePaths[currImage],end='\n\n')
                 remainImageNumber.append(currImage)
 
                 # write the data!
@@ -635,12 +523,9 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                                     'eachTime':eachTime},
                                     ignore_index=True)
                 
-                # currMorphParameter=re.findall(r"_\w+_",imagePaths[currImage].image)[1]
-                # if currMorphParameter!=oldMorphParameter:
-                #     pass
-                # oldMorphParameter=currMorphParameter
                 currImage=currImage+1        
-            except:
+            except Exception as e:
+                print(f"error: {e}")
                 pass
     elif states[0] == 'ITI':
         backgroundImage.setAutoDraw(True)
@@ -649,9 +534,6 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if len(TR)>174-10: #如果是最开始的6个TR，就只需要countdown
             emoji("OFF")
             monetaryReward.setAutoDraw(False)
-            # message=display(f"Waiting for {countdown} s",message)
-            # if '5' in keys:
-            #     countdown-=2
         elif _countITI in [6,5,4]: # 如果不是最开始的6个TR，并且state又是ITI，那么如果是第1，2，3个TR，就展示message；
             if successful_TR >= 3:
                 emoji(1) # perfect!
@@ -672,15 +554,8 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
             emoji("OFF")
             monetaryReward.setAutoDraw(False)
-            
-            # try:
-            # emoji("1")
-            # display_monetaryReward("text",monetaryReward)
             message=display(f"Get ready...",message)
 
-            # message=display(f"Waiting for {2*_countITI} s",message)
-
-            
         if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
             if successful_TR >= 3:
                 perfect_trials+=1
@@ -708,9 +583,6 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
             ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
-            
-
-
             ITIFlag = 0 
     elif states[0] == 'waiting' and (trialTime>currImage*eachTime13):
         morphParam=13 #每一个trial结束之后将morphing parameter重置
@@ -726,44 +598,28 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 
         currImage=currImage+1
 
-        # if len(states)>2:
-        #     if states[1]=='feedback':
-        #         # message=display(points,message)
-        #         CurrBestParameter=19
-
     # refresh the screen
     mywin.flip()
 
-# # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
-# ThresholdLog["successful_trials"].iloc[-1] = successful_trials
-# print(f"saving successful_trials = {successful_trials}")
-# ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
-# ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+# 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
+ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+print(f"saving successful_trials = {successful_trials}")
+ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
+ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
+ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
+ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
+ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
+ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
+
+emoji("OFF")
+monetaryReward.setAutoDraw(False)
 money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
 message=display(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.",message)
+mywin.flip()
+
 time.sleep(5)
-# write data out!
 mywin.close()
 core.quit()
-# env.close()
 
 
-# except Exception as e:
-#     print(f"error {e}")
-#     # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
-#     print(f"saving successful_trials = {successful_trials}")
-#     ThresholdLog["successful_trials"].iloc[-1] = successful_trials
-#     ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
-
-#     ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
-#     ThresholdLog["monetaryReward5"].iloc[-1] = monetaryReward5
-#     ThresholdLog["monetaryReward9"].iloc[-1] = monetaryReward9
-#     ThresholdLog["monetaryReward13"].iloc[-1] = monetaryReward13
-
-#     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
-
-#     with open(f'./log_{time.time()}.txt', 'a') as f:
-#         f.write(str(e))
-#         f.write(traceback.format_exc())
-    
