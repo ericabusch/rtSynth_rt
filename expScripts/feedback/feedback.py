@@ -569,7 +569,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             print(f"perfect_trials={perfect_trials}")
 
             # 保存
-            ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+            ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
             print(f"saving successful_trials = {successful_trials}")
             ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
             ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
@@ -577,9 +577,6 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
             ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
             ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
-
-
-
 
             ITIFlag = 0 
     elif states[0] == 'waiting' and (trialTime>currImage*eachTime13):
@@ -600,7 +597,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     mywin.flip()
 
 # 最后使用最新的 perfect_trials 以及 successful_trials 来更新 ThresholdLog
-ThresholdLog["successful_trials"].iloc[-1] = successful_trials
+ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
 print(f"saving successful_trials = {successful_trials}")
 # ThresholdLog["perfect_trials"].iloc[-1] = perfect_trials
 # ThresholdLog["monetaryReward1"].iloc[-1] = monetaryReward1
