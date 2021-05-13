@@ -124,10 +124,11 @@ except Exception as e:
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
-print(f"ThresholdLog={ThresholdLog}")
+print(f"ThresholdLog={ThresholdLog[['run','threshold','successful_trials']]}")
 
 threshold = ThresholdLog['threshold'].iloc[-1]
 print(f"threshold={threshold}")
+
 # similation specific
 step=3 #in simulation, how quickly the morph changes ramp up. Note this is only for simulation, has nothing to do with real experiment
 
@@ -194,9 +195,6 @@ for i in range(6): # should be 6TR=12s
                                 ignore_index=True)
     curTime=curTime+TRduration
     curTR=curTR+1
-
-print('total trial number=',TrialNumber)
-print('preloaded parameter range=',parameterRange)
 
 def sample(L,num=10):
     # This functional uniformly sample the list to be num points
