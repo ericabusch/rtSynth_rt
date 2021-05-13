@@ -144,3 +144,10 @@ subjects/sub102/*
 *1D
 subjects/sub*/ses*/anat/*
 subjects/sub002_changed
+subjects/backup_sub001
+
+
+
+certs/tmp/_ca.config
+projects/rtSynth_rt/conf/sub102.ses1.toml
+
