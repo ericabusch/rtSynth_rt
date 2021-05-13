@@ -395,11 +395,12 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     #   INPUT:
     #       [1] filename (full path!)
     #       [2] data (that you want to write into the file)
-    if verbose:
-        print(""
-        "-----------------------------------------------------------------------------\n"
-        "• save activation value as a text file to tmp folder")
-    dataInterface.putFile(output_textFilename,str(B_probs))
+
+    # if verbose:
+    #     print(""
+    #     "-----------------------------------------------------------------------------\n"
+    #     "• save activation value as a text file to tmp folder")
+    # dataInterface.putFile(output_textFilename,str(B_probs))
 
     # use sio.save mat from scipy to save the matlab file
     if verbose:
