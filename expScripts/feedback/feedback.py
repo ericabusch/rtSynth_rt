@@ -139,9 +139,10 @@ except:
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+print(f"ThresholdLog={ThresholdLog}")
 
 threshold = ThresholdLog['threshold'].iloc[-1]
-
+print(f"threshold={threshold}")
 # similation specific
 step=3 #in simulation, how quickly the morph changes ramp up. Note this is only for simulation, has nothing to do with real experiment
 
