@@ -545,3 +545,58 @@ def recognition_preprocess_2run(cfg,scan_asTemplate):
     # monitor=monitor_name, color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
     # blendMode='avg', useFBO=True,
     # units='height')
+
+
+
+# def monitor(scnNum,config="sub001.ses3.toml"):
+#     cfg = cfg_loading(config)
+#     [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
+# #     sig=0.5
+#     B_evidences = np.load(f'{cfg.feedback_dir}B_evidences_{scnNum}.npy')
+#     plt.plot(B_evidences)
+#     plt.plot(np.arange(0,150),150*[mu])
+#     plt.plot(np.arange(0,150),150*[mu+3*sig])
+#     plt.plot(np.arange(0,150),150*[mu-3*sig])
+#     print(f"mu={mu},sig={sig}")
+
+#     _=plt.figure()
+#     morphParam=[int(gaussian(B_evidence, mu, sig)) for B_evidence in B_evidences]
+#     plt.plot(morphParam)
+# monitor(2,config="sub001.ses2.toml")
+
+
+
+    # load clf
+    # [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
+    # print(f"mu={mu},sig={sig}")
+    # def sigmoid(z):
+    #     return 1.0 / (1.0 + np.exp(-z))
+    # getting MorphingParameter: 
+    # which clf to load? 
+    # B evidence in BC/BD classifier for currt TR
+
+
+# def gaussian(x, mu, sig):
+#     # mu and sig is determined before each neurofeedback session using 2 recognition runs.
+#     return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
+
+
+# def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
+#     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
+#     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
+#     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
+#     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (1-(X@clf.coef_.T+clf.intercept_))
+#     Evidence = 1/(1+np.exp(-Evidence))
+#     # Evidence = sigmoid(Evidence)
+#     return np.asarray(Evidence)
+
+# def classifierEvidence(clf,X,Y):
+#     ID=np.where((clf.classes_==Y[0])*1==1)
+#     p = clf.predict_proba(X)[:,ID]
+#     BX=np.log(p/(1-p))
+#     return BX
+
+# def classifierEvidence(clf,X,Y):
+#     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
+#     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
+#     return np.asarray(Evidence)
