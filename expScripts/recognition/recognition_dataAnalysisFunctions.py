@@ -970,5 +970,4 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         'threshold':threshold},
         ignore_index=True)
 
-
     return ThresholdLog
