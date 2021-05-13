@@ -899,7 +899,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 def AdaptiveThreshold(cfg,ThresholdLog):
     ThresholdList = list(ThresholdLog['threshold'])
     SuccessList = list(ThresholdLog["successful_trials"]) #成功列表
-    print(f"SuccessList={SuccessList}")
+
     # 如果现在是第1个session的第一个feedback training run
     # threshold=0.6
     if cfg.session == 2 and cfg.run == 1:
@@ -959,16 +959,9 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         threshold=0.4
 
     # 如果这个run已经跑过了，给出这个error提醒。
-    try:
-        print(f"len(ThresholdLog)>=1={len(ThresholdLog)>=1}")
-        print(f"ThresholdLog['sub'].iloc[-1]==cfg.subjectName and ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run={ThresholdLog['sub'].iloc[-1]==cfg.subjectName and ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run}")
-    except:
-        pass
-    if len(ThresholdLog)>=1:
-        if len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==1)])>cfg.run: #more robust than     # if ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
-            print(f"this run exists! edit {cfg.adaptiveThreshold}")
-            raise Exception(f"this run exists! edit {cfg.adaptiveThreshold}") 
-
+    if len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==1)])>cfg.run: #more robust than     # if ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
+        print(f"this run exists! edit {cfg.adaptiveThreshold}")
+        raise Exception(f"this run exists! edit {cfg.adaptiveThreshold}") 
 
     ThresholdLog = ThresholdLog.append({
         'sub':cfg.subjectName, 
