@@ -130,10 +130,12 @@ venv.bak/
 web/*
 *.mat
 !subjects/sub*/ses*/recognition/sub*.csv
-!subjects/sub*/ses*/feedback/*
 !subjects/sub*/*.csv
-!expScripts/feedback/*.png
-!subjects/sub*/ses2/feedback/*
+!expScripts/feedback/emoji1.png
+!expScripts/feedback/emoji5.png
+!expScripts/feedback/emoji9.png
+!expScripts/feedback/emoji13.png
+
 
 
 subjects/sub102/*
