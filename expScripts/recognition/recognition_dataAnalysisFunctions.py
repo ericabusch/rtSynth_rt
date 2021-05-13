@@ -899,7 +899,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 def AdaptiveThreshold(cfg,ThresholdLog):
     ThresholdList = list(ThresholdLog['threshold'])
     SuccessList = list(ThresholdLog["successful_trials"]) #成功列表
-
+    print(f"SuccessList={SuccessList}")
     # 如果现在是第1个session的第一个feedback training run
     # threshold=0.6
     if cfg.session == 2 and cfg.run == 1:
@@ -934,7 +934,7 @@ def AdaptiveThreshold(cfg,ThresholdLog):
             # 如果之前的3个run的进步全部>=9
             # threshold=threshold+5%
             elif SuccessList[-1] >= 9 and SuccessList[-2] >= 9 and SuccessList[-3] >= 9:
-                threshold=threshold - 0.05
+                threshold=threshold + 0.05
 
         elif len(SuccessList)>=5:
             # 如果之前的5个run的进步全部<=5
@@ -945,7 +945,7 @@ def AdaptiveThreshold(cfg,ThresholdLog):
             # 如果之前的5个run的进步全部>=7
             # threshold=threshold+5%
             elif SuccessList[-1] >= 7 and SuccessList[-2] >= 7 and SuccessList[-3] >= 7 and SuccessList[-4] >= 7 and SuccessList[-5] >= 7:
-                threshold=threshold - 0.05
+                threshold=threshold + 0.05
 
         # 如果之前的任意个run的进步全部【6】
         # threshold=threshold
