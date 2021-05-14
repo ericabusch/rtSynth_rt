@@ -484,7 +484,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 
             imagePaths=imageLists[morphParam] #list(imageLists[parameter])
             # calculated how long each image should last.
-            eachTime=ParameterUpdateDuration/len(imagePaths)
+            eachTime=ParameterUpdateDuration/len(imagePaths) #eachTime是每一张morphing frame展示的时间 中文
             imagePaths13[-1].setAutoDraw(False)
             imagePaths[0].setAutoDraw(True)
             # currImage*eachTime is used in the calculation of the start time of next image in the list.
