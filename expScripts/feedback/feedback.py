@@ -475,7 +475,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             if morphParam<1:
                 morphParam=1
             print("\n=============================================")
-            print(f'Scanner_TR_ID={TR[0]},rtcloud_trID={trID},parameter={morphParam},B_prob={B_prob}')
+            print(f'Scanner_TR_ID={TR[0]},rtcloud_trID={trID},parameter={morphParam},B_prob={B_prob},threshold={threshold}')
             print(f"{trialTime} passed since received '5' ")
             print(f"runId={runId}")
 
