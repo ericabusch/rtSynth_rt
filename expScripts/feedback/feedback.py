@@ -436,9 +436,14 @@ eachTime13=ParameterUpdateDuration/len(imagePaths13)
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
     keys = event.getKeys(["5","0"])  # check for triggers
+    
+    feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=0.01) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
+    runId,trID,value,timestamp = feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
+
     if '0' in keys: # whenever you want to quit, type 0
         break
     if len(keys):
+
         TR.pop(0)
         old_state=states[0]
         states.pop(0)
@@ -452,12 +457,10 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if states[0] == 'feedback':
             # fetch parameter from preprocessing process on Milgram       
             # feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
-            feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=None) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
-            runId,trID,value,timestamp = feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
             trialTime = trialClock.getTime()
 
             if value==None:
-                B_prob = default_parameter
+                B_prob = 0
             else:
                 B_prob = float(value)
             
