@@ -136,7 +136,7 @@ web/*
 !expScripts/feedback/emoji9.png
 !expScripts/feedback/emoji13.png
 !subjects/sub00*/ses*/feedback/*.csv
-
+!subjects/sub00*/ses*/runRecording.csv
 
 subjects/sub102/*
 *BRIK
