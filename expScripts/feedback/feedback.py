@@ -461,10 +461,11 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
             trialTime = trialClock.getTime()
 
-            if value==None:
-                B_prob = 0
-            else:
+            try:
                 B_prob = float(value)
+            except Exception as e:
+                print(f"error {e}")
+                B_prob = 0
             
             if B_prob >= threshold: # 单方面递减，因此没有B_prob < threshold
                 morphParam = morphParam - 4
