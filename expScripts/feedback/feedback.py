@@ -494,7 +494,10 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 
             history = history.append({
                 "TR":TR[0],
+                "TR_milgram":trID,
+                "B_prob":B_prob,
                 "morphParam":morphParam,
+                "timestamp":timestamp,
                 "points":points,
                 "states":states[0]
             },
