@@ -437,7 +437,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     trialTime = trialClock.getTime()
     keys = event.getKeys(["5","0"])  # check for triggers
     try:
-        feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=0.01) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
+        feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=1) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
         runId,trID,value,timestamp = feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
     except Exception as e:
         print(f"error {e}")
