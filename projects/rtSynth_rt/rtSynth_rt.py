@@ -243,7 +243,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     
 
     num_total_trials=12
-    num_total_TRs = int((num_total_trials*28+12)/2)  # number of TRs to use for example 1
+    num_total_TRs = int((num_total_trials*28+12)/2) + 8  # number of TRs to use for example 1
     # morphParams = np.zeros((num_total_TRs, 1))
     B_probs=[]
     maskedData=0
