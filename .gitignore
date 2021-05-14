@@ -135,7 +135,7 @@ web/*
 !expScripts/feedback/emoji5.png
 !expScripts/feedback/emoji9.png
 !expScripts/feedback/emoji13.png
-
+!subjects/sub00*/ses*/feedback/*.csv
 
 
 subjects/sub102/*
