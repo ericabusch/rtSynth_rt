@@ -54,15 +54,17 @@ def cfg_loading(toml='',trying=""):
     cfg.recognition_expScripts_dir = f"{cfg.projectDir}expScripts/recognition/"
     cfg.feedback_expScripts_dir = f"{cfg.projectDir}expScripts/feedback/"
 
-    cfg.TR=2 #2 #每一个TR有2s
+    
 
     cfg.preDay_dicom_dir  = findDir(f"{cfg.dicom_folder}{cfg.preDay_YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  #e.g. /gpfs/milgram/project/realtime/DICOM/20201009.rtSynth_pilot001.rtSynth_pilot001/  # cfg.preDay_YYYYMMDD is "0" when there is no previous day    
     if trying=="trying":
         cfg.dicom_dir="/tmp/dicom_folder/"
         mkdir(cfg.dicom_dir)
         cfg.old_dicom_dir     = findDir(f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  # YYYYMMDD.$LASTNAME.$PATIENTID  e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm    
+        cfg.TR=1
     else:
         cfg.dicom_dir     = findDir(f"{cfg.dicom_folder}{cfg.YYYYMMDD}.{cfg.LASTNAME}*.{cfg.LASTNAME}*/")  # YYYYMMDD.$LASTNAME.$PATIENTID  e.g. /gpfs/milgram/project/realtime/DICOM/20201019.rtSynth_pilot001_2.rtSynth_pilot001_2/ inside which is like 001_000003_000067.dcm    
+        cfg.TR=2 #2 #每一个TR有2s
     cfg.dicomDir          = cfg.dicom_dir
     cfg.recognition_dir   = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/"
     cfg.feedback_dir      = f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/feedback/"
