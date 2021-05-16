@@ -47,3 +47,4 @@ for curr_TR in range(1,180+1):
     time.sleep(2)
     curr_dicom=f"{cfg.old_dicom_dir}001_{str(args.scan).zfill(6)}_{str(curr_TR).zfill(6)}.dcm"
     copyfile(curr_dicom,f"/tmp/dicom_folder/001_{str(args.scan).zfill(6)}_{str(curr_TR).zfill(6)}.dcm")
+    print(f"curr_TR={curr_TR}")
