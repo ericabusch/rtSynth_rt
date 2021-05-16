@@ -967,6 +967,7 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         threshold=0.4
 
     # 如果这个run已经跑过了，给出这个error提醒。
+    print(f"len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==cfg.run)])={len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==cfg.run)])}")
     if len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==cfg.run)])>1: #more robust than     # if ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
         print(f"this run exists! edit {cfg.adaptiveThreshold}")
         raise Exception(f"this run exists! edit {cfg.adaptiveThreshold}") 
