@@ -250,7 +250,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
         timeout_file = 5 # small number because of demo, can increase for real-time
         dicomFilename = dicomScanNamePattern.format(TR=this_TR)
-
+        processing_start_time=time.time()
         if useInitWatch is True:
             """
                 Use 'readRetryDicomFromDataInterface' in 'imageHandling.py' to wait for dicom
@@ -386,7 +386,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         # dataInterface.putFile(output_textFilename,str(B_probs))
         np.save(f'{cfg.feedback_dir}B_probs_{scanNum}',B_probs)
-        
+        processing_end_time=time.time()
+        print(f"{processing_end_time-processing_start_time} s passes when processing")
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
 
