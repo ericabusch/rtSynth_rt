@@ -50,7 +50,7 @@ class ProjectServer:
         # run in a thread - web.start(self.params, self.args.config, testMode=self.args.test)
         webThread = threading.Thread(name='webServerThread',
                                     target=web.start,
-                                    args=(self.params, self.args.config,),
+                                    args=(self.params, self.args.config, self.args.trying,),
                                     kwargs={'testMode': self.args.test})
         webThread.setDaemon(True)
         webThread.start()
