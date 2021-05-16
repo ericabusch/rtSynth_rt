@@ -145,7 +145,7 @@ subjects/sub102/*
 subjects/sub*/ses*/anat/*
 subjects/sub002_changed
 subjects/sub002_backupAfterSes4
-
+subjects/backup_sub001
 
 
 certs/tmp/_ca.config
