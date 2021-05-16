@@ -137,10 +137,14 @@ step=3 #in simulation, how quickly the morph changes ramp up. Note this is only 
 # trial_list designing parameters
 parameterRange=[1,5,9,13] #np.arange(1,prange) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
-TrialNumber=cfg.TrialNumber # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
+
 if args.trying:
-    TrialNumber=1
-    print("TrialNumber=1")
+    # TrialNumber=1
+    # print("TrialNumber=1")
+    pass
+else:
+    TrialNumber=cfg.TrialNumber # how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
+
 ## - design the trial list: the sequence of the different types of components: 
 ## - e.g: ITI + waiting for fMRI signal + feedback (receive model output from feedbackReceiver.py)
 trial_list = pd.DataFrame(columns=['Trial','time','TR','state','newWobble'])
