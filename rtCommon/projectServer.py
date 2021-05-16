@@ -39,7 +39,6 @@ class ProjectServer:
              'initScript': args.initScript,
              'finalizeScript': args.finalizeScript,
              'port' : args.port,
-             'trying': args.trying,
             })
         self.web = None
         print(f'## Settings: dataRemote:{self.args.dataRemote}, subjectRemote:{self.args.subjectRemote}')
@@ -50,7 +49,7 @@ class ProjectServer:
         # run in a thread - web.start(self.params, self.args.config, testMode=self.args.test)
         webThread = threading.Thread(name='webServerThread',
                                     target=web.start,
-                                    args=(self.params, self.args.config, self.args.trying),
+                                    args=(self.params, self.args.config,),
                                     kwargs={'testMode': self.args.test})
         webThread.setDaemon(True)
         webThread.start()
@@ -116,8 +115,6 @@ if __name__ == "__main__":
                            help='user remote services for both data and subject interface')
     argParser.add_argument('--test', '-t', default=False, action='store_true',
                            help='start webServer in test mode, unsecure')
-    argParser.add_argument('--trying', default=False, action='store_true',
-                           help='trying mode')
     args = argParser.parse_args()
     args.port=6666 #7777
 
