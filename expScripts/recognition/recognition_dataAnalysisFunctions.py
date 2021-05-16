@@ -127,18 +127,25 @@ def recognition_preprocess(cfg,scan_asTemplate):
 
     for curr_run_behav,curr_run in enumerate(actualRuns):
         # load behavior data
-        behav_data = behaviorDataLoading(cfg,curr_run_behav+1)
+        behav_data = behaviorDataLoading(cfg,curr_run_behav+1) # behav_data 的数据的TR是从0开始的。brain_data 也是 中文
+        #len = 48 ，最后一个TR ID是 142 中文
 
         # brain data is first aligned by pushed back 2TR(4s)
         brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))
-        Brain_TR=np.arange(brain_data.shape[0])
+        #len = 144
+        Brain_TR=np.arange(brain_data.shape[0]) #假设brain_data 有144个，那么+2之后的Brain_TR就是2，3，。。。，145.一共144个TR。中文
         Brain_TR = Brain_TR + 2
-        
+
         # select volumes of brain_data by counting which TR is left in behav_data
-        Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
+        Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0 #筛选掉无用的TR，由于两个都是从0开始计数的，所以是可以的。 中文
+        # 筛选掉之后的Brain_TR长度是 48 最后一个ID是144 中文
+        # Brain_TR[-1] 是想要的最后一个TR的ID，看看是否在brain_data里面？如果不在的话，那么删除最后一个Brain_TR，也删除behav里面的最后一行 中文    
+        # 如果大脑数据的长度没有行为学数据长（比如大脑只收集到144个TR，然后我现在想要第145个TR的数据，这提醒我千万不要过早结束recognition run） 中文
         if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
             Brain_TR = Brain_TR[:-1]
-            behav_data = behav_data.drop([behav_data.iloc[-1].TR])
+            #behav_data = behav_data.drop([behav_data.iloc[-1].TR])
+            behav_data.drop(behav_data.tail(1).index,inplace=True)
+
         brain_data=brain_data[Brain_TR]
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
