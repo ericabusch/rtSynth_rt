@@ -246,7 +246,9 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     # morphParams = np.zeros((num_total_TRs, 1))
     B_probs=[]
     maskedData=0
+    processedTime=[] # for each this_TR (in dicom folder TR start from 1)
     for this_TR in np.arange(1,num_total_TRs):
+        print(f"milgramTR_ID={this_TR}")
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
         timeout_file = 5 # small number because of demo, can increase for real-time
         dicomFilename = dicomScanNamePattern.format(TR=this_TR)
@@ -388,6 +390,8 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         np.save(f'{cfg.feedback_dir}B_probs_{scanNum}',B_probs)
         processing_end_time=time.time()
         print(f"{processing_end_time-processing_start_time} s passes when processing")
+        processedTime.append(processing_end_time-processing_start_time)
+        np.save(f'{cfg.feedback_dir}processedTime_{scanNum}',processedTime)
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
 
@@ -443,8 +447,6 @@ def main(argv=None):
     argParser.add_argument('--Verbose', '-v', default=False, action='store_true',
                            help='print verbose output')
 
-    argParser.add_argument('--trying', default=False, action='store_true',
-                           help='trying mode')
 
     args = argParser.parse_args(argv)
 
@@ -453,7 +455,7 @@ def main(argv=None):
 
     # load the experiment configuration file
     print(f"rtSynth_rt: args.config={args.config}")
-    if True:
+    if False:
         cfg = cfg_loading(args.config,trying="trying")
     else:
         cfg = cfg_loading(args.config)
