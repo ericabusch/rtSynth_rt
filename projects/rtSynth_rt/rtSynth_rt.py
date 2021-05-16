@@ -391,7 +391,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         processing_end_time=time.time()
         print(f"{processing_end_time-processing_start_time} s passes when processing")
         processedTime.append(processing_end_time-processing_start_time)
-        np.save(f'{cfg.feedback_dir}processedTime_{scanNum}',processedTime)
+        np.save(f'{cfg.feedback_dir}processedTime_scan{scanNum}',processedTime)
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
 
@@ -455,7 +455,7 @@ def main(argv=None):
 
     # load the experiment configuration file
     print(f"rtSynth_rt: args.config={args.config}")
-    if False:
+    if True:
         cfg = cfg_loading(args.config,trying="trying")
     else:
         cfg = cfg_loading(args.config)
