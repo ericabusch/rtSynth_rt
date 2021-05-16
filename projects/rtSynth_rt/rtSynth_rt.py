@@ -115,7 +115,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     runNum = cfg.runNum[0]
 
     print(f"Doing run {runNum}, scan {scanNum}")
-
+    print(f"cfg.dicomDir={cfg.dicomDir}")
     """
     Before we get ahead of ourselves, we need to make sure that the necessary file
         types are allowed (meaning, we are able to read them in)... in this example,
@@ -176,7 +176,6 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             print(f"cfg.dicom_dir={cfg.dicom_dir}, cfg.dicomNamePattern={cfg.dicomNamePattern}, \
                 cfg.minExpectedDicomSize={cfg.minExpectedDicomSize}")
         dataInterface.initWatch(cfg.dicomDir, dicomScanNamePattern, cfg.minExpectedDicomSize)
-        print(f"cfg.dicomDir={cfg.dicomDir}")
     else:  # use Stream functions
         """
         Initialize a Dicom stream by indicating the directory and dicom file pattern that
