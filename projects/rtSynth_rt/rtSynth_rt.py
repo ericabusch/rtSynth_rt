@@ -176,7 +176,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             print(f"cfg.dicom_dir={cfg.dicom_dir}, cfg.dicomNamePattern={cfg.dicomNamePattern}, \
                 cfg.minExpectedDicomSize={cfg.minExpectedDicomSize}")
         dataInterface.initWatch(cfg.dicomDir, dicomScanNamePattern, cfg.minExpectedDicomSize)
-
+        print(f"cfg.dicomDir={cfg.dicomDir}")
     else:  # use Stream functions
         """
         Initialize a Dicom stream by indicating the directory and dicom file pattern that
