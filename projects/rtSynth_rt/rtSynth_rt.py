@@ -25,7 +25,7 @@ Finally, this script is called from 'projectMain.py', which is called from
 
 -----------------------------------------------------------------------------"""
 
-verbose = False
+verbose = True
 useInitWatch = True
 
 if verbose:
@@ -443,6 +443,9 @@ def main(argv=None):
     argParser.add_argument('--Verbose', '-v', default=False, action='store_true',
                            help='print verbose output')
 
+    argParser.add_argument('--trying', default=False, action='store_true',
+                           help='trying mode')
+
     args = argParser.parse_args(argv)
 
     useInitWatch = args.useInitWatch
@@ -450,7 +453,10 @@ def main(argv=None):
 
     # load the experiment configuration file
     print(f"rtSynth_rt: args.config={args.config}")
-    cfg = cfg_loading(args.config)
+    if args.trying:
+        cfg = cfg_loading(args.config,trying="trying")
+    else:
+        cfg = cfg_loading(args.config)
 
 
     # override config file run and scan values if specified
