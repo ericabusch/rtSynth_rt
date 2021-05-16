@@ -39,6 +39,7 @@ class ProjectServer:
              'initScript': args.initScript,
              'finalizeScript': args.finalizeScript,
              'port' : args.port,
+             'trying': args.trying,
             })
         self.web = None
         print(f'## Settings: dataRemote:{self.args.dataRemote}, subjectRemote:{self.args.subjectRemote}')
