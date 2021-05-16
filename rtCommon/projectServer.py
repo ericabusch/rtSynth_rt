@@ -115,6 +115,8 @@ if __name__ == "__main__":
                            help='user remote services for both data and subject interface')
     argParser.add_argument('--test', '-t', default=False, action='store_true',
                            help='start webServer in test mode, unsecure')
+    argParser.add_argument('--trying', default=False, action='store_true',
+                           help='trying mode')
     args = argParser.parse_args()
     args.port=6666 #7777
 
