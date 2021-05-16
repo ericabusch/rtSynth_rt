@@ -142,6 +142,7 @@ def recognition_preprocess(cfg,scan_asTemplate):
         # Brain_TR[-1] 是想要的最后一个TR的ID，看看是否在brain_data里面？如果不在的话，那么删除最后一个Brain_TR，也删除behav里面的最后一行 中文    
         # 如果大脑数据的长度没有行为学数据长（比如大脑只收集到144个TR，然后我现在想要第145个TR的数据，这提醒我千万不要过早结束recognition run） 中文
         if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
+            print("Warning: brain data is not long enough, don't cut the data collection too soon!!!!")
             Brain_TR = Brain_TR[:-1]
             #behav_data = behav_data.drop([behav_data.iloc[-1].TR])
             behav_data.drop(behav_data.tail(1).index,inplace=True)
