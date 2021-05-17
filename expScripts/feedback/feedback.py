@@ -444,7 +444,7 @@ eachTime13=ParameterUpdateDuration/len(imagePaths13)
 # calculated how long each image should last.
 eachTime=ParameterUpdateDuration/len(imagePaths13)
 #eachTime是每一张morphing frame展示的时间 中文
-B_prob=None
+B_prob=0
 morphParam=None
 runId,trID,value,timestamp=None,None,None,None
 imagePaths=imagePaths13
@@ -455,11 +455,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     try:
         feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=0.0001) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
         runId,trID,value,timestamp = feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
-        try:
-            B_prob = float(value)
-        except Exception as e:
-            print(f"error {e}")
-            B_prob = 0
+        B_prob = float(value)
     except Exception as e:
         # print(f"error {e}")
         pass
