@@ -96,8 +96,10 @@ if checkSSLCertAltName(certFile, addr) is False:
     # Addr not listed in sslCert, recreate ssl Cert
     makeSSLCertFile(addr)
 
-
-cfg = cfg_loading(args.config)
+if args.trying:
+    cfg = cfg_loading(args.config,trying="trying")
+else:
+    cfg = cfg_loading(args.config)
 sub = cfg.subjectName
 run = int(args.run)
 cfg.run = run
@@ -122,13 +124,16 @@ try:
     ThresholdLog=pd.read_csv(cfg.adaptiveThreshold)
 except Exception as e:
     print(f"error: {e}")
-    ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials','monetaryReward1','monetaryReward5','monetaryReward9','monetaryReward13'])
+    ThresholdLog = pd.DataFrame(columns=['sub', 'session', 'run', 'threshold', 'successful_trials', 'perfect_trials','monetaryReward10cent','monetaryReward5cent','monetaryReward0cent'])
 
 ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 print(f"ThresholdLog = \n{ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
 
-threshold = ThresholdLog['threshold'].iloc[-1]
+if args.trying:
+    threshold=0.6
+else:
+    threshold = ThresholdLog['threshold'].iloc[-1]
 print(f"threshold={threshold}")
 
 # similation specific
@@ -306,11 +311,13 @@ def emoji(endMorphing): #endMorphing can be [1,5,9,13]
         emoji13.setAutoDraw(False)
 emoji("OFF")
 
-monetaryReward1 = 0
-monetaryReward5 = 0
-monetaryReward9 = 0
-monetaryReward13 = 0
-
+# monetaryReward1 = 0
+# monetaryReward5 = 0
+# monetaryReward9 = 0
+# monetaryReward13 = 0
+monetaryReward10cent = 0
+monetaryReward5cent = 0
+monetaryReward0cents = 0
 # preload image list for parameter from 1 to 19.
 # def preloadimages(parameterRange=np.arange(1,20),tune=1):
 def preloadimages(parameterRange=[1,5,9,13],tune=1):
@@ -417,7 +424,7 @@ subjectService.runDetached()
 global CurrBestParameter, parameter, points
 points=0
 CurrBestParameter=19
-history=pd.DataFrame(columns=['TR', 'morphParam', 'states',"points"])
+history=pd.DataFrame(columns=['TR_scanner', 'morphParam', 'states',"B_prob","TR_milgram"])
 default_parameter=19
 
 initialMorphParam=13
@@ -438,9 +445,10 @@ eachTime13=ParameterUpdateDuration/len(imagePaths13)
 # calculated how long each image should last.
 eachTime=ParameterUpdateDuration/len(imagePaths13)
 #eachTime是每一张morphing frame展示的时间 中文
-trID=None
 B_prob=None
 morphParam=None
+runId,trID,value,timestamp=None,None,None,None
+imagePaths=imagePaths13
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -448,6 +456,11 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     try:
         feedbackMsg = subjectService.subjectInterface.msgQueue.get(block=True, timeout=0.0001) # from subjInterface.setResult(runNum, int(this_TR), B_prob)
         runId,trID,value,timestamp = feedbackMsg.get('runId'),feedbackMsg.get('trId'),feedbackMsg.get('value'),feedbackMsg.get('timestamp')
+        try:
+            B_prob = float(value)
+        except Exception as e:
+            print(f"error {e}")
+            B_prob = 0
     except Exception as e:
         # print(f"error {e}")
         pass
@@ -469,12 +482,6 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # fetch parameter from preprocessing process on Milgram       
             # feedbackMsg = WsFeedbackReceiver.msgQueue.get(block=True, timeout=None)     
             trialTime = trialClock.getTime()
-
-            try:
-                B_prob = float(value)
-            except Exception as e:
-                print(f"error {e}")
-                B_prob = 0
             
             if B_prob >= threshold: # 单方面递减，因此没有B_prob < threshold
                 morphParam = morphParam - 4
@@ -548,7 +555,9 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                 "points":points,
                 "states":states[0],
                 'image':imagePaths[0].image,
-                'eachTime':eachTime
+                'eachTime':eachTime,
+                'successful_trials':successful_trials,
+                'perfect_trials':perfect_trials
             },
             ignore_index=True)
 
@@ -562,14 +571,14 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                 
                 remainImageNumber.append(currImage)
 
-                # write the data!
-                data = data.append({'Sub': sub, 
-                                    'Run': run, 
-                                    'TR': TR[0], 
-                                    'time': trialTime, 
-                                    'imageTime':imagePaths[currImage].image,
-                                    'eachTime':eachTime},
-                                    ignore_index=True)
+                # # write the data!
+                # data = data.append({'Sub': sub, 
+                #                     'Run': run, 
+                #                     'TR': TR[0], 
+                #                     'time': trialTime, 
+                #                     'imageTime':imagePaths[currImage].image,
+                #                     'eachTime':eachTime},
+                #                     ignore_index=True)
                 
                 currImage=currImage+1        
             except Exception as e:
@@ -582,87 +591,135 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if len(TR)>(TrialNumber*14+6)-10: #如果是最开始的6个TR，就只需要countdown
             pass
         elif _countITI in [6,5,4]: # 如果不是最开始的6个TR，并且state又是ITI，那么如果是第1，2，3个TR，就展示message；
-            if successful_TR >= 3:
-                emoji(1) # perfect!
-                monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
-                
-            elif successful_TR ==2:
-                emoji(5) # great job
-                monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
-                
-            elif successful_TR ==1:
-                emoji(9) # good try
-                monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
-                
-            elif successful_TR ==0:
-                emoji(13) # no luck
-                monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
-                
+            design="design2"
+            # 设计1：5个中的至少1个成功算作成功；0个算失败，1个算9号表情包，2个算5号表情包，3、4、5个算1号表情包
+            if design=="design1":
+                if successful_TR >= 3:
+                    emoji(1) # perfect!
+                    monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
+                    
+                elif successful_TR ==2:
+                    emoji(5) # great job
+                    monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
+                    
+                elif successful_TR ==1:
+                    emoji(9) # good try
+                    monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
+                    
+                elif successful_TR ==0:
+                    emoji(13) # no luck
+                    monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
+            elif design=="design2":
+                if successful_TR >= 4:
+                    emoji(1) # perfect!
+                    monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
+                    
+                elif successful_TR==2 or successful_TR==3:
+                    emoji(5) # great job
+                    monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
+                    
+                elif successful_TR ==1:
+                    emoji(9) # good try
+                    monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
+                    
+                elif successful_TR ==0:
+                    emoji(13) # no luck
+                    monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
+                    
         if _countITI in [2,1]: # 如果是第4，5，6个TR，就展示 countdown
             emoji("OFF")
             monetaryReward.setAutoDraw(False)
             message=display(f"Get ready...",message)
 
-        design="design1"
+        design="design2"
         # 设计1：5个中的至少1个成功算作成功；0个算失败，1个算9号表情包，2个算5号表情包，3、4、5个算1号表情包
         if design=="design1":
-            if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
-                if successful_TR >= 3:
-                    perfect_trials+=1
-                    monetaryReward1+=1 #15cent
-                if successful_TR == 2:
-                    monetaryReward5+=1 #10cent
-                if successful_TR == 1:
-                    monetaryReward9+=1 #5cent
-                if successful_TR == 0:
-                    monetaryReward13+=1 #0cent
+            pass
+            # if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+            #     if successful_TR >= 3:
+            #         perfect_trials+=1
+            #         monetaryReward1+=1 #15cent
+            #     if successful_TR == 2:
+            #         monetaryReward5+=1 #10cent
+            #     if successful_TR == 1:
+            #         monetaryReward9+=1 #5cent
+            #     if successful_TR == 0:
+            #         monetaryReward13+=1 #0cent
 
-                if successful_TR >= 1:
-                    successful_trials+=1 
+            #     if successful_TR >= 1:
+            #         successful_trials+=1 
+            #     print(f"successful_trials={successful_trials}")
+            #     print(f"perfect_trials={perfect_trials}")
+
+            #     # 保存
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
+            #     print(f"saving successful_trials = {successful_trials}")
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
+            #     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
+            #     ITIFlag = 0 
         # 设计2：5个中的至少2个成功算作成功；小于等于1个算失败，2个算9号表情包，3个算5号表情包，4、5个算1号表情包
         elif design=="design2":
             if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
                 if successful_TR >= 4:
                     perfect_trials+=1
-                    monetaryReward1+=1 #15cent
-                if successful_TR == 3:
-                    monetaryReward5+=1 #10cent
-                if successful_TR == 2:
-                    monetaryReward9+=1 #5cent
-                if successful_TR <= 1:
-                    monetaryReward13+=1 #0cent
+                    monetaryReward10cent += 1 #10cent
+                if successful_TR == 2 or successful_TR == 3:
+                    monetaryReward5cent += 1 #5cent
+                # if successful_TR == 1:
+                #     monetaryReward9+=1 #5cent
+                if successful_TR <= 2:
+                    monetaryReward0cents += 1 #0cent
 
                 if successful_TR >= 2:
                     successful_trials+=1 
+                print(f"successful_trials={successful_trials}")
+                print(f"perfect_trials={perfect_trials}")
+
+                # 保存
+                ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
+                print(f"saving successful_trials = {successful_trials}")
+                ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
+                ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward10cent"] = monetaryReward10cent
+                ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5cent"] = monetaryReward5cent
+                ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward0cents"] = monetaryReward0cents
+                ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+
+                ITIFlag = 0 
         # 设计3：5个中的至少3个成功算作成功；小于等于2个算失败，3个算9号表情包，4个算5号表情包，5个算1号表情包
         elif design=="design3":
-            if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
-                if successful_TR >= 5:
-                    perfect_trials+=1
-                    monetaryReward1+=1 #15cent
-                if successful_TR == 4:
-                    monetaryReward5+=1 #10cent
-                if successful_TR == 3:
-                    monetaryReward9+=1 #5cent
-                if successful_TR <= 2:
-                    monetaryReward13+=1 #0cent
+            pass
+            # if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+            #     if successful_TR >= 5:
+            #         perfect_trials+=1
+            #         monetaryReward1+=1 #15cent
+            #     if successful_TR == 4:
+            #         monetaryReward5+=1 #10cent
+            #     if successful_TR == 3:
+            #         monetaryReward9+=1 #5cent
+            #     if successful_TR <= 2:
+            #         monetaryReward13+=1 #0cent
 
-                if successful_TR >= 3:
-                    successful_trials+=1 
-            print(f"successful_trials={successful_trials}")
-            print(f"perfect_trials={perfect_trials}")
+            #     if successful_TR >= 3:
+            #         successful_trials+=1 
+            #     print(f"successful_trials={successful_trials}")
+            #     print(f"perfect_trials={perfect_trials}")
 
-            # 保存
-            ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
-            print(f"saving successful_trials = {successful_trials}")
-            ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
-            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
-            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
-            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
-            ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
-            ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
+            #     # 保存
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
+            #     print(f"saving successful_trials = {successful_trials}")
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
+            #     ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
+            #     ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
-            ITIFlag = 0 
+            #     ITIFlag = 0 
     elif states[0] == 'waiting' and (trialTime>currImage*eachTime13):
         morphParam=13 #每一个trial结束之后将morphing parameter重置
         successful_TR=0 #每一个trial结束之后将successful_TR(在这个trial中成功的TR数)重置
@@ -684,17 +741,16 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
 ThresholdLog.loc[len(ThresholdLog)-1,"successful_trials"] = successful_trials
 print(f"saving successful_trials = {successful_trials}")
 ThresholdLog.loc[len(ThresholdLog)-1,"perfect_trials"] = perfect_trials
-ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward1"] = monetaryReward1
-ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5"] = monetaryReward5
-ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward9"] = monetaryReward9
-ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward13"] = monetaryReward13
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward10cent"] = monetaryReward10cent
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward5cent"] = monetaryReward5cent
+ThresholdLog.loc[len(ThresholdLog)-1,"monetaryReward0cents"] = monetaryReward0cents
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 
 print(f"ThresholdLog = \n{ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
 
 emoji("OFF")
 monetaryReward.setAutoDraw(False)
-money=monetaryReward1*15 + monetaryReward5*10 + monetaryReward9*5 + monetaryReward13*0
+money=monetaryReward10cent*10 + monetaryReward5cent*5 + monetaryReward0cents*0
 message=display(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.",message)
 mywin.flip()
 
