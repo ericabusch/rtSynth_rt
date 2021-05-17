@@ -229,12 +229,11 @@ def countITI(states):
             return c
     return c
 
-datadir = main_dir + f"subjects/{sub}/ses{sess}/feedback/"
 # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
-newfile = datadir+"{}_{}.csv".format(str(sub), str(run))
-if os.path.exists(newfile):
-    print(f'{newfile} exists')
-    raise Exception(f'{newfile} exists')
+# newfile = cfg.feedback_dir+"{}_{}.csv".format(str(sub), str(run))
+# if os.path.exists(newfile):
+#     print(f'{newfile} exists')
+#     raise Exception(f'{newfile} exists')
 
 message = visual.TextStim(mywin, text=f'Waiting...',pos=(0, 0), depth=-5.0, height=0.05,units='pix')
 def display(text,message): #endMorphing can be [1,5,9,13]
@@ -562,7 +561,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             ignore_index=True)
 
         # data.to_csv(newfile, index=False)
-        history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
+        history.to_csv(cfg.feedback_dir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
 
     if (states[0] == 'feedback') and (trialTime>currImage*eachTime):
             try: # sometimes the trialTime accidentally surpasses the maximum time, in this case just do nothing, pass
