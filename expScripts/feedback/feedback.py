@@ -435,6 +435,12 @@ eachTime13=ParameterUpdateDuration/len(imagePaths13)
 # message=display(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.",message)
 # time.sleep(5)
 
+# calculated how long each image should last.
+eachTime=ParameterUpdateDuration/len(imagePaths13)
+#eachTime是每一张morphing frame展示的时间 中文
+trID=None
+B_prob=None
+morphParam=None
 # curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -486,38 +492,68 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # update the image list to be shown based on the fetched parameter
 
             imagePaths=imageLists[morphParam] #list(imageLists[parameter])
-            # calculated how long each image should last.
-            eachTime=ParameterUpdateDuration/len(imagePaths) #eachTime是每一张morphing frame展示的时间 中文
+            
             imagePaths13[-1].setAutoDraw(False)
             imagePaths[0].setAutoDraw(True)
             # currImage*eachTime is used in the calculation of the start time of next image in the list.
             # currImage*eachTime 被用来计算列表中下一个图片开始的时间 中文
 
             # save when the image is presented and which image is presented.
-            data = data.append({'Sub': sub, 
-                                'Run': run, 
-                                'TR': TR[0],
-                                'time': trialTime, 
-                                'imageTime':imagePaths[0].image,
-                                'eachTime':eachTime},
-                            ignore_index=True)
+            # data = data.append({'Sub': sub, 
+            #                     'Run': run, 
+            #                     'TR': TR[0],
+            #                     'time': trialTime, 
+            #                     'image':imagePaths[0].image,
+            #                     'eachTime':eachTime},
+            #                 ignore_index=True)
 
-            history = history.append({
-                "TR":TR[0],
+            # history = history.append({
+            #     "TR":TR[0],
+            #     "TR_milgram":trID,
+            #     "B_prob":B_prob,
+            #     "morphParam":morphParam,
+            #     "timestamp":timestamp,
+            #     "points":points,
+            #     "states":states[0]
+            # },
+            # history = history.append({
+            #     'Sub': sub, 
+            #     'Run': run, 
+            #     "TR_scanner":TR[0],
+            #     "TR_milgram":trID,
+            #     "B_prob":B_prob,
+            #     "morphParam":morphParam,
+            #     "timestamp":timestamp,
+            #     "points":points,
+            #     "states":states[0],
+            #     'image':imagePaths[0].image,
+            #     'eachTime':eachTime
+            # },
+            # ignore_index=True)
+
+            # # data.to_csv(newfile, index=False)
+            # history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
+
+            remainImageNumber.append(0)
+            ITIFlag=1 #这个flag用来避免ITI的时候多次计数
+        # 在每一个TR来的时候都要保存history 中文
+        history = history.append({
+                'Sub': sub, 
+                'Run': run, 
+                "TR_scanner":TR[0],
                 "TR_milgram":trID,
                 "B_prob":B_prob,
                 "morphParam":morphParam,
                 "timestamp":timestamp,
                 "points":points,
-                "states":states[0]
+                "states":states[0],
+                'image':imagePaths[0].image,
+                'eachTime':eachTime
             },
             ignore_index=True)
 
-            data.to_csv(newfile, index=False)
-            history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
-
-            remainImageNumber.append(0)
-            ITIFlag=1 #这个flag用来避免ITI的时候多次计数
+        # data.to_csv(newfile, index=False)
+        history.to_csv(datadir+"{}_{}_history.csv".format(str(sub), str(run)), index=False)
 
     if (states[0] == 'feedback') and (trialTime>currImage*eachTime):
             try: # sometimes the trialTime accidentally surpasses the maximum time, in this case just do nothing, pass
