@@ -567,20 +567,52 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             monetaryReward.setAutoDraw(False)
             message=display(f"Get ready...",message)
 
-        if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
-            if successful_TR >= 3:
-                perfect_trials+=1
-                monetaryReward1+=1 #15cent
-            if successful_TR > 0:
-                successful_trials+=1 
+        design="design1"
+        # 设计1：5个中的至少1个成功算作成功；0个算失败，1个算9号表情包，2个算5号表情包，3、4、5个算1号表情包
+        if design=="design1":
+            if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+                if successful_TR >= 3:
+                    perfect_trials+=1
+                    monetaryReward1+=1 #15cent
+                if successful_TR == 2:
+                    monetaryReward5+=1 #10cent
+                if successful_TR == 1:
+                    monetaryReward9+=1 #5cent
+                if successful_TR == 0:
+                    monetaryReward13+=1 #0cent
 
-            if successful_TR == 2:
-                monetaryReward5+=1 #10cent
-            if successful_TR == 1:
-                monetaryReward9+=1 #5cent
-            if successful_TR == 0:
-                monetaryReward13+=1 #0cent
+                if successful_TR >= 1:
+                    successful_trials+=1 
+        # 设计2：5个中的至少2个成功算作成功；小于等于1个算失败，2个算9号表情包，3个算5号表情包，4、5个算1号表情包
+        elif design=="design2":
+            if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+                if successful_TR >= 4:
+                    perfect_trials+=1
+                    monetaryReward1+=1 #15cent
+                if successful_TR == 3:
+                    monetaryReward5+=1 #10cent
+                if successful_TR == 2:
+                    monetaryReward9+=1 #5cent
+                if successful_TR <= 1:
+                    monetaryReward13+=1 #0cent
 
+                if successful_TR >= 2:
+                    successful_trials+=1 
+        # 设计3：5个中的至少3个成功算作成功；小于等于2个算失败，3个算9号表情包，4个算5号表情包，5个算1号表情包
+        elif design=="design3":
+            if ITIFlag == 1: #每个ITI只计算一次，避免重复计数
+                if successful_TR >= 5:
+                    perfect_trials+=1
+                    monetaryReward1+=1 #15cent
+                if successful_TR == 4:
+                    monetaryReward5+=1 #10cent
+                if successful_TR == 3:
+                    monetaryReward9+=1 #5cent
+                if successful_TR <= 2:
+                    monetaryReward13+=1 #0cent
+
+                if successful_TR >= 3:
+                    successful_trials+=1 
             print(f"successful_trials={successful_trials}")
             print(f"perfect_trials={perfect_trials}")
 
