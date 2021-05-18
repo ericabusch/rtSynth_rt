@@ -44,6 +44,9 @@ argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
 argParser.add_argument('--skipPre', '-s', default=0, type=int, help='skip preprocess or not')
 argParser.add_argument('--skipGreedy', '-g', default=0, type=int, help='skip greedy or not')
+argParser.add_argument('--testRun', '-t', default=None, type=int, help='testRun, can be [None,1,2,3,4,5,6,7,8]')
+argParser.add_argument('--scan_asTemplate', '-a', default=1, type=int, help="which scan's middle dicom as Template?")
+
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
 # config="sub001.ses2.toml"
@@ -62,7 +65,7 @@ find the middle volume of the run1 as the template volume
 align every other functional volume with templateFunctionalVolume (3dvolreg)
 '''
 if not args.skipPre:
-    recognition_preprocess(cfg) #somehow this cannot be run in jupyter
+    recognition_preprocess(cfg,args.scan_asTemplate) #somehow this cannot be run in jupyter
 
 
 '''
@@ -86,7 +89,7 @@ if cfg.session==1:
 
 # train the classifiers
 # accs = minimalClass(cfg)
-accs = minimalClass(cfg,testRun=None)
+accs = minimalClass(cfg,testRun=args.testRun)
 
 print("\n\n")
 print(f"minimalClass accs={accs}")

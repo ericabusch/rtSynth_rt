@@ -263,7 +263,8 @@ try:
         message = visual.TextStim(mywin, text=f'Waiting for {2*countDown} s',pos=(0, 0), depth=-5.0, height=32,units='pix')
         message.setAutoDraw(True)
         return message
-
+    responseNumber = 0
+    TrialNumber = 0
     # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
     while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
         globalTime = globalClock.getTime()
@@ -328,6 +329,7 @@ try:
         if len(keys) > 0:  # if a response is made and its not a 5, document response and RT
             print('keys=',keys)
             if "5" not in keys:
+                responseNumber+=1
                 resp = keys[0]
                 resp_time = globalTime - image_on_persist - 1  # when the resp_time is negative, that means the subject press a button before the button appears.
                 print('resp_time=', resp_time)
@@ -378,6 +380,9 @@ try:
                     print('text OFF', globalTime, trialTime)
                     button_off = globalTime  # data.at[lastestImageIDinData,'button_off']=globalTime
                     time19s = 0
+                    TrialNumber+=1
+                    print("================================================")
+                    print(f"missed {TrialNumber-responseNumber}")
 
         fix.draw()
         # refresh the screen

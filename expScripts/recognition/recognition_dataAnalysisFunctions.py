@@ -53,7 +53,7 @@ from rtCommon.cfg_loading import mkdir,cfg_loading
 # setting up code testing environment: 
 # from rtCommon.cfg_loading import mkdir,cfg_loading ;cfg = cfg_loading('pilot_sub001.ses1.toml')
 
-def recognition_preprocess(cfg): 
+def recognition_preprocess(cfg,scan_asTemplate): 
     '''
     purpose: 
         prepare data for the model training code.
@@ -62,47 +62,60 @@ def recognition_preprocess(cfg):
         find the middle volume of the run1 as the template volume
         align every other functional volume with templateFunctionalVolume (3dvolreg)
     '''
-
-    # convert all dicom files into nii files in the temp dir. 
-    tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
-    dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
-    for curr_dicom in dicomFiles:
-        dicomImg = readDicomFromFile(curr_dicom) # read dicom file
-        convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}/{curr_dicom.split('/')[-1]}") #convert dicom to nii    
-        # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
-
-    # find the middle volume of the run1 as the template volume
-    tmp=glob(f"{tmp_dir}/001_000001*.nii") ; tmp.sort()
-    cfg.templateFunctionalVolume = f"{cfg.recognition_dir}/templateFunctionalVolume.nii" 
-    call(f"cp {tmp[int(len(tmp)/2)]} {cfg.templateFunctionalVolume}", shell=True)
-
-    # align every other functional volume with templateFunctionalVolume (3dvolreg)
-    allTRs=glob(f"{tmp_dir}/001_*.nii") ; allTRs.sort()
-
     # select a list of run IDs based on the runRecording.csv, actualRuns would be [1,2] is the 1st and the 3rd runs are recognition runs.
     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])
-    for curr_run in actualRuns:
-        outputFileNames=[]
-        runTRs=glob(f"{tmp_dir}/001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
-        for curr_TR in runTRs:
-            command = f"3dvolreg \
-                -base {cfg.templateFunctionalVolume} \
-                -prefix  {curr_TR[0:-4]}_aligned.nii \
-                {curr_TR}"
-            call(command,shell=True)
-            outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
-        files=''
-        for f in outputFileNames:
-            files=files+' '+f
-        command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
-        print('running',command)
-        call(command, shell=True)
 
-    # remove the tmp folder
-    shutil.rmtree(tmp_dir)
+    # convert all dicom files into nii files in the temp dir. 
+    if os.path.exists(f"{cfg.recognition_dir}run{actualRuns[-1]}.nii") or os.path.exists(f"{cfg.recognition_dir}run{actualRuns[-1]}.nii.gz"):
+        pass # 如果检测到已经存在了fslmerge的结果，就不做这一步了 中文
+    else:
+        tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
+        dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
+        for curr_dicom in dicomFiles:
+            dicomImg = readDicomFromFile(curr_dicom) # read dicom file
+            convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}/{curr_dicom.split('/')[-1]}") #convert dicom to nii    
+            # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
 
-    # load and apply mask
+        # find the middle volume of the run1 as the template volume
+        
+        scan_asTemplate=str(scan_asTemplate).zfill(6)
+        tmp=glob(f"{tmp_dir}001_{scan_asTemplate}*.nii") ; tmp.sort()
+        # cfg.templateFunctionalVolume = f"{cfg.recognition_dir}/templateFunctionalVolume.nii" 
+        if cfg.session ==1:
+            call(f"cp {tmp[int(len(tmp)/2)]} {cfg.templateFunctionalVolume}", shell=True)
+            call(f"cp {cfg.templateFunctionalVolume} {cfg.templateFunctionalVolume_converted}", shell=True)
+        else:
+            # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.templateFunctionalVolume_converted}", shell=True)
+            # convert cfg.templateFunctionalVolume to the previous template volume space 
+            cmd=f"flirt -ref {cfg.templateFunctionalVolume} \
+                -in {tmp[int(len(tmp)/2)]} \
+                -out {cfg.templateFunctionalVolume_converted}"
+            print(cmd)
+            call(cmd,shell=True) 
+
+        # align every other functional volume with templateFunctionalVolume (3dvolreg)
+        allTRs=glob(f"{tmp_dir}/001_*.nii") ; allTRs.sort()
+
+        for curr_run in actualRuns:
+            outputFileNames=[]
+            runTRs=glob(f"{tmp_dir}/001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
+            for curr_TR in runTRs:
+                command = f"3dvolreg \
+                    -base {cfg.templateFunctionalVolume_converted} \
+                    -prefix  {curr_TR[0:-4]}_aligned.nii \
+                    {curr_TR}"
+                call(command,shell=True)
+                outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
+            files=''
+            for f in outputFileNames:
+                files=files+' '+f
+            command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
+            print('running',command)
+            call(command, shell=True)
+
+        # remove the tmp folder
+        shutil.rmtree(tmp_dir)
             
     '''
     for each run, 
@@ -114,22 +127,128 @@ def recognition_preprocess(cfg):
 
     for curr_run_behav,curr_run in enumerate(actualRuns):
         # load behavior data
-        behav_data = behaviorDataLoading(cfg,curr_run_behav+1)
+        behav_data = behaviorDataLoading(cfg,curr_run_behav+1) # behav_data 的数据的TR是从0开始的。brain_data 也是 中文
+        #len = 48 ，最后一个TR ID是 142 中文
 
         # brain data is first aligned by pushed back 2TR(4s)
         brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))
-        Brain_TR=np.arange(brain_data.shape[0])
+        #len = 144
+        Brain_TR=np.arange(brain_data.shape[0]) #假设brain_data 有144个，那么+2之后的Brain_TR就是2，3，。。。，145.一共144个TR。中文
         Brain_TR = Brain_TR + 2
-        
+
         # select volumes of brain_data by counting which TR is left in behav_data
-        Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
+        Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0 #筛选掉无用的TR，由于两个都是从0开始计数的，所以是可以的。 中文
+        # 筛选掉之后的Brain_TR长度是 48 最后一个ID是144 中文
+        # Brain_TR[-1] 是想要的最后一个TR的ID，看看是否在brain_data里面？如果不在的话，那么删除最后一个Brain_TR，也删除behav里面的最后一行 中文    
+        # 如果大脑数据的长度没有行为学数据长（比如大脑只收集到144个TR，然后我现在想要第145个TR的数据，这提醒我千万不要过早结束recognition run） 中文
         if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
+            print("Warning: brain data is not long enough, don't cut the data collection too soon!!!!")
             Brain_TR = Brain_TR[:-1]
-            behav_data = behav_data.drop([behav_data.iloc[-1].TR])
+            #behav_data = behav_data.drop([behav_data.iloc[-1].TR])
+            behav_data.drop(behav_data.tail(1).index,inplace=True)
+
         brain_data=brain_data[Brain_TR]
         np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
         # save the behavior data
         behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
+
+
+
+def recognition_preprocess_2run(cfg,scan_asTemplate): 
+    '''
+    purpose: 
+        prepare the data for 2 recognition runs     (to later(not in this function) get the morphing target function)
+        find the functional template image for current session
+    steps:
+        convert all dicom files into nii files in the temp dir. 
+        find the middle volume of the run1 as the template volume, convert this to the previous template volume space and save the converted file as today's functional template (templateFunctionalVolume)
+        align every other functional volume with templateFunctionalVolume (3dvolreg)
+    '''
+    from shutil import copyfile
+    from rtCommon.imageHandling import convertDicomFileToNifti
+    # convert all dicom files into nii files in the temp dir. 
+    tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
+    dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
+    # 把cfg.dicom_dir的file复制到tmp folder并且转换成nii
+    for curr_dicom in dicomFiles:
+        # dicomImg = readDicomFromFile(curr_dicom) # read dicom file
+        dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}"
+        copyfile(curr_dicom,dicomFilename)
+        niftiFilename = dicomFilename[:-4]+'.nii'
+        convertDicomFileToNifti(dicomFilename, niftiFilename)
+        # convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}") #convert dicom to nii    
+        # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
+
+    # find the middle volume of the run1 as the template volume
+    # here you are assuming that the first run is a good run
+    scan_asTemplate=str(scan_asTemplate).zfill(6)
+    tmp=glob(f"{tmp_dir}001_{scan_asTemplate}*.nii") ; tmp.sort()
+    # print(f"all nii files: {tmp}")
+    # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.recognition_dir}t.nii", shell=True)
+
+    # convert cfg.templateFunctionalVolume to the previous template volume space 
+    cmd=f"flirt -ref {cfg.templateFunctionalVolume} \
+        -in {tmp[int(len(tmp)/2)]} \
+        -out {cfg.templateFunctionalVolume_converted}"
+    print(cmd)
+    call(cmd,shell=True) 
+        
+
+    # # align every other functional volume with templateFunctionalVolume (3dvolreg)
+    # allTRs=glob(f"{tmp_dir}001_*.nii") ; allTRs.sort()
+    # # select a list of run IDs based on the runRecording.csv, actualRuns would be [1,2] is the 1st and the 3rd runs are recognition runs.
+    # runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
+    # actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])[:2]
+    # for curr_run in actualRuns:
+    #     if not (os.path.exists(f"{cfg.recognition_dir}run{curr_run}.nii.gz") and os.path.exists(f"{cfg.recognition_dir}run{curr_run}.nii")):
+    #         outputFileNames=[]
+    #         runTRs=glob(f"{tmp_dir}001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
+    #         for curr_TR in runTRs:
+    #             command = f"3dvolreg \
+    #                 -base {cfg.templateFunctionalVolume_converted} \
+    #                 -prefix  {curr_TR[0:-4]}_aligned.nii \
+    #                 {curr_TR}"
+    #             call(command,shell=True)
+    #             outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
+    #         files=''
+    #         for f in outputFileNames:
+    #             files=files+' '+f
+    #         command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
+    #         print('running',command)
+    #         call(command, shell=True)
+
+
+    # remove the tmp folder
+    shutil.rmtree(tmp_dir)
+            
+    # '''
+    # for each run, 
+    #     load behavior data 
+    #     push the behavior data back for 2 TRs
+    #     save the brain TRs with images
+    #     save the behavior data
+    # '''
+
+    # for curr_run_behav,curr_run in enumerate(actualRuns):
+    #     # load behavior data
+    #     behav_data = behaviorDataLoading(cfg,curr_run_behav+1)
+
+    #     # brain data is first aligned by pushed back 2TR(4s)
+    #     brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))
+    #     Brain_TR=np.arange(brain_data.shape[0])
+    #     Brain_TR = Brain_TR+2
+
+    #     # select volumes of brain_data by counting which TR is left in behav_data
+    #     Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
+    #     if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
+    #         Brain_TR = Brain_TR[:-1]
+    #         behav_data = behav_data.drop([behav_data.iloc[-1].TR])
+    #     brain_data=brain_data[Brain_TR]
+    #     np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
+    #     # save the behavior data
+    #     behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
+
+
 
 from scipy.stats import zscore
 def normalize(X):
@@ -159,67 +278,12 @@ def minimalClass(cfg,testRun=None):
     import itertools
     from sklearn.linear_model import LogisticRegression
 
-    # def gaussian(x, mu, sig):
-    #     # mu and sig is determined before each neurofeedback session using 2 recognition runs.
-    #     return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
-
-    # def jitter(size,const=0):
-    #     jit = np.random.normal(0+const, 0.05, size)
-    #     X = np.zeros((size))
-    #     X = X + jit
-    #     return X
-
     def other(target):
         other_objs = [i for i in ['bed', 'bench', 'chair', 'table'] if i not in target]
         return other_objs
 
     def red_vox(n_vox, prop=0.1):
         return int(np.ceil(n_vox * prop))
-
-    def get_inds(X, Y, pair, testRun=None):
-        
-        inds = {}
-        
-        # return relative indices
-        if testRun:
-            trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(testRun))]
-        else:
-            trainIX = Y.index[(Y['label'].isin(pair))]
-
-        # pull training and test data
-        trainX = X[trainIX]
-        trainY = Y.iloc[trainIX].label
-        
-        # Main classifier on 5 runs, testing on 6th
-        clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                    multi_class='multinomial').fit(trainX, trainY)
-        B = clf.coef_[0]  # pull betas
-
-        # retrieve only the first object, then only the second object
-        if testRun:
-            obj1IX = Y.index[(Y['label'] == pair[0]) & (Y['run_num'] != int(testRun))]
-            obj2IX = Y.index[(Y['label'] == pair[1]) & (Y['run_num'] != int(testRun))]
-        else:
-            obj1IX = Y.index[(Y['label'] == pair[0])]
-            obj2IX = Y.index[(Y['label'] == pair[1])]
-
-        # Get the average of the first object, then the second object
-        obj1X = np.mean(X[obj1IX], 0)
-        obj2X = np.mean(X[obj2IX], 0)
-
-        # Build the importance map
-        mult1X = obj1X * B
-        mult2X = obj2X * B
-
-        # Sort these so that they are from least to most important for a given category.
-        sortmult1X = mult1X.argsort()[::-1]
-        sortmult2X = mult2X.argsort()
-
-        # add to a dictionary for later use
-        inds[clf.classes_[0]] = sortmult1X
-        inds[clf.classes_[1]] = sortmult2X
-                    
-        return inds
 
     if 'milgram' in os.getcwd():
         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/'
@@ -250,6 +314,8 @@ def minimalClass(cfg,testRun=None):
 
     objects = ['bed', 'bench', 'chair', 'table']
 
+    new_run_indexs=[]
+    new_run_index=1 #使用新的run 的index，以便于后面的testRun selection的时候不会重复。正常的话 new_run_index 应该是1，2，3，4，5，6，7，8
     for ii,run in enumerate(actualRuns): # load behavior and brain data for current session
         t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
         mask = np.load(f"{cfg.chosenMask}")
@@ -258,6 +324,9 @@ def minimalClass(cfg,testRun=None):
         brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
+        t['run_num'] = new_run_index
+        new_run_indexs.append(new_run_index)
+        new_run_index+=1
         behav_data=t if ii==0 else pd.concat([behav_data,t])
 
     for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for previous session
@@ -268,6 +337,9 @@ def minimalClass(cfg,testRun=None):
         brain_data = np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/behav_run{run}.csv")
+        t['run_num'] = new_run_index
+        new_run_indexs.append(new_run_index)
+        new_run_index+=1
         behav_data = pd.concat([behav_data,t])
 
     for ii,run in enumerate(actualRuns_prepreDay): # load behavior and brain data for previous session
@@ -278,6 +350,9 @@ def minimalClass(cfg,testRun=None):
         brain_data = np.concatenate((brain_data,t), axis=0)
 
         t = pd.read_csv(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-2}/recognition/behav_run{run}.csv")
+        t['run_num'] = new_run_index
+        new_run_indexs.append(new_run_index)
+        new_run_index+=1
         behav_data = pd.concat([behav_data,t])
 
     # FEAT=brain_data.reshape(brain_data.shape[0],-1)
@@ -306,73 +381,118 @@ def minimalClass(cfg,testRun=None):
 
     # Which run to use as test data (leave as None to not have test data)
     # testRun = 0 # when testing: testRun = 2 ; META['run_num'].iloc[:5]=2
+    def train4wayClf(META, FEAT):
+        runList = np.unique(list(META['run_num']))
+        print(f"runList={runList}")
+        accList={}
+        for testRun in runList:
+            trainIX = META['run_num']!=int(testRun)
+            testIX = META['run_num']==int(testRun)
 
-    # Decide on the proportion of crescent data to use for classification
+            # pull training and test data
+            trainX = FEAT[trainIX]
+            testX = FEAT[testIX]
+            trainY = META.iloc[np.asarray(trainIX)].label
+            testY = META.iloc[np.asarray(testIX)].label
+
+            # Train your classifier
+            clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                        multi_class='multinomial').fit(trainX, trainY)
+            
+            # model_folder = cfg.trainingModel_dir
+            # Save it for later use
+            # joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
+            
+            # Monitor progress by printing accuracy (only useful if you're running a test set)
+            acc = clf.score(testX, testY)
+            print("acc=", acc)
+            accList[testRun] = acc
+        print(f"new trained full rotation 4 way accuracy mean={np.mean(list(accList.values()))}")
+        return accList
+    accList = train4wayClf(META, FEAT)
+    
+    # 获得full rotation的2way clf的accuracy 平均值 中文
+    accs_rotation=[]
+    print(f"new_run_indexs={new_run_indexs}")
+    for testRun in new_run_indexs:
+        allpairs = itertools.combinations(objects,2)
+        accs={}
+        # Iterate over all the possible target pairs of objects
+        for pair in allpairs:
+            # Find the control (remaining) objects for this pair
+            altpair = other(pair)
+            
+            # pull sorted indices for each of the critical objects, in order of importance (low to high)
+            # inds = get_inds(FEAT, META, pair, testRun=testRun)
+            
+            # Find the number of voxels that will be left given your inclusion parameter above
+            # nvox = red_vox(FEAT.shape[1], include)
+            
+            for obj in pair:
+                # foil = [i for i in pair if i != obj][0]
+                for altobj in altpair:
+                    # establish a naming convention where it is $TARGET_$CLASSIFICATION
+                    # Target is the NF pair (e.g. bed/bench)
+                    # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
+                    naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
+
+                    if testRun:
+                        trainIX = ((META['label']==obj) | (META['label']==altobj)) & (META['run_num']!=int(testRun))
+                        testIX = ((META['label']==obj) | (META['label']==altobj)) & (META['run_num']==int(testRun))
+                    else:
+                        trainIX = ((META['label']==obj) | (META['label']==altobj))
+                        testIX = ((META['label']==obj) | (META['label']==altobj))
+
+                    # pull training and test data
+                    trainX = FEAT[trainIX]
+                    testX = FEAT[testIX]
+                    trainY = META.iloc[np.asarray(trainIX)].label
+                    testY = META.iloc[np.asarray(testIX)].label
+
+                    assert len(np.unique(trainY))==2
+
+                    # Train your classifier
+                    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                                multi_class='multinomial').fit(trainX, trainY)
+                    
+                    model_folder = cfg.trainingModel_dir
+                    # Save it for later use
+                    # joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
+                    
+                    # Monitor progress by printing accuracy (only useful if you're running a test set)
+                    acc = clf.score(testX, testY)
+                    print(naming, acc)
+                    accs[naming]=acc
+        print(f"testRun = {testRun} : average 2 way clf accuracy={np.mean(list(accs.values()))}")
+        accs_rotation.append(np.mean(list(accs.values())))
+    print(f"mean of 2 way clf acc full rotation = {np.mean(accs_rotation)}")
+
+    # 用所有数据训练要保存并且使用的模型：
     allpairs = itertools.combinations(objects,2)
     accs={}
     # Iterate over all the possible target pairs of objects
     for pair in allpairs:
         # Find the control (remaining) objects for this pair
         altpair = other(pair)
-        
-        # pull sorted indices for each of the critical objects, in order of importance (low to high)
-        # inds = get_inds(FEAT, META, pair, testRun=testRun)
-        
-        # Find the number of voxels that will be left given your inclusion parameter above
-        # nvox = red_vox(FEAT.shape[1], include)
-        
         for obj in pair:
             # foil = [i for i in pair if i != obj][0]
             for altobj in altpair:
-                
                 # establish a naming convention where it is $TARGET_$CLASSIFICATION
                 # Target is the NF pair (e.g. bed/bench)
                 # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
                 naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
-                
-                # Pull the relevant inds from your previously established dictionary 
-                # obj_inds = inds[obj]
-                
-                # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
-                # if testRun:
-                #     trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(testRun))]
-                #     testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(testRun))]
-                # else:
-                #     trainIX = META.index[(META['label'].isin([obj, altobj]))]
-                #     testIX = META.index[(META['label'].isin([obj, altobj]))]
-                # # pull training and test data
-                # trainX = FEAT[trainIX]
-                # testX = FEAT[testIX]
-                # trainY = META.iloc[trainIX].label
-                # testY = META.iloc[testIX].label
-                
-                # print(f"obj={obj},altobj={altobj}")
-                # print(f"unique(trainY)={np.unique(trainY)}")
-                # print(f"unique(testY)={np.unique(testY)}")
-                # assert len(np.unique(trainY))==2
 
-                if testRun:
-                    trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
-                    testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
-                else:
-                    trainIX = ((META['label']==obj) | (META['label']==altobj))
-                    testIX = ((META['label']==obj) | (META['label']==altobj))
+                trainIX = ((META['label']==obj) | (META['label']==altobj))
+                testIX = ((META['label']==obj) | (META['label']==altobj))
+
                 # pull training and test data
                 trainX = FEAT[trainIX]
                 testX = FEAT[testIX]
                 trainY = META.iloc[np.asarray(trainIX)].label
                 testY = META.iloc[np.asarray(testIX)].label
 
-                # print(f"obj={obj},altobj={altobj}")
-                # print(f"unique(trainY)={np.unique(trainY)}")
-                # print(f"unique(testY)={np.unique(testY)}")
                 assert len(np.unique(trainY))==2
 
-                # # If you're selecting high-importance features, this bit handles that
-                # if include < 1:
-                #     trainX = trainX[:, obj_inds[-nvox:]]
-                #     testX = testX[:, obj_inds[-nvox:]]
-                
                 # Train your classifier
                 clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
                                             multi_class='multinomial').fit(trainX, trainY)
@@ -385,85 +505,8 @@ def minimalClass(cfg,testRun=None):
                 acc = clf.score(testX, testY)
                 print(naming, acc)
                 accs[naming]=acc
-
     print(f"average 2 way clf accuracy={np.mean(list(accs.values()))}")
-    # def evidence(trainX,trainY):
-    #     # def classifierEvidence(clf,X,Y):
-    #     #     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-    #     #     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-    #     #     # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
-    #     #     return np.asarray(Evidence)
-    #     FEAT=trainX
-    #     META=trainY
-        
-    #     A_ID = META['label']=='bed'
-    #     X = FEAT[A_ID]
 
-    #     print("floor")
-    #     # D evidence for AD_clf when A is presented.
-    #     Y = 'bench'
-    #     AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-    #     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
-    #     evidence_floor = np.mean(AD_D_evidence)
-    #     print(f"D evidence for AD_clf when A is presented={evidence_floor}")
-
-    #     # C evidence for AC_clf when A is presented.
-    #     Y = 'table'
-    #     AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
-    #     AC_C_evidence = classifierEvidence(AC_clf,X,Y)
-    #     evidence_floor = np.mean(AC_C_evidence)
-    #     print(f"C evidence for AC_clf when A is presented={evidence_floor}")
-
-
-    #     # D evidence for CD_clf when A is presented.
-    #     Y = 'bench'
-    #     CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-    #     CD_D_evidence = classifierEvidence(CD_clf,X,Y)
-    #     evidence_floor = np.mean(CD_D_evidence)
-    #     print(f"D evidence for CD_clf when A is presented={evidence_floor}")
-
-    #     # C evidence for CD_clf when A is presented.
-    #     Y = 'table'
-    #     CD_clf=joblib.load(cfg.trainingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-    #     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
-    #     evidence_floor = np.mean(CD_C_evidence)
-    #     print(f"C evidence for CD_clf when A is presented={evidence_floor}")
-
-    #     # since this subject has CD_clf C evidence systematically too high(sometimes higher than AC_clf A evidence or AD_clf A evidence), I choose to use 0 as the floor
-    #     evidence_floor = 0
-
-
-
-
-    #     print("ceil")
-    #     # evidence_ceil  is A evidence in AC and AD classifier
-    #     Y = 'bed'
-    #     AC_clf=joblib.load(cfg.trainingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
-    #     AC_A_evidence = classifierEvidence(AC_clf,X,Y)
-    #     evidence_ceil1 = AC_A_evidence
-    #     print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
-
-    #     Y = 'bed'
-    #     AD_clf=joblib.load(cfg.trainingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-    #     AD_A_evidence = classifierEvidence(AD_clf,X,Y)
-    #     evidence_ceil2 = AD_A_evidence
-    #     print(f"A evidence in AD_clf when A is presented={np.mean(evidence_ceil2)}")
-
-    #     # evidence_ceil = np.mean(evidence_ceil1)
-    #     # evidence_ceil = np.mean(evidence_ceil2)
-    #     evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
-    #     print(f"evidence_ceil={evidence_ceil}")
-
-    #     mu = (evidence_ceil+evidence_floor)/2
-    #     sig = (evidence_ceil-evidence_floor)/2.3548
-    #     print(f"floor={evidence_floor}, ceil={evidence_ceil}")
-    #     print(f"mu={mu}, sig={sig}")
-
-
-    # # print the evidence using model training data
-    # evidence(FEAT,META)
-    # print the evidence using model testing data
-    
     return accs
                 
 
@@ -491,13 +534,17 @@ def behaviorDataLoading(cfg,curr_run):
     # extract the labels which is selected by the subject and coresponding TR and time
     behav_data = behav_data[['TR', 'image_on', 'Resp',  'Item']] # the TR, the real time it was presented, 
 
+    # 为了处理 情况 A.被试的反应慢了一个TR，或者 B.两个按钮都被按了(这种情况下按照第二个按钮处理)
+    # 现在的问题是”下一个TR“可能超过了behav_data的长度
     # this for loop is to deal with the situation where Resp is late for 1 TR, or two buttons are pressed. 
     # when Resp is late for 1 TR, set the current Resp as the later Response.
     # when two buttons are pressed, set the current Resp as the later Response because the later one should be the real choice
     for curr_trial in range(behav_data.shape[0]):
         if behav_data['Item'].iloc[curr_trial]  in ["A","B","C","D"]:
-            if behav_data['Resp'].iloc[curr_trial+1] in [1.0,2.0]:
-                behav_data['Resp'].iloc[curr_trial]=behav_data['Resp'].iloc[curr_trial+1]
+            if curr_trial+1<behav_data.shape[0]: # 为了防止”下一个TR“超过behav_data的长度  中文
+                if behav_data['Resp'].iloc[curr_trial+1] in [1.0,2.0]:
+                    behav_data['Resp'].iloc[curr_trial]=behav_data['Resp'].iloc[curr_trial+1]
+
 
     behav_data=behav_data.dropna(subset=['Item'])
 
@@ -514,120 +561,6 @@ def behaviorDataLoading(cfg,curr_run):
     return behav_data
 
 
-
-
-def recognition_preprocess_2run(cfg,run_asTemplate): 
-    '''
-    purpose: 
-        prepare the data for 2 recognition runs     (to later(not in this function) get the morphing target function)
-        find the functional template image for current session
-    steps:
-        convert all dicom files into nii files in the temp dir. 
-        find the middle volume of the run1 as the template volume, convert this to the previous template volume space and save the converted file as today's functional template (templateFunctionalVolume)
-        align every other functional volume with templateFunctionalVolume (3dvolreg)
-    '''
-    from shutil import copyfile
-    from rtCommon.imageHandling import convertDicomFileToNifti
-    # convert all dicom files into nii files in the temp dir. 
-    tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
-    dicomFiles=glob(f"{cfg.dicom_dir}/*.dcm") ; dicomFiles.sort()
-    for curr_dicom in dicomFiles:
-        # dicomImg = readDicomFromFile(curr_dicom) # read dicom file
-        dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}"
-        copyfile(curr_dicom,dicomFilename)
-        niftiFilename = dicomFilename[:-4]+'.nii'
-        convertDicomFileToNifti(dicomFilename, niftiFilename)
-        # convertDicomImgToNifti(dicomImg, dicomFilename=f"{tmp_dir}{curr_dicom.split('/')[-1]}") #convert dicom to nii    
-        # os.remove(f"{tmp_dir}/{curr_dicom.split('/')[-1]}") # remove temp dcm file
-
-    # find the middle volume of the run1 as the template volume
-    # here you are assuming that the first run is a good run
-    run_asTemplate=str(run_asTemplate).zfill(6)
-    tmp=glob(f"{tmp_dir}001_{run_asTemplate}*.nii") ; tmp.sort()
-    # print(f"all nii files: {tmp}")
-    # call(f"cp {tmp[int(len(tmp)/2)]} {cfg.recognition_dir}t.nii", shell=True)
-
-    # convert cfg.templateFunctionalVolume to the previous template volume space 
-    cmd=f"flirt -ref {cfg.templateFunctionalVolume} \
-        -in {tmp[int(len(tmp)/2)]} \
-        -out {cfg.templateFunctionalVolume_converted}"
-    print(cmd)
-    call(cmd,shell=True) 
-        
-    # align every other functional volume with templateFunctionalVolume (3dvolreg)
-    allTRs=glob(f"{tmp_dir}001_*.nii") ; allTRs.sort()
-
-    # select a list of run IDs based on the runRecording.csv, actualRuns would be [1,2] is the 1st and the 3rd runs are recognition runs.
-    runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
-    actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])])[:2]
-    for curr_run in actualRuns:
-        if not (os.path.exists(f"{cfg.recognition_dir}run{curr_run}.nii.gz") and os.path.exists(f"{cfg.recognition_dir}run{curr_run}.nii")):
-            outputFileNames=[]
-            runTRs=glob(f"{tmp_dir}001_{str(curr_run).zfill(6)}_*.nii") ; runTRs.sort()
-            for curr_TR in runTRs:
-                command = f"3dvolreg \
-                    -base {cfg.templateFunctionalVolume_converted} \
-                    -prefix  {curr_TR[0:-4]}_aligned.nii \
-                    {curr_TR}"
-                call(command,shell=True)
-                outputFileNames.append(f"{curr_TR[0:-4]}_aligned.nii")
-            files=''
-            for f in outputFileNames:
-                files=files+' '+f
-            command=f"fslmerge -t {cfg.recognition_dir}run{curr_run}.nii {files}"
-            print('running',command)
-            call(command, shell=True)
-
-    # remove the tmp folder
-    shutil.rmtree(tmp_dir)
-            
-    '''
-    for each run, 
-        load behavior data 
-        push the behavior data back for 2 TRs
-        save the brain TRs with images
-        save the behavior data
-    '''
-
-    for curr_run_behav,curr_run in enumerate(actualRuns):
-        # load behavior data
-        behav_data = behaviorDataLoading(cfg,curr_run_behav+1)
-
-        # brain data is first aligned by pushed back 2TR(4s)
-        brain_data = nib.load(f"{cfg.recognition_dir}run{curr_run}.nii.gz").get_data() ; brain_data=np.transpose(brain_data,(3,0,1,2))
-        Brain_TR=np.arange(brain_data.shape[0])
-        Brain_TR = Brain_TR+2
-
-        # select volumes of brain_data by counting which TR is left in behav_data
-        Brain_TR=Brain_TR[list(behav_data['TR'])] # original TR begin with 0
-        if Brain_TR[-1]>=brain_data.shape[0]: # when the brain data is not as long as the behavior data, delete the last row
-            Brain_TR = Brain_TR[:-1]
-            behav_data = behav_data.drop([behav_data.iloc[-1].TR])
-        brain_data=brain_data[Brain_TR]
-        np.save(f"{cfg.recognition_dir}brain_run{curr_run}.npy", brain_data)
-        # save the behavior data
-        behav_data.to_csv(f"{cfg.recognition_dir}behav_run{curr_run}.csv")
-
-
-# def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
-#     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
-#     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-#     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-#     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (-(X@clf.coef_.T+clf.intercept_))
-#     Evidence = 1/(1+np.exp(-Evidence))
-#     return np.asarray(Evidence)
-
-# def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y)*1==1)[0][0]
-#     p = clf.predict_proba(X)[:,ID]
-#     BX=np.log(p/(1-p))
-#     return BX
-
-# def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y)*1==1)[0][0]
-#     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-#     # Evidence=(X@clf.coef_.T+clf.intercept_) if ID==0 else (-(X@clf.coef_.T+clf.intercept_))
-#     return np.asarray(Evidence)
 
 def classifierProb(clf,X,Y):
     ID=np.where((clf.classes_==Y)*1==1)[0][0]
@@ -708,8 +641,8 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 
 
     from rtCommon.cfg_loading import mkdir,cfg_loading
-    config="sub001.ses1.toml"
-    cfg = cfg_loading(config)
+    # config="sub001.ses1.toml"
+    # cfg = cfg_loading(config)
 
     subject,dataSource,roiloc,N=cfg.subjectName,"realtime","schaefer2018",N
     # subject,dataSource,roiloc,N=sys.argv[1],sys.argv[2],sys.argv[3],int(sys.argv[4])
@@ -723,7 +656,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 
     topN = load_obj(f"{cfg.recognition_expScripts_dir}top{N}ROIs")
     print(f"len(topN)={len(topN)}")
-    print(f"topN={topN}")
+    print(f"GMschaefer_ topN loaded from neurosketch={topN}")
 
     def Wait(waitfor, delay=1):
         while not os.path.exists(waitfor):
@@ -777,7 +710,6 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
         t=list(t['Item'])
         behav_data.append(t)
-
     for ii,run in enumerate(actualRuns_preDay): # load behavior and brain data for previous session
         t = np.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session-1}/recognition/brain_run{run}.npy")
         t = normalize(t)
@@ -948,10 +880,6 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     GreedyBestAcc=np.zeros((len(subjects),N+1))
     GreedyBestAcc[GreedyBestAcc==0]=None
     for ii,subject in enumerate(subjects):
-    #     try:
-    #         GreedyBestAcc[ii,40]=np.load("./{}/{}/output/top{}.npy".format(roiloc, subject, N))
-    #     except:
-    #         pass
         for len_topN_1 in range(N-1,0,-1):
             try:
                 # print(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
@@ -961,6 +889,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
                 pass
     GreedyBestAcc=GreedyBestAcc.T
 
+    # import matplotlib.pyplot as plt
     # plt.imshow(GreedyBestAcc)
     # _=plt.figure()
     # for i in range(GreedyBestAcc.shape[0]):
@@ -970,13 +899,15 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     performance_mean = np.nanmean(GreedyBestAcc,axis=1)
     bestID=np.where(performance_mean==max(performance_mean))[0][0]
     di = load_obj(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{bestID+1}")
+    print(f"bestID={bestID}; best Acc = {di['bestAcc']}")
     mask = getMask(di['bestROIs'],cfg)
     np.save(cfg.chosenMask,mask)
     return 0
 
 def AdaptiveThreshold(cfg,ThresholdLog):
+    ThresholdLog_curr_ses=ThresholdLog[ThresholdLog['session']==cfg.session]
     ThresholdList = list(ThresholdLog['threshold'])
-    SuccessList = list(ThresholdLog["successful_trials"]) #成功列表
+    SuccessList = list(ThresholdLog_curr_ses["successful_trials"]) #成功列表
 
     # 如果现在是第1个session的第一个feedback training run
     # threshold=0.6
@@ -991,44 +922,51 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         except:
             threshold=0.6 #在极端情况下，我可能第二个session没有能够运行feedback session，就必须在第三个session的时候的第一个run才产生第一个threshold
     else:
+        change = 0
         threshold=ThresholdList[-1]
 
         # 如果之前的1个run的进步是<=1
         # threshold=threshold-5%
         if SuccessList[-1] <= 1:
-            threshold=threshold - 0.05
+            change = change - 0.05
 
         # 如果之前的1个run的进步全部>=11
         # threshold=threshold+5%
-        elif SuccessList[-1] >= 11:
-            threshold=threshold + 0.05
+        if SuccessList[-1] >= 11:
+            change = change + 0.05
 
-        elif len(SuccessList)>=3:
+        if len(SuccessList)>=3:
             # 如果之前的3个run的进步全部<=3
             # threshold=threshold-5%
             if SuccessList[-1] <= 3 and SuccessList[-2] <= 3 and SuccessList[-3] <= 3:
-                threshold=threshold - 0.05
+                change = change - 0.05
 
             # 如果之前的3个run的进步全部>=9
             # threshold=threshold+5%
             elif SuccessList[-1] >= 9 and SuccessList[-2] >= 9 and SuccessList[-3] >= 9:
-                threshold=threshold - 0.05
+                change = change + 0.05
 
-        elif len(SuccessList)>=5:
+        if len(SuccessList)>=5:
             # 如果之前的5个run的进步全部<=5
             # threshold=threshold-5%
             if SuccessList[-1] <= 5 and SuccessList[-2] <= 5 and SuccessList[-3] <= 5 and SuccessList[-4] <= 5 and SuccessList[-5] <= 5:
-                threshold=threshold - 0.05
+                change = change - 0.05
 
             # 如果之前的5个run的进步全部>=7
             # threshold=threshold+5%
             elif SuccessList[-1] >= 7 and SuccessList[-2] >= 7 and SuccessList[-3] >= 7 and SuccessList[-4] >= 7 and SuccessList[-5] >= 7:
-                threshold=threshold - 0.05
+                change = change + 0.05
 
         # 如果之前的任意个run的进步全部【6】
         # threshold=threshold
-        else:
-            threshold=threshold
+        if SuccessList[-1] == 6:
+            change = 0
+
+        if change > 0.05:
+            change = 0.05
+        if change < -0.05:
+            change = -0.05
+        threshold = threshold + change
 
     # 不要越界
     if threshold>0.9:
@@ -1036,6 +974,11 @@ def AdaptiveThreshold(cfg,ThresholdLog):
     if threshold<0.4:
         threshold=0.4
 
+    # 如果这个run已经跑过了，给出这个error提醒。
+    print(f"len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==cfg.run)])={len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==cfg.run)])}")
+    if len(ThresholdLog[(ThresholdLog['session']==cfg.session) & (ThresholdLog['run']==cfg.run)])>0: #more robust than     # if ThresholdLog['session'].iloc[-1]==cfg.session and ThresholdLog['run'].iloc[-1]==cfg.run:
+        print(f"this run exists! edit {cfg.adaptiveThreshold}")
+        raise Exception(f"this run exists! edit {cfg.adaptiveThreshold}") 
 
     ThresholdLog = ThresholdLog.append({
         'sub':cfg.subjectName, 
@@ -1043,225 +986,5 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         'run':cfg.run, 
         'threshold':threshold},
         ignore_index=True)
+
     return ThresholdLog
-
-# def morphingTarget(cfg):
-#     '''
-#     purpose:
-#         get the morphing target function
-#     steps:
-#         load train clf
-#         load brain data and behavior data
-#         get the morphing target function
-#             evidence_floor is C evidence for CD classifier(can also be D evidence for CD classifier)
-#             evidence_ceil  is A evidence in AC and AD classifier
-#     '''
-
-#     import os
-#     import numpy as np
-#     import pandas as pd
-#     import joblib
-#     import nibabel as nib
-
-
-
-#     if 'milgram' in os.getcwd():
-#         main_dir='/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/'
-#     else:
-#         main_dir='/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/'
-
-#     working_dir=main_dir
-#     os.chdir(working_dir)
-
-#     runRecording = pd.read_csv(f"{cfg.recognition_dir}../runRecording.csv")
-#     actualRuns = list(runRecording['run'].iloc[list(np.where(1==1*(runRecording['type']=='recognition'))[0])]) # can be [1,2,3,4,5,6,7,8] or [1,2,4,5]
-
-#     objects = ['bed', 'bench', 'chair', 'table']
-
-#     for ii,run in enumerate(actualRuns[:2]): # load behavior and brain data for current session
-#         t = np.load(f"{cfg.recognition_dir}brain_run{run}.npy")
-#         # mask = nib.load(f"{cfg.chosenMask}").get_data()
-#         mask = np.load(cfg.chosenMask)
-#         t = t[:,mask==1]
-#         t = normalize(t)
-#         brain_data=t if ii==0 else np.concatenate((brain_data,t), axis=0)
-
-#         t = pd.read_csv(f"{cfg.recognition_dir}behav_run{run}.csv")
-#         behav_data=t if ii==0 else pd.concat([behav_data,t])
-
-#     # FEAT=brain_data.reshape(brain_data.shape[0],-1)
-#     FEAT=brain_data
-#     print("FEAT.shape=",FEAT.shape)
-#     assert len(FEAT.shape)==2
-#     # FEAT_mean=np.mean(FEAT,axis=1)
-#     # FEAT=(FEAT.T-FEAT_mean).T
-#     # FEAT_mean=np.mean(FEAT,axis=0)
-#     # FEAT=FEAT-FEAT_mean
-
-#     META=behav_data
-
-#     # convert item colume to label colume
-#     imcodeDict={
-#     'A': 'bed',
-#     'B': 'chair',
-#     'C': 'table',
-#     'D': 'bench'}
-#     label=[]
-#     for curr_trial in range(META.shape[0]):
-#         label.append(imcodeDict[META['Item'].iloc[curr_trial]])
-#     META['label']=label # merge the label column with the data dataframe
-
-
-
-
-#     def clf_score(obj,altobj,clf,FEAT,META): # obj is A, altobj is B, clf is AC_clf
-#         ID = (META['label']==imcodeDict[obj]) | (META['label']==imcodeDict[altobj])
-#         X = FEAT[ID]
-#         Y = META['label'][ID]
-#         acc = clf.score(X, Y)
-#         print(f"{obj}{altobj}_clf accuracy = {acc}")
-
-#     A_ID = (META['label']=='bed')
-#     X = FEAT[A_ID]
-
-#     # evidence_floor is C evidence for AC_CD BC_CD CD_CD classifier(can also be D evidence for CD classifier)
-
-
-
-
-#     #try out other forms of floor: C evidence in AC and D evidence for AD
-
-#     # imcodeDict={
-#     # 'A': 'bed',
-#     # 'B': 'chair',
-#     # 'C': 'table',
-#     # 'D': 'bench'}
-
-#     # this part is to know the performance of BC and BD clf on current day to judge whether to use both clf in realtime.
-#     print("BC_clf BD_clf accuracy")
-
-#     BC_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairtable.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-#     clf_score("B","C",BC_clf,FEAT,META)
-#     B_ID = (META['label']=='chair')
-#     BC_B_evidence = np.mean(classifierEvidence(BC_clf,FEAT[B_ID],'chair'))
-#     print(f"B evidence for BC_clf when B is presented={BC_B_evidence}")
-
-#     BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-#     clf_score("B","D",BD_clf,FEAT,META)
-#     B_ID = (META['label']=='chair')
-#     BD_B_evidence = np.mean(classifierEvidence(BD_clf,FEAT[B_ID],'chair'))
-#     print(f"B evidence for BD_clf when B is presented={BD_B_evidence}")
-
-#     print()
-
-#     print("floor")
-#     # D evidence for AD_clf when A is presented.
-#     Y = 'bench'
-#     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-#     clf_score("A","D",AD_clf,FEAT,META)
-#     AD_D_evidence = classifierEvidence(AD_clf,X,Y)
-#     evidence_floor = np.mean(AD_D_evidence)
-#     print(f"D evidence for AD_clf when A is presented={evidence_floor}")
-
-#     # C evidence for AC_clf when A is presented.
-#     Y = 'table'
-#     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
-#     clf_score("A","C",AC_clf,FEAT,META)
-#     AC_C_evidence = classifierEvidence(AC_clf,X,Y)
-#     evidence_floor = np.mean(AC_C_evidence)
-#     print(f"C evidence for AC_clf when A is presented={evidence_floor}")
-
-
-#     # D evidence for CD_clf when A is presented.
-#     Y = 'bench'
-#     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-#     clf_score("C","D",CD_clf,FEAT,META)
-#     CD_D_evidence = classifierEvidence(CD_clf,X,Y)
-#     evidence_floor = np.mean(CD_D_evidence)
-#     print(f"D evidence for CD_clf when A is presented={evidence_floor}")
-
-#     # C evidence for CD_clf when A is presented.
-#     Y = 'table'
-#     CD_clf=joblib.load(cfg.usingModel_dir +'bedbench_benchtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
-#     clf_score("C","D",CD_clf,FEAT,META)
-#     CD_C_evidence = classifierEvidence(CD_clf,X,Y)
-#     evidence_floor = np.mean(CD_C_evidence)
-#     print(f"C evidence for CD_clf when A is presented={evidence_floor}")
-#     evidence_floor = 0
-
-
-
-
-#     print("ceil")
-#     # evidence_ceil  is A evidence in AC and AD classifier
-#     Y = 'bed'
-#     AC_clf=joblib.load(cfg.usingModel_dir +'benchtable_tablebed.joblib') # These 4 clf are the same:   bedbench_bedtable.joblib bedchair_bedtable.joblib benchtable_tablebed.joblib chairtable_tablebed.joblib
-#     clf_score("A","C",AC_clf,FEAT,META)
-#     AC_A_evidence = classifierEvidence(AC_clf,X,Y)
-#     evidence_ceil1 = AC_A_evidence
-#     print(f"A evidence in AC_clf when A is presented={np.mean(evidence_ceil1)}")
-
-#     Y = 'bed'
-#     AD_clf=joblib.load(cfg.usingModel_dir +'bedchair_bedbench.joblib') # These 4 clf are the same:   bedchair_bedbench.joblib bedtable_bedbench.joblib benchchair_benchbed.joblib benchtable_benchbed.joblib
-#     clf_score("A","D",AD_clf,FEAT,META)
-#     AD_A_evidence = classifierEvidence(AD_clf,X,Y)
-#     evidence_ceil2 = AD_A_evidence
-#     print(f"A evidence in AD_clf when A is presented={np.mean(evidence_ceil2)}")
-
-#     # evidence_ceil = np.mean(evidence_ceil1)
-#     # evidence_ceil = np.mean(evidence_ceil2)
-#     evidence_ceil = np.mean((evidence_ceil1+evidence_ceil2)/2)
-#     print(f"evidence_ceil={evidence_ceil}")
-
-#     return evidence_floor, evidence_ceil
-
-#     # allpairs = itertools.combinations(objects,2)
-
-#     # # Iterate over all the possible target pairs of objects
-#     # for pair in allpairs:
-#     #     # Find the control (remaining) objects for this pair
-#     #     altpair = other(pair)
-       
-#     #     for obj in pair:
-#     #         # foil = [i for i in pair if i != obj][0]
-#     #         for altobj in altpair:
-                
-#     #             # establish a naming convention where it is $TARGET_$CLASSIFICATION
-#     #             # Target is the NF pair (e.g. bed/bench)
-#     #             # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
-#     #             naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
-              
-
-#     #             if testRun:
-#     #                 trainIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']!=int(testRun))
-#     #                 testIX = ((META['label']==obj) + (META['label']==altobj)) * (META['run_num']==int(testRun))
-#     #             else:
-#     #                 trainIX = ((META['label']==obj) + (META['label']==altobj))
-#     #                 testIX = ((META['label']==obj) + (META['label']==altobj))
-#     #             # pull training and test data
-#     #             trainX = FEAT[trainIX]
-#     #             testX = FEAT[testIX]
-#     #             trainY = META.iloc[np.asarray(trainIX)].label
-#     #             testY = META.iloc[np.asarray(testIX)].label
-
-#     #             print(f"obj={obj},altobj={altobj}")
-#     #             print(f"unique(trainY)={np.unique(trainY)}")
-#     #             print(f"unique(testY)={np.unique(testY)}")
-#     #             assert len(np.unique(trainY))==2
-
-#     #             # # If you're selecting high-importance features, this bit handles that
-#     #             # if include < 1:
-#     #             #     trainX = trainX[:, obj_inds[-nvox:]]
-#     #             #     testX = testX[:, obj_inds[-nvox:]]
-                
-#     #             # Train your classifier
-#     #             clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-#     #                                      multi_class='multinomial').fit(trainX, trainY)
-                
-#     #             model_folder = cfg.trainingModel_dir
-#     #             # Save it for later use
-#     #             joblib.dump(clf, model_folder +'/{}.joblib'.format(naming))
-                
-#     #             # Monitor progress by printing accuracy (only useful if you're running a test set)
-#     #             acc = clf.score(testX, testY)
-#     #             print(naming, acc)

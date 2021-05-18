@@ -73,7 +73,6 @@ rootPath = os.path.dirname(os.path.dirname(currPath))
 # add the path for the root directory to your python path so that you can import
 #   project modules from rt-cloud
 sys.path.append(rootPath)
-# import project modules from rt-cloud
 from rtCommon.utils import loadConfigFile, stringPartialFormat
 from rtCommon.clientInterface import ClientInterface
 from rtCommon.imageHandling import readRetryDicomFromDataInterface, convertDicomImgToNifti
@@ -81,32 +80,7 @@ from rtCommon.dataInterface import DataInterface #added by QL
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
 from recognition_dataAnalysisFunctions import normalize,classifierProb
 
-# def classifierEvidence(clf,X,Y): # X shape is [trials,voxelNumber], Y is ['bed', 'bed'] for example # return a 1-d array of probability
-#     # This function get the data X and evidence object I want to know Y, and output the trained model evidence.
-#     targetID=[np.where((clf.classes_==i)==True)[0][0] for i in Y]
-#     # Evidence=(np.sum(X*clf.coef_,axis=1)+clf.intercept_) if targetID[0]==1 else (1-(np.sum(X*clf.coef_,axis=1)+clf.intercept_))
-#     Evidence=(X@clf.coef_.T+clf.intercept_) if targetID[0]==1 else (1-(X@clf.coef_.T+clf.intercept_))
-#     Evidence = 1/(1+np.exp(-Evidence))
-#     # Evidence = sigmoid(Evidence)
-#     return np.asarray(Evidence)
-
-# def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y[0])*1==1)
-#     p = clf.predict_proba(X)[:,ID]
-#     BX=np.log(p/(1-p))
-#     return BX
-
-# def classifierEvidence(clf,X,Y):
-#     ID=np.where((clf.classes_==Y[0])*1==1)[0][0]
-#     Evidence=(X@clf.coef_.T+clf.intercept_) if ID==1 else (-(X@clf.coef_.T+clf.intercept_))
-#     return np.asarray(Evidence)
-
 sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/')
-
-# def gaussian(x, mu, sig):
-#     # mu and sig is determined before each neurofeedback session using 2 recognition runs.
-#     return round(1+18*(1 - np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))))) # map from (0,1) -> [1,19]
-
 
 
 # obtain the full path for the configuration toml file
@@ -141,7 +115,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     runNum = cfg.runNum[0]
 
     print(f"Doing run {runNum}, scan {scanNum}")
-
+    print(f"cfg.dicomDir={cfg.dicomDir}")
     """
     Before we get ahead of ourselves, we need to make sure that the necessary file
         types are allowed (meaning, we are able to read them in)... in this example,
@@ -202,7 +176,6 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
             print(f"cfg.dicom_dir={cfg.dicom_dir}, cfg.dicomNamePattern={cfg.dicomNamePattern}, \
                 cfg.minExpectedDicomSize={cfg.minExpectedDicomSize}")
         dataInterface.initWatch(cfg.dicomDir, dicomScanNamePattern, cfg.minExpectedDicomSize)
-
     else:  # use Stream functions
         """
         Initialize a Dicom stream by indicating the directory and dicom file pattern that
@@ -258,56 +231,47 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
     tmp_dir=f"{cfg.tmp_folder}{time.time()}/" ; mkdir(tmp_dir)
     mask=np.load(cfg.chosenMask)
 
-    # load clf
-    # [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
-    # print(f"mu={mu},sig={sig}")
-    # def sigmoid(z):
-    #     return 1.0 / (1.0 + np.exp(-z))
-    # getting MorphingParameter: 
-    # which clf to load? 
-    # B evidence in BC/BD classifier for currt TR
-
-
 
     BC_clf=joblib.load(cfg.usingModel_dir +'benchchair_chairtable.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
     BD_clf=joblib.load(cfg.usingModel_dir +'bedchair_chairbench.joblib') # These 4 clf are the same: bedbench_benchtable.joblib bedtable_tablebench.joblib benchchair_benchtable.joblib chairtable_tablebench.joblib
 
     # where the morphParams are saved
-    output_textFilename = f'{cfg.feedback_dir}B_probs_{scanNum}.txt'
+    # output_textFilename = f'{cfg.feedback_dir}B_probs_{scanNum}.txt'
     output_matFilename = os.path.join(f'{cfg.feedback_dir}B_probs_{scanNum}.mat')
     
     
 
     num_total_trials=12
-    num_total_TRs = int((num_total_trials*28+12)/2)  # number of TRs to use for example 1
+    num_total_TRs = int((num_total_trials*28+12)/2) + 8  # number of TRs to use for example 1
     # morphParams = np.zeros((num_total_TRs, 1))
     B_probs=[]
     maskedData=0
+    processedTime=[] # for each this_TR (in dicom folder TR start from 1)
     for this_TR in np.arange(1,num_total_TRs):
+        print(f"milgramTR_ID={this_TR}")
         # declare variables that are needed to use 'readRetryDicomFromFileInterface'
         timeout_file = 5 # small number because of demo, can increase for real-time
         dicomFilename = dicomScanNamePattern.format(TR=this_TR)
-
+        processing_start_time=time.time()
         if useInitWatch is True:
             """
-            Use 'readRetryDicomFromDataInterface' in 'imageHandling.py' to wait for dicom
-                files to be written by the scanner (uses 'watchFile' internally) and then
-                reading the dicom file once it is available.
-            INPUT:
-                [1] dataInterface (allows a cloud script to access files from the
-                    control room computer)
-                [2] filename (the dicom file we're watching for and want to load)
-                [3] timeout (time spent waiting for a file before timing out)
-            OUTPUT:
-                [1] dicomData (with class 'pydicom.dataset.FileDataset')
-            """
+                Use 'readRetryDicomFromDataInterface' in 'imageHandling.py' to wait for dicom
+                    files to be written by the scanner (uses 'watchFile' internally) and then
+                    reading the dicom file once it is available.
+                INPUT:
+                    [1] dataInterface (allows a cloud script to access files from the
+                        control room computer)
+                    [2] filename (the dicom file we're watching for and want to load)
+                    [3] timeout (time spent waiting for a file before timing out)
+                OUTPUT:
+                    [1] dicomData (with class 'pydicom.dataset.FileDataset')
+                """
             print(f'Processing TR {this_TR}')
             if verbose:
                 print("• use 'readRetryDicomFromDataInterface' to read dicom file for",
                     "TR %d, %s" %(this_TR, dicomFilename))
             dicomData = readRetryDicomFromDataInterface(dataInterface, dicomFilename,
                 timeout_file)  
-
         else:  # use Stream functions
             """
             Use dataInterface.getImageData(streamId) to query a stream, waiting for a 
@@ -330,8 +294,7 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
 
         if dicomData is None:
             print('Error: getImageData returned None')
-            return
-                    
+            return         
         dicomData.convert_pixel_data()
 
         # use 'dicomreaders.mosaic_to_nii' to convert the dicom data into a nifti
@@ -383,11 +346,9 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         _maskedData = normalize(maskedData)
 
         print(f"_maskedData.shape={_maskedData.shape}")
-        # print(f"X.shape={X.shape}")
+
         X = np.expand_dims(_maskedData[-1], axis=0)
-        # print(f"X.shape={X.shape}")
-        # print(f"X={X}")
-        
+
         Y = 'chair'
         # imcodeDict={
         # 'A': 'bed',
@@ -402,9 +363,6 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         print(f"BD_B_prob={BD_B_prob}")
         B_prob = float((BC_B_prob+BD_B_prob)/2)
         print(f"B_prob={B_prob}")
-        # print(f"mu={mu}, sig={sig}")
-        # morphParam=int(gaussian(B_evidence, mu, sig))
-
         
         B_probs.append(B_prob)
         # print(f"morphParam={morphParam}")
@@ -428,26 +386,25 @@ def doRuns(cfg, dataInterface, subjInterface, webInterface):
         # save the activations value info into a vector that can be saved later
         # morphParams[this_TR] = morphParam
 
-        dataInterface.putFile(output_textFilename,str(B_probs))
+        # dataInterface.putFile(output_textFilename,str(B_probs))
         np.save(f'{cfg.feedback_dir}B_probs_{scanNum}',B_probs)
-        
-
-        
-        # time.sleep(1.5)
-
+        processing_end_time=time.time()
+        print(f"{processing_end_time-processing_start_time} s passes when processing")
+        processedTime.append(processing_end_time-processing_start_time)
+        np.save(f'{cfg.feedback_dir}processedTime_scan{scanNum}',processedTime)
     # create the full path filename of where we want to save the activation values vector
     #   we're going to save things as .txt and .mat files
-    
 
     # use 'putTextFile' from 'fileClient.py' to save the .txt file
     #   INPUT:
     #       [1] filename (full path!)
     #       [2] data (that you want to write into the file)
-    if verbose:
-        print(""
-        "-----------------------------------------------------------------------------\n"
-        "• save activation value as a text file to tmp folder")
-    dataInterface.putFile(output_textFilename,str(B_probs))
+
+    # if verbose:
+    #     print(""
+    #     "-----------------------------------------------------------------------------\n"
+    #     "• save activation value as a text file to tmp folder")
+    # dataInterface.putFile(output_textFilename,str(B_probs))
 
     # use sio.save mat from scipy to save the matlab file
     if verbose:
@@ -490,6 +447,7 @@ def main(argv=None):
     argParser.add_argument('--Verbose', '-v', default=False, action='store_true',
                            help='print verbose output')
 
+
     args = argParser.parse_args(argv)
 
     useInitWatch = args.useInitWatch
@@ -497,7 +455,10 @@ def main(argv=None):
 
     # load the experiment configuration file
     print(f"rtSynth_rt: args.config={args.config}")
-    cfg = cfg_loading(args.config)
+    if False:
+        cfg = cfg_loading(args.config,trying="trying")
+    else:
+        cfg = cfg_loading(args.config)
 
 
     # override config file run and scan values if specified
@@ -557,19 +518,3 @@ if __name__ == "__main__":
     main()
     sys.exit(0)
 
-
-# def monitor(scnNum,config="sub001.ses3.toml"):
-#     cfg = cfg_loading(config)
-#     [mu,sig]=np.load(f"{cfg.feedback_dir}morphingTarget.npy")
-# #     sig=0.5
-#     B_evidences = np.load(f'{cfg.feedback_dir}B_evidences_{scnNum}.npy')
-#     plt.plot(B_evidences)
-#     plt.plot(np.arange(0,150),150*[mu])
-#     plt.plot(np.arange(0,150),150*[mu+3*sig])
-#     plt.plot(np.arange(0,150),150*[mu-3*sig])
-#     print(f"mu={mu},sig={sig}")
-
-#     _=plt.figure()
-#     morphParam=[int(gaussian(B_evidence, mu, sig)) for B_evidence in B_evidences]
-#     plt.plot(morphParam)
-# monitor(2,config="sub001.ses2.toml")
