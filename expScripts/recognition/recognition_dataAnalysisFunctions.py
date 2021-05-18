@@ -905,8 +905,9 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     return 0
 
 def AdaptiveThreshold(cfg,ThresholdLog):
+    ThresholdLog_curr_ses=ThresholdLog[ThresholdLog['session']==cfg.session]
     ThresholdList = list(ThresholdLog['threshold'])
-    SuccessList = list(ThresholdLog["successful_trials"]) #成功列表
+    SuccessList = list(ThresholdLog_curr_ses["successful_trials"]) #成功列表
 
     # 如果现在是第1个session的第一个feedback training run
     # threshold=0.6
@@ -921,44 +922,51 @@ def AdaptiveThreshold(cfg,ThresholdLog):
         except:
             threshold=0.6 #在极端情况下，我可能第二个session没有能够运行feedback session，就必须在第三个session的时候的第一个run才产生第一个threshold
     else:
+        change = 0
         threshold=ThresholdList[-1]
 
         # 如果之前的1个run的进步是<=1
         # threshold=threshold-5%
         if SuccessList[-1] <= 1:
-            threshold=threshold - 0.05
+            change = change - 0.05
 
         # 如果之前的1个run的进步全部>=11
         # threshold=threshold+5%
-        elif SuccessList[-1] >= 11:
-            threshold=threshold + 0.05
+        if SuccessList[-1] >= 11:
+            change = change + 0.05
 
-        elif len(SuccessList)>=3:
+        if len(SuccessList)>=3:
             # 如果之前的3个run的进步全部<=3
             # threshold=threshold-5%
             if SuccessList[-1] <= 3 and SuccessList[-2] <= 3 and SuccessList[-3] <= 3:
-                threshold=threshold - 0.05
+                change = change - 0.05
 
             # 如果之前的3个run的进步全部>=9
             # threshold=threshold+5%
             elif SuccessList[-1] >= 9 and SuccessList[-2] >= 9 and SuccessList[-3] >= 9:
-                threshold=threshold + 0.05
+                change = change + 0.05
 
-        elif len(SuccessList)>=5:
+        if len(SuccessList)>=5:
             # 如果之前的5个run的进步全部<=5
             # threshold=threshold-5%
             if SuccessList[-1] <= 5 and SuccessList[-2] <= 5 and SuccessList[-3] <= 5 and SuccessList[-4] <= 5 and SuccessList[-5] <= 5:
-                threshold=threshold - 0.05
+                change = change - 0.05
 
             # 如果之前的5个run的进步全部>=7
             # threshold=threshold+5%
             elif SuccessList[-1] >= 7 and SuccessList[-2] >= 7 and SuccessList[-3] >= 7 and SuccessList[-4] >= 7 and SuccessList[-5] >= 7:
-                threshold=threshold + 0.05
+                change = change + 0.05
 
         # 如果之前的任意个run的进步全部【6】
         # threshold=threshold
-        else:
-            threshold=threshold
+        if SuccessList[-1] == 6:
+            change = 0
+
+        if change > 0.05:
+            change = 0.05
+        if change < -0.05:
+            change = -0.05
+        threshold = threshold + change
 
     # 不要越界
     if threshold>0.9:
