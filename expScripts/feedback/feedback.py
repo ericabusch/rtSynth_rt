@@ -130,10 +130,7 @@ ThresholdLog = AdaptiveThreshold(cfg,ThresholdLog)
 ThresholdLog.to_csv(cfg.adaptiveThreshold, index=False)
 print(f"ThresholdLog = \n{ThresholdLog[['run','threshold','successful_trials']].to_string(index=False)}")
 
-if args.trying:
-    threshold=0.6
-else:
-    threshold = ThresholdLog['threshold'].iloc[-1]
+threshold = ThresholdLog['threshold'].iloc[-1]
 print(f"threshold={threshold}")
 
 # similation specific
@@ -462,7 +459,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
     if '0' in keys: # whenever you want to quit, type 0
         break
     if len(keys):
-        print(f"Scanner_TR_ID={TR[0]}")
+        print(f"Scanner_TR={TR[0]}")
         TR.pop(0)
         old_state=states[0]
         states.pop(0)
@@ -486,7 +483,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             if morphParam<1:
                 morphParam=1
             print("\n=============================================")
-            print(f'Scanner_TR_ID={TR[0]},rtcloud_trID={trID},parameter={morphParam},B_prob={B_prob},threshold={threshold}')
+            print(f'ScannerTR={TR[0]},rtcloud_TR={trID},parameter={morphParam},B_prob={round(B_prob,2)},threshold={round(threshold,2)},successful_trials={successful_trials}')
             print(f"{trialTime} passed since received '5' ")
             print(f"runId={runId}")
 
@@ -589,21 +586,22 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             design="design2"
             # 设计1：5个中的至少1个成功算作成功；0个算失败，1个算9号表情包，2个算5号表情包，3、4、5个算1号表情包
             if design=="design1":
-                if successful_TR >= 3:
-                    emoji(1) # perfect!
-                    monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
+                pass
+                # if successful_TR >= 3:
+                #     emoji(1) # perfect!
+                #     monetaryReward = display_monetaryReward("+15 ¢",monetaryReward)
                     
-                elif successful_TR ==2:
-                    emoji(5) # great job
-                    monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
+                # elif successful_TR ==2:
+                #     emoji(5) # great job
+                #     monetaryReward = display_monetaryReward("+10 ¢",monetaryReward)
                     
-                elif successful_TR ==1:
-                    emoji(9) # good try
-                    monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
+                # elif successful_TR ==1:
+                #     emoji(9) # good try
+                #     monetaryReward = display_monetaryReward("+5 ¢",monetaryReward)
                     
-                elif successful_TR ==0:
-                    emoji(13) # no luck
-                    monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
+                # elif successful_TR ==0:
+                #     emoji(13) # no luck
+                #     monetaryReward = display_monetaryReward("+0 ¢",monetaryReward)
             elif design=="design2":
                 if successful_TR >= 4:
                     emoji(1) # perfect!
