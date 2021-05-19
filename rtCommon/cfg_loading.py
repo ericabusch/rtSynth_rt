@@ -79,13 +79,14 @@ def cfg_loading(toml='',trying=""):
     cfg.adaptiveThreshold=f"{cfg.subjects_dir}{cfg.subjectName}/adaptiveThreshold.csv"
     # prepare folder structure
     mkdir(f"{cfg.subjects_dir}{cfg.subjectName}") # mkdir subject folder
-    for curr_ses in [1,5]:
+    for curr_ses in [1,5,6]: # keep 6 here just for sub002
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/catPer/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/anat/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/clf/")
-    
+        mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/feedback/") # keep this here just for sub002
+
     for curr_ses in [2,3,4]:
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/")
         mkdir(f"{cfg.subjects_dir}{cfg.subjectName}/ses{curr_ses}/recognition/")
