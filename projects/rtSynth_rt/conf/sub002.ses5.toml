@@ -13,13 +13,19 @@
 
 # for 8 recognition run on day5 ; 
 
+
 # subject Sheri Choi,
+# Date of birth: 11/24/1990
+# Height: 5 feet 3 inch
+# Weight: 125
+# Sex: female
+
 
 title = 'rtSynth_rt'
 
 session=5 # which session is this? which day is this on? could be 1 2 3 4 5 
 subjectDay = 5 #this is for the naming of web/conf/{subjactName}_day{subjectDay}_run{runNum}.toml
-subjectIDforxnat="rtSynth_sub002_ses5" #PATIENTID has to be unique for each subject
+subjectIDforxnat="rtSynth_sub002_ses5" # PATIENTID has to be unique for each subject
 preDay_YYYYMMDD="20210514" # can be "0" if there is no previous day for this session
 YYYYMMDD="20210518"
 
