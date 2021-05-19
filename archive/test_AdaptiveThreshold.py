@@ -116,7 +116,9 @@ for i,sub in enumerate(performance):
     plt.plot(sub)
     performances[i,0:len(sub)]=sub
 
+plt.figure()
 plt.imshow(performances)
 
+plt.figure()
 plt.plot(np.nanmean(performances,axis=0))
 plt.title("progress trace mean for all subjects")
