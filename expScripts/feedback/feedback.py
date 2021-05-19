@@ -484,10 +484,10 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                 morphParam=1
             print("\n=============================================")
             print(f'ScannerTR={TR[0]},rtcloud_TR={trID},parameter={morphParam},B_prob={round(B_prob,2)},threshold={round(threshold,2)},successful_trials={successful_trials}')
-            print(f"{trialTime} passed since received '5' ")
+            # print(f"{trialTime} passed since received '5' ")
             print(f"runId={runId}")
 
-            print(f"timestamp={timestamp}")
+            # print(f"timestamp={timestamp}")
             # update the image list to be shown based on the fetched parameter
 
             imagePaths=imageLists[morphParam] #list(imageLists[parameter])
