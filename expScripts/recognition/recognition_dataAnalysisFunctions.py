@@ -1100,9 +1100,12 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     return 0
 
 def AdaptiveThreshold(cfg,ThresholdLog):
-    ThresholdLog_curr_ses=ThresholdLog[ThresholdLog['session']==cfg.session]
+    # if Catalin_current_session_design:
+    #     ThresholdLog_curr_ses=ThresholdLog[ThresholdLog['session']==cfg.session]
+    #     SuccessList = list(ThresholdLog_curr_ses["successful_trials"]) #成功列表    
+
     ThresholdList = list(ThresholdLog['threshold'])
-    SuccessList = list(ThresholdLog_curr_ses["successful_trials"]) #成功列表
+    SuccessList = list(ThresholdLog["successful_trials"]) #成功列表
 
     # 如果现在是第1个session的第一个feedback training run
     # threshold=0.6
