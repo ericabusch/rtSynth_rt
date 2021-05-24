@@ -1,0 +1,1258 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+<script type="text/javascript"> // generate the image order and button order
+
+    /* Fisher-Yates shuffle */
+    function shuffle(o){
+        for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+        return o;
+    }
+
+    function numberList(m,n){
+        var foo = [];
+        for(var i = m; i < n; i++){
+            foo.push(i); 
+        }
+        return foo;
+    }
+
+    function id2image(_order){ //this function convert image ID to image, e.g. e.g. 123 to image A or image 1, 456 to image B or image 2)
+        clone = _order.slice()  
+        for (i = 0; i < 26; i++){
+            for (j = 0; j < clone.length; j++){
+                if (clone[j]>=(i*3) && clone[j]<(i*3+3)){
+                    clone[j]=i;
+                }
+            }
+        }
+        return clone;
+    }
+
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+
+    function checkNeighboringReplicate(clone){ //this function checks if there is neighboring replicate in a array, e.g. [1, 1, 2, 3] has 1 replication.
+        var zeroCount=0
+        // for (j = 1; j < clone.length; j++){
+        //     if (clone[j]==clone[j-1]){
+        //         zeroCount++;
+        //     }
+        // }
+        // 我发现对于9 grade design来说，这还不够，因为相邻的两个会比较相似，所以只要是相邻的也要算作重复，也就是说我的图片的编号有0-17。也就是说相邻两个的差必须大于1，除非他们俩分别是8和9。 0-8 9-17 中文
+        var t1112 = { 11:'xxxx', 12: 'xxxx'};
+        var t1314 = { 13: 'xxxx', 14: 'xxxx' };
+        for (j = 1; j < clone.length; j++){
+
+            if (Math.abs(clone[j] - clone[j-1]) < 3){
+                if (clone[j] == clone[j-1]){
+                    zeroCount++;
+                }
+                if ((clone[j] in t1112 && clone[j-1] in t1314) || (clone[j] in t1314 && clone[j-1] in t1112)){
+                    zeroCount=zeroCount;
+                } else{
+                    zeroCount++;
+                }
+                
+            }
+        }
+
+        if (zeroCount==0){
+            back2backRep_morph=false;
+        } else{
+            back2backRep_morph=true;
+        }
+        return back2backRep_morph;
+    }
+
+    var arraysMatch = function (arr1, arr2) {
+        // Check if the arrays are the same length
+        if (arr1.length !== arr2.length) return false;
+        // Check if all items exist and are in the same order
+        for (var i = 0; i < arr1.length; i++) {
+            if (arr1[i] !== arr2[i]) return false;
+        }
+        // Otherwise, return true
+        return true;
+    };
+
+    var subj=1
+    order=[]
+    var quarter=0
+    while (quarter<4){
+        back2backRep_morph=true //indicate that the same morph images are repeated back to back
+        back2backRep_cat=true //indicate that the images in the same cat are repeated back to back 
+        //Cat is defined as {'cat1':[A,B,C],'cat2':[D,E,F],'cat3':[G,H,I],'cat4':[J,K,L]}
+        while (back2backRep_morph){ // or back2backRep_cat: # only accept the order when both are false
+            _order=shuffle(numberList(0,78));
+            _order=id2image(_order);
+            back2backRep_morph=checkNeighboringReplicate(_order);
+        }
+
+        //check if this particular sequence already exists in generated orders
+        var exist=0;
+        for (i = 0; i < order.length; i++){
+            if (arraysMatch(order[i],_order)){
+                exist=1;
+            }
+        }
+        
+        // avoid tail-head repetion between two quaters
+        if (order.length>0){
+            if (order[order.length-1][order[order.length-1].length-1]==_order[0]){
+                exist=1; 
+            }
+        }
+        // if this particular sequence does not already exists in generated orders, store it
+        if (exist==0){
+            order.push(_order);
+            quarter++;
+        }
+    }
+
+    // convert to a single array
+    var order_all=[]
+    for (i=0; i<order.length;i++){
+        for (j=0;j<order[i].length;j++){
+            order_all.push(order[i][j]);
+        }
+    }
+    order=order_all; //order is the real image order
+
+
+    ImagePath=[]
+    Imagecat=[]
+    ButtonLeft=[]
+    ButtonRight=[]
+    Images=[]
+
+
+    // To change the "horizontal" "vertical" "diagonal" version, A, change the following line; B, change the `demoStageblock` in demo
+    currFurSpaceDirection="horizontal" // "horizontal" "vertical" "diagonal"
+
+    // initialize the view angle of each image randomly
+    viewPointOrder=[]
+    for (i=0;i<26;i++){
+        viewPointOrder.push(shuffle(numberList(1,14))) // possible range 0-39, so here is using 1-13, times 3 later to 3-39 in the range of 0-39
+    }
+    viewPointOrder_forSaving=viewPointOrder.slice()
+    var axes = {
+    "horizontal": ["bedChair", "tableBench"],
+    "vertical": ["benchBed","chairTable"],
+    "diagonal": ["chairBench","bedTable"]
+    };
+    var buttons = {
+    "horizontal": [{"left":"Bed","right":"Chair"},{"left":"Table","right":"Bench"}],
+    "vertical": [{"left":"Bench","right":"Bed"},{"left":"Chair","right":"Table"}],
+    "diagonal": [{"left":"Chair","right":"Bench"},{"left":"Bed","right":"Table"}]
+    };
+    ImageFolder="./carchair_exp_3axes/"
+
+    for (j=0;j<order.length;j++){
+        switch	(order[j]){
+            case 0:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_18_"+viewPointOrder[0].pop(0)*3+".png");
+            Images.push(0)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 1:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_26_"+viewPointOrder[1].pop(0)*3+".png");
+            Images.push(1)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 2:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_34_"+viewPointOrder[2].pop(0)*3+".png");
+            Images.push(2)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 3:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_38_"+viewPointOrder[3].pop(0)*3+".png");
+            Images.push(3)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 4:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_42_"+viewPointOrder[4].pop(0)*3+".png");
+            Images.push(4)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 5:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_46_"+viewPointOrder[5].pop(0)*3+".png");
+            Images.push(5)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 6:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_50_"+viewPointOrder[6].pop(0)*3+".png");
+            Images.push(6)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 7:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_54_"+viewPointOrder[7].pop(0)*3+".png");
+            Images.push(7)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 8:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_58_"+viewPointOrder[8].pop(0)*3+".png");
+            Images.push(8)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 9:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_62_"+viewPointOrder[9].pop(0)*3+".png");
+            Images.push(9)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 10:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_66_"+viewPointOrder[10].pop(0)*3+".png");
+            Images.push(10)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 11:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_74_"+viewPointOrder[11].pop(0)*3+".png");
+            Images.push(11)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 12:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][0]+"_82_"+viewPointOrder[12].pop(0)*3+".png");
+            Images.push(12)
+            Imagecat.push(axes[currFurSpaceDirection][0]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][0]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][0]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][0][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][0][['left','right'][1-i]]);
+            break;
+            case 13:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_18_"+viewPointOrder[13].pop(0)*3+".png");
+            Images.push(13)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 14:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_26_"+viewPointOrder[14].pop(0)*3+".png");
+            Images.push(14)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 15:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_34_"+viewPointOrder[15].pop(0)*3+".png");
+            Images.push(15)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 16:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_38_"+viewPointOrder[16].pop(0)*3+".png");
+            Images.push(16)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 17:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_42_"+viewPointOrder[17].pop(0)*3+".png");
+            Images.push(17)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 18:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_46_"+viewPointOrder[18].pop(0)*3+".png");
+            Images.push(18)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 19:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_50_"+viewPointOrder[19].pop(0)*3+".png");
+            Images.push(19)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 20:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_54_"+viewPointOrder[20].pop(0)*3+".png");
+            Images.push(20)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 21:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_58_"+viewPointOrder[21].pop(0)*3+".png");
+            Images.push(21)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 22:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_62_"+viewPointOrder[22].pop(0)*3+".png");
+            Images.push(22)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 23:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_66_"+viewPointOrder[23].pop(0)*3+".png");
+            Images.push(23)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 24:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_74_"+viewPointOrder[24].pop(0)*3+".png");
+            Images.push(24)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+            case 25:
+            ImagePath.push(ImageFolder+axes[currFurSpaceDirection][1]+"_82_"+viewPointOrder[25].pop(0)*3+".png");
+            Images.push(25)
+            Imagecat.push(axes[currFurSpaceDirection][1]);
+            // ButtonLeft.push(buttons[currFurSpaceDirection][1]["left"]);
+            // ButtonRight.push(buttons[currFurSpaceDirection][1]["right"]);
+            i=getRandomInt(2)
+            ButtonLeft.push(buttons[currFurSpaceDirection][1][['left','right'][i]]);
+            ButtonRight.push(buttons[currFurSpaceDirection][1][['left','right'][1-i]]);
+            break;
+        }
+    }
+</script>
+
+<style> 
+    body {
+    font-family: Arial, Helvetica;
+    font-size: 14pt;
+    }
+
+    .continueButton {
+    width: 200px;
+    text-align: center;
+    border: 4px outset gray;
+    background: gray;
+    padding: 5px;
+    margin: 0 auto;
+    }
+
+    #startExperimentButton {
+    width: 200px;
+    text-align: center;
+    border: 4px outset gray;
+    background: gray;
+    padding: 5px;
+    margin: 0 auto;
+    }
+
+    .Continue {
+    color: rgb(200,200,200);
+    text-decoration: none;
+    }
+
+    #startExperiment {
+    color: rgb(200,200,200);
+    text-decoration: none;
+    }
+
+    .Continue:hover {
+    color: white;
+    }
+
+    #startExperiment:hover {
+    color: white;
+    }
+
+    #startScreen {
+        text-align: center
+    }
+
+    #endScreen {
+        text-align: center
+    }
+
+    #endExperiment:hover {
+    color: white;
+    }
+
+    #endExperimentButton {
+    width: 200px;
+    text-align: center;
+    border: 4px outset gray;
+    background: gray;
+    padding: 5px;
+    margin: 0 auto;
+    }
+
+    .instructions {
+        width: 1000px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    #submitButton {
+        display: none;
+    }
+
+    .outer {
+        text-align: center;
+    }
+
+    .background_square{
+        position: relative; 
+        top:60px; 
+        left:25%; 
+        border-radius:25px; 
+        width:660px;
+        height:550px;
+        background:rgb(127,127,127);
+        z-index: -1
+    }
+    .stimuli{
+        width: 500px;
+        text-align:center;
+        display:block;
+        margin:auto;
+        position: absolute;
+        top: 27px;
+        left: 12%;
+        height: auto;
+        z-index: 1
+    }
+    #leftButton{
+        position:absolute; 
+        left:0%;
+        top:560px; 
+        width: 310px;
+        height:75px;
+        background:black;
+        border-radius:10px;
+        text-align:center; 
+        color:white;
+        line-height: 10px;
+    }
+    #rightButton{
+        position:absolute; 
+        left:53%;
+        top:560px; 
+        width: 310px;
+        height:75px;
+        background:black;
+        border-radius:10px;
+        text-align:center; 
+        color:white;
+        line-height: 10px;
+    }
+
+    .inner {
+        position: absolute;
+        left: 25%;
+    }
+
+    .rs-control .rs-range-color {
+        background-color: #54BBE0;
+        opacity: 0;
+    }
+    .rs-control .rs-path-color {
+        background-color: white;
+        opacity: 0;
+    }
+    .rs-control .rs-handle {
+        background-color: #838383;
+    }
+    .rs-control .rs-bg-color {
+        background-color: white;
+        opacity: 0;
+
+    }
+    .rs-control .rs-border {
+        opacity: 0;
+
+    }
+
+    #stim {
+        margin-left: 240px;
+        margin-top: 240px;
+    }
+
+    #square {
+        width: 150px;
+        height: 150px;
+        background-color: rgb(0,0,0);
+        margin-left: 240px;
+        margin-top: 240px;
+    }
+
+    #canvas {
+        width: 620px;
+        height: 620px;
+        background-color: rgb(126,126,126);
+        border: 3px solid black;
+    }
+
+    #colorWheel {
+        margin-left: 10px;
+        margin-top: 10px;
+    }
+
+    #startExperimentButton {
+    width: 200px;
+    text-align: center;
+    border: 4px outset gray;
+    background: gray;
+    padding: 5px;
+    margin: 0 auto;
+    }
+
+    #familPrompt {
+        text-align:center;
+        margin-left: 230px;
+        margin-top: 300px;
+    }
+    #fixCross{
+        margin: auto;
+        font-size: xx-large;
+        z-index:2;
+        position: absolute;
+        left: 50%;
+        top:260px;
+    }
+    #ObjectName{
+        position:absolute; 
+        left:0%;
+        top:560px; 
+        width: 662px;
+        height:75px;
+        background:black;
+        border-radius:10px;
+        text-align:center; 
+        color:white;
+        line-height: 10px;
+    }
+</style>
+
+<body>
+    <div id="startScreen">
+        <p> <br/><br/><br/><br/><br/><br/>Thank you for participating! Before we get started, please maximize your browser window. Please also refrain from using your cell phone or being otherwise distracted while you participate. Participation will take approximately 10 minutes.</p> <b>Please do not refresh or close this webpage, or switch tabs/windows at any point after you start the experiment. </b> <p> <b>If you complete the task you will receive the payment specified. </b></p> <p> Before you begin the experiment, please enter your MTurk Worker ID. You can find your Worker ID on the top left corner of the MTurk site. </p>
+
+        <form>
+        MTurk Worker ID: <input id="MTurkID" type="text" name="MTurkID" placeholder="Enter your ID here..."><br>
+        </form>
+
+        <div ID="zoomAdjustStage">
+            <p>Now please <b>zoom in or zoom out the screen</b> by pressing "command plus"/"command minus" if you are using Mac OS, or "control plus"/"control minus" if you are using windows OS until the following credit card image matches the short side of a credit card or debit card.<br/>
+            Please place yourself at a distance of 70-100 cm from the display.<br/>
+            When you are done with that, please press CONTINUE to move on.</p>
+            <img src="./creditcard.png", style="width: 240px">  
+            <br/>
+            <img src="./posture.png", style="width: 240px">  
+        </div>
+        <p><br/><br/><br/></p>
+        <div id="startExperimentButton">
+        <a href="#" id="Continue">Continue</a>
+        </div>
+
+        <p>
+        <div id="invalidIDWarning">
+        <p>
+        </div>
+    </div>
+
+
+    <div class="instructions" id = "Instruc">
+        <p> <br/><br/><br/><br/><br/><br/>On each trial, you will be shown a picture of an object and asked to choose which of two labels best describes it by pressing <b>1 or left arrow key</b> for left choice and <b>2 or right arrow key</b> for right choice. If it is hard to tell what kind of object it is, please provide your best guess. Before you begin, you will be shown four typical examples of furniture. Pay close attention to the animations, since the objects you will see afterwards will be 'variations' on these typical examples. After each animation plays for a few seconds, you will begin the task. </p> <p> Press continue below to begin the task. </p> 
+    </div>
+
+    <div class = "instructions", id="startWhenReady">
+        <p><br/><br/><br/><br/><br/><br/>Please click continue when you are ready to start</p>
+    </div>
+
+
+    <div class = "continueButton", id="startTrial">
+    <a href="#" class="Continue">Continue</a>
+    </div>
+
+    <div class = "continueButton", id="startDemo">
+    <a href="#" class="Continue">Continue</a>
+    </div>
+
+    <div class = "continueButton", id="startTest">
+    <a href="#" class="Continue">Continue</a>
+    </div>
+
+    <div id="endInstructions">
+        <p>You are finished with the task! Please click "end experiment" to receive your confirmation code.</p>
+        <div id="endExperimentButton">End Experiment</a></div>
+    </div>
+
+    <div ID="catPerStage", class="outer">
+        <div id="background_square_catPer" class="background_square">
+            <img id="stimuli_catPer" class="stimuli">  <!--  src="./carchair_exp/bedChair_1_3.png" -->
+            <div id="fixCross">+</div>
+            <input type="text" id="leftButton" value="", style="color:white; margin: auto;font-size: xx-large;">
+            <input type="text" id="rightButton" value="", style="color:white; margin: auto;font-size: xx-large;">
+        </div>
+    </div>
+
+
+
+    <!-- <img id="zoomAdjustStage", class="zoomAdjustStage", src="./creditcard.png">  -->
+
+    <!-- Note that this part of code is generated automatically using the chunk of code in notebook realtime/javascript/data/dataAnalysis.ipynb  -->
+
+    <!-- horizontal -->
+    <div id="demoStage" class="outer">
+        <div id="background_square_demo" class="background_square">
+            <img id='stimuli_0' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_0.png'>
+            <img id='stimuli_1' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_1.png'>
+            <img id='stimuli_2' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_2.png'>
+            <img id='stimuli_3' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_3.png'>
+            <img id='stimuli_4' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_4.png'>
+            <img id='stimuli_5' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_5.png'>
+            <img id='stimuli_6' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_6.png'>
+            <img id='stimuli_7' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_7.png'>
+            <img id='stimuli_8' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_8.png'>
+            <img id='stimuli_9' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_9.png'>
+            <img id='stimuli_10' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_10.png'>
+            <img id='stimuli_11' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_11.png'>
+            <img id='stimuli_12' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_12.png'>
+            <img id='stimuli_13' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_13.png'>
+            <img id='stimuli_14' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_14.png'>
+            <img id='stimuli_15' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_15.png'>
+            <img id='stimuli_16' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_16.png'>
+            <img id='stimuli_17' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_17.png'>
+            <img id='stimuli_18' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_18.png'>
+            <img id='stimuli_19' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_19.png'>
+            <img id='stimuli_20' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_20.png'>
+            <img id='stimuli_21' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_21.png'>
+            <img id='stimuli_22' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_22.png'>
+            <img id='stimuli_23' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_23.png'>
+            <img id='stimuli_24' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_24.png'>
+            <img id='stimuli_25' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_25.png'>
+            <img id='stimuli_26' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_26.png'>
+            <img id='stimuli_27' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_27.png'>
+            <img id='stimuli_28' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_28.png'>
+            <img id='stimuli_29' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_29.png'>
+            <img id='stimuli_30' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_30.png'>
+            <img id='stimuli_31' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_31.png'>
+            <img id='stimuli_32' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_32.png'>
+            <img id='stimuli_33' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_33.png'>
+            <img id='stimuli_34' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_34.png'>
+            <img id='stimuli_35' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_35.png'>
+            <img id='stimuli_36' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_36.png'>
+            <img id='stimuli_37' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_37.png'>
+            <img id='stimuli_38' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_38.png'>
+            <img id='stimuli_39' class='stimuli' src='carchair_exp_demo_rotating/bedChair_1_39.png'>
+            <img id='stimuli_40' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_0.png'>
+            <img id='stimuli_41' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_1.png'>
+            <img id='stimuli_42' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_2.png'>
+            <img id='stimuli_43' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_3.png'>
+            <img id='stimuli_44' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_4.png'>
+            <img id='stimuli_45' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_5.png'>
+            <img id='stimuli_46' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_6.png'>
+            <img id='stimuli_47' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_7.png'>
+            <img id='stimuli_48' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_8.png'>
+            <img id='stimuli_49' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_9.png'>
+            <img id='stimuli_50' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_10.png'>
+            <img id='stimuli_51' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_11.png'>
+            <img id='stimuli_52' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_12.png'>
+            <img id='stimuli_53' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_13.png'>
+            <img id='stimuli_54' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_14.png'>
+            <img id='stimuli_55' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_15.png'>
+            <img id='stimuli_56' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_16.png'>
+            <img id='stimuli_57' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_17.png'>
+            <img id='stimuli_58' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_18.png'>
+            <img id='stimuli_59' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_19.png'>
+            <img id='stimuli_60' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_20.png'>
+            <img id='stimuli_61' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_21.png'>
+            <img id='stimuli_62' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_22.png'>
+            <img id='stimuli_63' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_23.png'>
+            <img id='stimuli_64' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_24.png'>
+            <img id='stimuli_65' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_25.png'>
+            <img id='stimuli_66' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_26.png'>
+            <img id='stimuli_67' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_27.png'>
+            <img id='stimuli_68' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_28.png'>
+            <img id='stimuli_69' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_29.png'>
+            <img id='stimuli_70' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_30.png'>
+            <img id='stimuli_71' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_31.png'>
+            <img id='stimuli_72' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_32.png'>
+            <img id='stimuli_73' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_33.png'>
+            <img id='stimuli_74' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_34.png'>
+            <img id='stimuli_75' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_35.png'>
+            <img id='stimuli_76' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_36.png'>
+            <img id='stimuli_77' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_37.png'>
+            <img id='stimuli_78' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_38.png'>
+            <img id='stimuli_79' class='stimuli' src='carchair_exp_demo_rotating/bedChair_100_39.png'>
+            <img id='stimuli_80' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_0.png'>
+            <img id='stimuli_81' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_1.png'>
+            <img id='stimuli_82' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_2.png'>
+            <img id='stimuli_83' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_3.png'>
+            <img id='stimuli_84' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_4.png'>
+            <img id='stimuli_85' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_5.png'>
+            <img id='stimuli_86' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_6.png'>
+            <img id='stimuli_87' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_7.png'>
+            <img id='stimuli_88' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_8.png'>
+            <img id='stimuli_89' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_9.png'>
+            <img id='stimuli_90' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_10.png'>
+            <img id='stimuli_91' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_11.png'>
+            <img id='stimuli_92' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_12.png'>
+            <img id='stimuli_93' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_13.png'>
+            <img id='stimuli_94' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_14.png'>
+            <img id='stimuli_95' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_15.png'>
+            <img id='stimuli_96' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_16.png'>
+            <img id='stimuli_97' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_17.png'>
+            <img id='stimuli_98' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_18.png'>
+            <img id='stimuli_99' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_19.png'>
+            <img id='stimuli_100' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_20.png'>
+            <img id='stimuli_101' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_21.png'>
+            <img id='stimuli_102' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_22.png'>
+            <img id='stimuli_103' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_23.png'>
+            <img id='stimuli_104' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_24.png'>
+            <img id='stimuli_105' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_25.png'>
+            <img id='stimuli_106' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_26.png'>
+            <img id='stimuli_107' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_27.png'>
+            <img id='stimuli_108' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_28.png'>
+            <img id='stimuli_109' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_29.png'>
+            <img id='stimuli_110' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_30.png'>
+            <img id='stimuli_111' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_31.png'>
+            <img id='stimuli_112' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_32.png'>
+            <img id='stimuli_113' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_33.png'>
+            <img id='stimuli_114' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_34.png'>
+            <img id='stimuli_115' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_35.png'>
+            <img id='stimuli_116' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_36.png'>
+            <img id='stimuli_117' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_37.png'>
+            <img id='stimuli_118' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_38.png'>
+            <img id='stimuli_119' class='stimuli' src='carchair_exp_demo_rotating/tableBench_1_39.png'>
+            <img id='stimuli_120' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_0.png'>
+            <img id='stimuli_121' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_1.png'>
+            <img id='stimuli_122' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_2.png'>
+            <img id='stimuli_123' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_3.png'>
+            <img id='stimuli_124' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_4.png'>
+            <img id='stimuli_125' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_5.png'>
+            <img id='stimuli_126' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_6.png'>
+            <img id='stimuli_127' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_7.png'>
+            <img id='stimuli_128' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_8.png'>
+            <img id='stimuli_129' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_9.png'>
+            <img id='stimuli_130' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_10.png'>
+            <img id='stimuli_131' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_11.png'>
+            <img id='stimuli_132' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_12.png'>
+            <img id='stimuli_133' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_13.png'>
+            <img id='stimuli_134' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_14.png'>
+            <img id='stimuli_135' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_15.png'>
+            <img id='stimuli_136' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_16.png'>
+            <img id='stimuli_137' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_17.png'>
+            <img id='stimuli_138' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_18.png'>
+            <img id='stimuli_139' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_19.png'>
+            <img id='stimuli_140' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_20.png'>
+            <img id='stimuli_141' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_21.png'>
+            <img id='stimuli_142' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_22.png'>
+            <img id='stimuli_143' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_23.png'>
+            <img id='stimuli_144' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_24.png'>
+            <img id='stimuli_145' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_25.png'>
+            <img id='stimuli_146' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_26.png'>
+            <img id='stimuli_147' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_27.png'>
+            <img id='stimuli_148' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_28.png'>
+            <img id='stimuli_149' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_29.png'>
+            <img id='stimuli_150' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_30.png'>
+            <img id='stimuli_151' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_31.png'>
+            <img id='stimuli_152' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_32.png'>
+            <img id='stimuli_153' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_33.png'>
+            <img id='stimuli_154' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_34.png'>
+            <img id='stimuli_155' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_35.png'>
+            <img id='stimuli_156' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_36.png'>
+            <img id='stimuli_157' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_37.png'>
+            <img id='stimuli_158' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_38.png'>
+            <img id='stimuli_159' class='stimuli' src='carchair_exp_demo_rotating/tableBench_100_39.png'>
+
+
+            <input type="text" id="ObjectName" value="This is a BED", style="color:white; margin: auto;font-size: xx-large;">
+        </div>
+    </div>
+</body>
+
+
+<div class="hidden">
+	<script type="text/javascript">
+		console.log("preloading images");
+		var images = new Array();
+		function preload(ImagePath) {
+			for (i = 0; i < ImagePath.length; i++) {
+				images[i] = new Image();
+				images[i].src = ImagePath[i];
+			}
+		}
+		preload(ImagePath);
+	</script>
+</div>
+
+
+<script>
+var mTurk_id = "default"
+var isValid = true
+
+$(".continueButton").hide()
+$(".instructions").hide()
+$('.outer').hide()
+$('#background_square').hide()
+$('.stimuli').hide()
+$('#colorWheel').hide()
+$('#square').hide()
+
+$('#familPrompt').hide()
+$('#endInstructions').hide();
+$('#demoStage').hide();
+$('#catPerStage').hide();
+
+
+// list of trials so that we can shuffle them
+// var nTrials = 144; 
+// var trialOrder = Array.apply(null, {length: nTrials}).map(Number.call, Number);
+// shuffle(trialOrder);
+
+var curTrial = 0;
+var rt;
+var trlCode;
+var theTrueA;
+var theTrueB;
+var thefoilA;
+var thefoilB;
+var familResp;
+var ISItime = 1500;
+var prevColor = 0;
+var trialColors;
+var colorAns;
+var curCol;
+var imageStart;
+var imageEnd
+
+function getRandomArbitrary(min, max) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+function validate_mTurk_id(id_str)
+{
+  isValid = true
+  var min_length = 12;
+  var max_length = 16;
+  var bad_reg_ex = /\W/;
+
+  if (id_str.length < min_length)
+  isValid = false;
+
+  if (id_str.length > max_length)
+  isValid = false;
+}
+
+function setUpTask() {
+	mTurk_id = document.getElementById('MTurkID').value
+	validate_mTurk_id(mTurk_id)
+	if (isValid) {
+		$("#startScreen").hide()
+		$("#Instruc").show()
+        $("#startDemo").show()
+        // $("#startTrial").show()
+	} else {
+	document.getElementById('invalidIDWarning').innerHTML = "You have entered an invalid ID code. Please enter a valid ID.";
+	}
+}
+
+var otherButton=0
+var buttonRecord=[]
+var buttonTime=[]
+var CurrImage=[]
+var imageStart=NaN
+var imageEnd=NaN
+var response=NaN
+var responseTime=[]
+var timer1
+
+// Show stimulii
+function showStim(stim, left, right, time) {
+	$("#background_square_catPer").show()
+	// document.getElementById("leftButton").style.color='white';
+	// document.getElementById("rightButton").style.color='white';
+  	document.getElementById("stimuli_catPer").src = (stim);
+  	document.getElementById("leftButton").value=""
+	document.getElementById("rightButton").value=""
+  	$("#stimuli_catPer").show()
+	imageStart = Date.now();
+	$("#fixCross").hide();
+	timer1=setTimeout(function() {
+		$('#stimuli_catPer').hide()
+		imageEnd = Date.now();
+		console.log("imageEnd",imageEnd-currentTime)
+		currentTime=imageEnd;
+		document.getElementById("leftButton").value = left;
+	  	document.getElementById("rightButton").value = right;
+		console.log("stim duration:",imageEnd-imageStart)
+		console.log("\t\n\t")
+		$("#fixCross").show();
+		$("#leftButton").show();
+		$("#rightButton").show();
+	}, time);
+};
+function savingData(){
+	// save data
+	$.post("catPerDataSaving.py", {
+		workerid: mTurk_id, //work ID
+		this_trial:curTrial, //trial ID
+		Image:Images[curTrial], //image ID from 0 to 11, 12 in total
+		ImagePath: ImagePath[curTrial],  //image file path, containing viewpoint
+		category: Imagecat[curTrial],  //stimuli axis
+		imageStart:imageStart,
+		imageEnd:imageEnd,
+		response: response.toString(),
+		responseTime: responseTime.toString(),
+        currentTime: new Date(),
+        ButtonLeft:ButtonLeft[curTrial],
+        ButtonRight:ButtonRight[curTrial],
+	});
+}
+function buttonPressing(){
+	$(document).on("keydown",function(event) {
+		if (event.which == 49) { //ascii 49 is 1 , 50 is 2
+			// document.getElementById("leftButton").style.color='red';
+			console.log(ButtonLeft[curTrial],"current time:", Date());
+			$(document).off("keydown");
+			var curTime = Date.now();
+			rt = curTime - startTrialTime;
+			console.log("reaction time=", rt);
+			response.push(1);
+			responseTime.push(rt);
+			trialIsOver();
+			// setTimeout(function(){
+			// 	buttonPressing()
+			// },10);
+		} else if (event.which == 37) { //left arrow key = 37 ;  right arrow key = 39
+			console.log(ButtonLeft[curTrial],"current time:", Date());
+			$(document).off("keydown");
+			var curTime = Date.now();
+			rt = curTime - startTrialTime;
+			console.log("reaction time=", rt);
+			response.push(1);
+			responseTime.push(rt);
+			trialIsOver();
+		} else if (event.which == 50) { //ascii 49 is 1 , 50 is 2
+			// document.getElementById("rightButton").style.color='red';
+			console.log(ButtonRight[curTrial],"current time:", Date());
+			$(document).off("keydown");
+			var curTime = Date.now();
+			rt = curTime - startTrialTime;
+			console.log("reaction time=", rt);
+			response.push(2);
+			responseTime.push(rt);
+			trialIsOver();
+			// setTimeout(function(){
+			// 	buttonPressing()
+			// },10);
+		} else if (event.which == 39) { //left arrow key = 37 ;  right arrow key = 39
+			console.log(ButtonRight[curTrial],"current time:", Date());
+			$(document).off("keydown");
+			var curTime = Date.now();
+			rt = curTime - startTrialTime;
+			console.log("reaction time=", rt);
+			response.push(2);
+			responseTime.push(rt);
+			trialIsOver();
+		} else {
+			if (otherButton<100){
+				alert("Opps! You pressed other buttons. Please only press 1/2 or left/right arrow keys. Thank you!")
+				otherButton++;
+			};
+		};
+	});
+}
+var startTrialTime=NaN
+function Trial() {
+	response=[]
+	responseTime=[]
+	imageEnd=NaN
+	if (curTrial == 0) {
+		$("#leftButton").show();
+		$("#rightButton").show();
+		$("#startTrial").hide();
+		$("#startWhenReady").hide();
+		$("#catPerStage").show();
+		$("#background_square_catPer").show();
+		document.getElementById("leftButton").style.color='white';
+		document.getElementById("rightButton").style.color='white';
+	}
+
+	startTrialTime = Date.now(); 
+	imageStart = startTrialTime;
+	console.log("imageStart", imageStart-currentTime)
+	currentTime=startTrialTime;
+	console.log("currentImage=", ImagePath[curTrial])
+	showStim(ImagePath[curTrial], ButtonLeft[curTrial],ButtonRight[curTrial],1000);
+	buttonPressing()
+
+	// setTimeout(function() {
+	// 	trialIsOver();
+	// }, ISItime+1000);
+	
+};
+
+function trialIsOver() {
+	clearTimeout(timer1)
+	// missing trial detection and alert
+	if (response.length==0) {
+		alert("You missed that trial. Please click OK to continue. Thank you!")
+	}
+
+	// unbind the waiting for button (document and keydown) combination, avoid future appearing
+	$(document).off('keydown');
+	
+	// save data
+	savingData();
+	
+	// update trial number and check for last trial
+	curTrial ++;
+	if (curTrial < ImagePath.length) {
+		Trial()
+	}  else {
+		$('.outer').hide()
+		$("#endInstructions").show()
+
+
+	}
+
+}
+
+var currentTime=Date.now();
+var DemoList=[]
+var ObjectNameList=[]
+var axis=["bedChair","tableBench"];
+var morphList=[1,100];
+var viewList=Array.apply(null, {length: 40}).map(Number.call, Number);
+for (curr_axis=0;curr_axis<2;curr_axis++){
+	for (curr_morph=0;curr_morph<2;curr_morph++){
+		for (curr_view=0;curr_view<40;curr_view++){
+			DemoList.push("carchair_exp_demo_rotating/"+axis[curr_axis]+"_"
+				+morphList[curr_morph]+"_"+viewList[curr_view]+".png")
+			if (curr_axis==0 && curr_morph==0){
+				ObjectNameList.push("This is a BED")
+			} else if (curr_axis==0 && curr_morph==1) {
+				ObjectNameList.push("This is a CHAIR")
+			} else if (curr_axis==1 && curr_morph==0) {
+				ObjectNameList.push("This is a TABLE")
+			} else if (curr_axis==1 && curr_morph==1) {
+				ObjectNameList.push("This is a BENCH")
+			}
+		}
+	}
+}
+
+var DemoLeft=['Bed','Bed','Table','Table'];
+var DemoRight=['Chair','Chair','Bench','Bench'];
+var curTrial_demo=0;
+var demoFrameTime=150; //should be 6000ms/40 viewpoints=150ms/viewpoint
+var currentTime=Date.now();
+var demoDurationList=[];
+function preloadImage(url)
+{
+    var img=new Image();
+    img.src=url;
+}
+
+// Show stimulii for time 
+function showDemo(stim, ObjectName, time) {
+	$("#background_square_demo").show()
+	// console.log("curTrial_demo=",curTrial_demo)
+	$("#stimuli_"+(curTrial_demo-1)).hide()
+	$("#stimuli_"+curTrial_demo).show()
+  	document.getElementById("ObjectName").value = ObjectName;
+};
+function start_demo() {
+
+	$("#Instruc").hide();
+	$("#startDemo").hide();
+	$("#background_square_demo").show();
+	$("#fixCross").hide();
+	$("#ObjectName").show();
+	$("#leftButton").hide();
+	$("#rightButton").hide();
+	$('#demoStage').show();
+	$('#catPerStage').hide();
+
+	currentTime=Date.now();
+
+	demo();
+}
+
+function demo() {
+	// demoDurationList.push(Date.now()-currentTime);
+	// currentTime=Date.now();
+	showDemo(DemoList[curTrial_demo],ObjectNameList[curTrial_demo],demoFrameTime);
+	setTimeout(function() {
+		trialIsOver_demo();
+	},demoFrameTime);	
+};
+
+function trialIsOver_demo() {
+	// $("#stimuli_"+curTrial_demo).hide()
+	curTrial_demo ++;
+	if (curTrial_demo < DemoList.length) {
+		demo()
+	} else {
+		// console.log("below is the demo duration lost:")
+		// for (i=0;i<demoDurationList.length;i++){
+			// console.log(demoDurationList[i]);
+		// }
+		$("#background_square_demo").hide();
+		$("#ObjectName").hide();
+		$("#startTrial").show();
+		$("#startWhenReady").show();
+		$('#demoStage').hide();
+	}
+}
+var confirmationCode = "";
+var infix            = "-il1-";
+var suffix           = "-a";
+var finalInstructions = "";
+
+function randomIntFromInterval(min,max)
+{
+  return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+function generateConfirmationCode(){
+  for (var i = 0; i < 9; i++) {
+    var thisNum = randomIntFromInterval(0,9);
+    var thisChar = String(thisNum);
+    confirmationCode = confirmationCode + thisChar;
+  };
+
+  confirmationCode = confirmationCode + infix;
+
+  for (var i = 0; i < 7; i++) {
+  var thisNum = randomIntFromInterval(0,9);
+  var thisChar = String(thisNum);
+  confirmationCode = confirmationCode + thisChar;
+  };
+
+  confirmationCode = confirmationCode + suffix;
+}
+
+function createCookie(name, value) {
+  document.cookie = escape(name) + "=" + escape(value) + "; path=/";
+}
+
+function finalPage(){
+	// Generate confirmation code
+	generateConfirmationCode();
+	$('#endExperimentButton').hide();
+	// Set instructions
+	finalInstructions = "Your confirmation code is " + confirmationCode + ".";
+	// Show instructions
+	$("#endInstructions").html(finalInstructions);
+	$('#endInstructions').show();
+	// $.post("confirmationCode_catPerDataSaving.py", {
+	// 	workerid: mTurk_id.toString(), //work ID
+	// 	confirmationCode: confirmationCode.toString(), //trial ID
+	// 	currentTime: currentTime.toString()
+	// });
+
+}
+
+
+
+$('#startExperimentButton').click(setUpTask)
+$('#startDemo').click(start_demo)
+$('#startTrial').click(Trial)
+$('#endExperimentButton').click(finalPage);
+
+</script>
+
