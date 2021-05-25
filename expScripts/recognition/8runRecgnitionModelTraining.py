@@ -42,9 +42,9 @@ def load_obj(name):
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--config', '-c', default='sub001.ses1.toml', type=str, help='experiment file (.json or .toml)')
-argParser.add_argument('--skipPre', '-s', default=0, type=int, help='skip preprocess or not')
+argParser.add_argument('--skipPre', '-s', default=False, action='store_true', help='skip preprocess or not')
 argParser.add_argument('--skipGreedy', '-g', default=0, type=int, help='skip greedy or not')
-argParser.add_argument('--forceGreedy', '-f', default=0, type=int, help='whether to force Greedy search in current session')
+argParser.add_argument('--forceGreedy', default=False, action='store_true', help='whether to force Greedy search in current session')
 argParser.add_argument('--testRun', '-t', default=None, type=int, help='testRun, can be [None,1,2,3,4,5,6,7,8]')
 argParser.add_argument('--scan_asTemplate', '-a', default=1, type=int, help="which scan's middle dicom as Template?")
 
@@ -90,7 +90,7 @@ if cfg.session==1:
 
 
 if args.forceGreedy:
-    print("running greedyMask")
+    print("force running greedyMask")
     cfg.chosenMask=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/chosenMask.npy"
     greedyMask(cfg)
 
