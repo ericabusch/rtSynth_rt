@@ -922,7 +922,10 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         t=list(t['Item'])
         behav_data.append(t)
 
-    save_obj([brain_data,behav_data],f"{cfg.projectDir}tmp__folder/{subject}_{dataSource}_{roiloc}_{N}") #{len(topN)}_{i}
+
+    tmp_folder = f"{cfg.projectDir}tmp__folder_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))}" #tmp__folder
+    mkdir(tmp_folder)
+    save_obj([brain_data,behav_data],f"{cfg.projectDir}{tmp_folder}/{subject}_{dataSource}_{roiloc}_{N}") #{len(topN)}_{i}
 
     def wait(tmpFile):
         while not os.path.exists(tmpFile+'_result.npy'):
@@ -967,7 +970,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         
         return np.mean(accs)
 
-    if not os.path.exists(f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}.pkl"):
+    if not os.path.exists(f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}.pkl"):
         brain_data = [t[:,mask==1] for t in brain_data]
         # _runs = [runs[:,mask==1]]
         print("Runs shape", [t.shape for t in brain_data])
@@ -979,11 +982,11 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         "currNumberOfROI":len(topN),
         "bestAcc":sl_result, # this is the sl_result for the topN, not the bestAcc, bestAcc is for the purpose of keeping consistent with others
         "bestROIs":topN},# this is the topN, not the bestROIs, bestROIs is for the purpose of keeping consistent with others
-        f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}"
+        f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}"
         )
-    # ./tmp__folder/0125171_40_schaefer2018_neurosketch_39.pkl
-    if os.path.exists(f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{1}.pkl"):
-        print(f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_1.pkl exists")
+
+    if os.path.exists(f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{1}.pkl"):
+        print(f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_1.pkl exists")
         raise Exception('runned or running')
 
     # N-1
@@ -998,16 +1001,16 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
             topNs=[]
             sl_results=[]
             tmpFiles=[]
-            while os.path.exists(f"{cfg.projectDir}tmp__folder/holdon.npy"):
+            while os.path.exists(f"{cfg.projectDir}{tmp_folder}/holdon.npy"):
                 time.sleep(10)
-                print("sleep for 10s ; waiting for ./tmp__folder/holdon.npy to be deleted")
-            np.save(f"{cfg.projectDir}tmp__folder/holdon",1)
+                print(f"sleep for 10s ; waiting for ./{tmp_folder}/holdon.npy to be deleted")
+            np.save(f"{cfg.projectDir}{tmp_folder}/holdon",1)
 
             # 对于每一个round，提交一个job array，然后等待这个job array完成之后再进行下一轮
             # 具体的方法是首先保存需要的input，也就是这一轮需要用到的tmpFile，然后再将tmpFile除了之外的字符串输入
             skip_flag=0
             for i,_topN in enumerate(allpairs):
-                tmpFile=f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_{i}"
+                tmpFile=f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_{i}"
                 print(f"tmpFile={tmpFile}")
                 topNs.append(_topN)
                 tmpFiles.append(tmpFile)
@@ -1036,14 +1039,14 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
                     skip_flag+=1
 
             if skip_flag!=(i+1): # 如果有一个不存在，就需要跑一跑
-                command=f'sbatch --array=1-{i+1} {cfg.recognition_expScripts_dir}class.sh ./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_'
+                command=f'sbatch --array=1-{i+1} {cfg.recognition_expScripts_dir}class.sh ./{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_'
                 print(command)
                 proc = subprocess.Popen([command], shell=True) # sl_result = Class(_runs, bcvar) 
             else:
-                command=f'sbatch --array=1-{i+1} {cfg.recognition_expScripts_dir}class.sh ./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_'
+                command=f'sbatch --array=1-{i+1} {cfg.recognition_expScripts_dir}class.sh ./{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)}_'
                 print(f"skip {command}")
 
-            os.remove(f"{cfg.projectDir}tmp__folder/holdon.npy")
+            os.remove(f"{cfg.projectDir}{tmp_folder}/holdon.npy")
 
             # wait for everything to be finished and make a summary to find the best performed megaROI
             sl_results=[]
@@ -1058,9 +1061,9 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
             "currNumberOfROI":len(topN)-1,
             "bestAcc":max(sl_results),
             "bestROIs":topNs[maxID]},
-            f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}"
+            f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}"
             )
-            print(f"bestAcc={max(sl_results)} For {len(topN)-1} = {cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}")
+            print(f"bestAcc={max(sl_results)} For {len(topN)-1} = {cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len(topN)-1}")
             tmpFiles=next(topNs[maxID])
             return 0
     tmpFiles=next(topN)
@@ -1077,8 +1080,8 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     for ii,subject in enumerate(subjects):
         for len_topN_1 in range(N-1,0,-1):
             try:
-                # print(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
-                di = load_obj(f"{cfg.projectDir}tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
+                # print(f"./{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
+                di = load_obj(f"{cfg.projectDir}{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
                 GreedyBestAcc[ii,len_topN_1-1] = di['bestAcc']
             except:
                 pass
@@ -1093,7 +1096,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 
     performance_mean = np.nanmean(GreedyBestAcc,axis=1)
     bestID=np.where(performance_mean==max(performance_mean))[0][0]
-    di = load_obj(f"./tmp__folder/{subject}_{N}_{roiloc}_{dataSource}_{bestID+1}")
+    di = load_obj(f"./{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{bestID+1}")
     print(f"bestID={bestID}; best Acc = {di['bestAcc']}")
     mask = getMask(di['bestROIs'],cfg)
     np.save(cfg.chosenMask,mask)
