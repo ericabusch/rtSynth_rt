@@ -862,7 +862,7 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
 
     def getMask(topN, cfg):
         for pn, parc in enumerate(topN):
-            _mask = nib.load(cfg.recognition_dir+"mask/GMschaefer_{}".format(parc))
+            _mask = nib.load(f"{cfg.subjects_dir}{cfg.subjectName}/ses1/recognition/mask/GMschaefer_{parc}"
             # schaefer_56.nii.gz
             aff = _mask.affine
             _mask = _mask.get_data()
