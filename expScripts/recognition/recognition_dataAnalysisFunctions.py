@@ -923,8 +923,8 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
         behav_data.append(t)
 
 
-    tmp_folder = f"{cfg.projectDir}tmp__folder_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))}" #tmp__folder
-    mkdir(tmp_folder)
+    tmp_folder = f"tmp__folder_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))}" #tmp__folder
+    mkdir(f"{cfg.projectDir}{tmp_folder}")
     save_obj([brain_data,behav_data],f"{cfg.projectDir}{tmp_folder}/{subject}_{dataSource}_{roiloc}_{N}") #{len(topN)}_{i}
 
     def wait(tmpFile):
