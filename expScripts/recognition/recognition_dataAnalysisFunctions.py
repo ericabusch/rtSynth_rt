@@ -257,7 +257,7 @@ def normalize(X):
     _X[np.isnan(_X)]=0
     return _X
 
-def minimalClass(cfg,testRun=None):
+def minimalClass(cfg,testRun=None,recordingTxt=None):
     '''
     purpose: 
         train offline models
@@ -408,6 +408,9 @@ def minimalClass(cfg,testRun=None):
             print("acc=", acc)
             accList[testRun] = acc
         print(f"new trained full rotation 4 way accuracy mean={np.mean(list(accList.values()))}")
+        if recordingTxt: #if tmp_folder is not None but some string, save the sentence.
+            append_file(f"{recordingTxt}",f"new trained full rotation 4 way accuracy mean={np.mean(list(accList.values()))}")
+        
         return accList
     accList = train4wayClf(META, FEAT)
     
@@ -466,6 +469,9 @@ def minimalClass(cfg,testRun=None):
         print(f"testRun = {testRun} : average 2 way clf accuracy={np.mean(list(accs.values()))}")
         accs_rotation.append(np.mean(list(accs.values())))
     print(f"mean of 2 way clf acc full rotation = {np.mean(accs_rotation)}")
+    if recordingTxt: #if tmp_folder is not None but some string, save the sentence.
+        append_file(f"{recordingTxt}",f"mean of 2 way clf acc full rotation = {np.mean(accs_rotation)}")
+
 
     # 用所有数据训练要保存并且使用的模型：
     allpairs = itertools.combinations(objects,2)
@@ -509,6 +515,13 @@ def minimalClass(cfg,testRun=None):
 
     return accs
 
+def append_file(fileName,text):
+    # Open a file with access mode 'a'
+    file_object = open(fileName, 'a')
+    # Append 'hello' at the end of file
+    file_object.write(f" \n\n {text}")
+    # Close the file
+    file_object.close()
 
 def compareScore(cfg,testRun=None): 
     # 这个函数是从minimalClass修改过来的。目的是为了使用ses4的模型来对比ses5的前两个recognition run和后两个recognition run 的testing score
@@ -604,6 +617,7 @@ def compareScore(cfg,testRun=None):
             print("acc=", acc)
             accList[testRun] = acc
         print(f"new trained full rotation 4 way accuracy mean={np.mean(list(accList.values()))}")
+        
         return accList
     # accList = train4wayClf(META, FEAT)
     
@@ -1096,9 +1110,14 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     bestID=np.where(performance_mean==max(performance_mean))[0][0]
     di = load_obj(f"./{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{bestID+1}")
     print(f"bestID={bestID}; best Acc = {di['bestAcc']}")
+    print(f"bestROIs={di['bestROIs']}")
+    recordingTxt=f"{tmp_folder}/recording.txt"
+    append_file(recordingTxt,f"bestID={bestID}; best Acc = {di['bestAcc']}")
+    append_file(recordingTxt,f"bestROIs={di['bestROIs']}")
+
     mask = getMask(di['bestROIs'],cfg)
     np.save(cfg.chosenMask,mask)
-    return 0
+    return recordingTxt
 
 def AdaptiveThreshold(cfg,ThresholdLog):
     # if Catalin_current_session_design:

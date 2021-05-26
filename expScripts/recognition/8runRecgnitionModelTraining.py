@@ -88,15 +88,15 @@ if cfg.session==1:
         print("running greedyMask")
         greedyMask(cfg)
 
-
+recordingTxt=None
 if args.forceGreedy:
     print("force running greedyMask")
     cfg.chosenMask=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/chosenMask.npy"
-    greedyMask(cfg)
+    recordingTxt=greedyMask(cfg)
 
 # train the classifiers
 # accs = minimalClass(cfg)
-accs = minimalClass(cfg,testRun=args.testRun)
+accs = minimalClass(cfg,testRun=args.testRun,recordingTxt=recordingTxt)
 
 print("\n\n")
 print(f"minimalClass accs={accs}")
