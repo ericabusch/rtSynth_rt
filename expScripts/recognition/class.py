@@ -57,7 +57,7 @@ def getMask(topN, cfg):
 tmpFile = f"{sys.argv[1]}{int(sys.argv[2])-1}"
 print(f"tmpFile={tmpFile}")
 [_topN,subject,dataSource,roiloc,N] = load_obj(tmpFile)
-[brain_data,behav_data] = load_obj(f"./tmp__folder/{subject}_{dataSource}_{roiloc}_{N}") 
+[brain_data,behav_data] = load_obj(f"{os.path.dirname(tmpFile)}/{subject}_{dataSource}_{roiloc}_{N}")
 _mask=getMask(_topN,subject) ; print('mask dimensions: {}'. format(_mask.shape)) ; print('number of voxels in mask: {}'.format(np.sum(_mask)))
 brain_data = [t[:,_mask==1] for t in brain_data]
 print("Runs shape", [t.shape for t in brain_data])

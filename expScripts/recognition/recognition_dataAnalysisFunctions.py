@@ -847,8 +847,6 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     funcdata = cfg.recognition_dir + "brain_run{run}.npy"
     metadata = cfg.recognition_dir + "behav_run{run}.csv"
 
-    workingDir="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/sub001/ses1/recognition"
-
     topN = load_obj(f"{cfg.recognition_expScripts_dir}top{N}ROIs")
     print(f"len(topN)={len(topN)}")
     print(f"GMschaefer_ topN loaded from neurosketch={topN}")
