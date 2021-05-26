@@ -88,7 +88,7 @@ if cfg.session==1:
         print("running greedyMask")
         greedyMask(cfg)
 
-recordingTxt=None
+recordingTxt=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/recording.txt" # None
 if args.forceGreedy:
     print("force running greedyMask")
     cfg.chosenMask=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/chosenMask.npy"
