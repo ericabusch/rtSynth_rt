@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --output=GM_modelTrain-%j.out
+#SBATCH --output=logs/GM_modelTrain-%j.out
 #SBATCH -p day
 #SBATCH -t 24:00:00
 #SBATCH --mem 20GB
