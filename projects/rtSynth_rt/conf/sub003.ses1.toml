@@ -1,0 +1,39 @@
+# subject Qian Xu,
+# Date of birth: 03/19/1995
+# Height: 5 feet 2 inch
+# Weight: 110
+# Sex: female
+
+
+title = 'rtSynth_rt'
+
+session=1 # which session is this? which day is this on? could be 1 2 3 4 5 
+subjectDay = 1 #this is for the naming of web/conf/{subjactName}_day{subjectDay}_run{runNum}.toml
+subjectIDforxnat="rtSynth_sub003_ses1" # PATIENTID has to be unique for each subject
+preDay_YYYYMMDD="0" # can be "0" if there is no previous day for this session
+YYYYMMDD="20210531" # 20210531 20210602 20210604 20210606 20210607
+
+subjectName = "sub003" # subject folder name in the rtSynth_rt/subjects folder
+LASTNAME="rtSynth_sub003"
+realtimeFolder_subjectName="rtSynth_sub003"
+
+studyDescription="rtSynth_rt"
+
+num_total_TRs=174 # number of total TRs in feedback session # 12*14+6=174
+TrialNumber= 12 # feedback trial number for a feedback run.
+
+runNum = [1] #[1,2,3,4,5,6,7,8] # This is the list of unique run, e.g. when the recognition1 is repeated twice, this can be 1 and 2
+scanNum = [1] #[1,2,3,4,5,6,7,8] # This is a list of scan(or runs that might be repetitive)
+
+plotTitle = 'Realtime Plot'
+plotXLabel = 'Sample #'
+plotYLabel = 'B prob'
+plotXRangeLow = 0
+plotXRangeHigh = 176
+plotYRangeLow = 0
+plotYRangeHigh = 20
+plotAutoRangeX = false
+plotAutoRangeY = true
+# dicomNamePattern = "001_{SCAN:06d}_{TR:06d}.dcm"
+minExpectedDicomSize=300000
+
