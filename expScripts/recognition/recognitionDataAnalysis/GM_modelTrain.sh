@@ -15,6 +15,8 @@ raw_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recogni
 cd ${code_dir}
 
 sub=$1 # rtSynth_sub001 rtSynth_sub001_ses5 rtSynth_sub001 rtSynth_sub002_ses1
+scan_asTemplate=$2
+
 python -u -c "from GM_modelTrain_functions import _split ; _split('${sub}')"
 source ${code_dir}${sub}_subjectName.txt # so you have subjectName and ses
 echo subjactName=${subjectName} ses=${ses}
@@ -64,4 +66,4 @@ python -u -c "from GM_modelTrain_functions import wait; wait('/gpfs/milgram/proj
 
 # 下一步是 greedy 以及 训练模型
 cd /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/
-python -u expScripts/recognition/8runRecgnitionModelTraining.py -c ${subjectName}.ses${ses}.toml
+python -u expScripts/recognition/8runRecgnitionModelTraining.py -c ${subjectName}.ses${ses}.toml --scan_asTemplate ${scan_asTemplate}
