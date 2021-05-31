@@ -3,10 +3,10 @@
 
 #SBATCH --output=logs/class-%j.out
 #SBATCH --job-name class
-#SBATCH --partition=psych_day,scavenge_all,day,psych_scavenge,week,verylong,short
+#SBATCH --partition=psych_day,psych_scavenge,psych_week,verylong,short,day,scavenge_all,week
 #SBATCH --time=1:00:00 #20:00:00
-#SBATCH --mem=10000
-#SBATCH -n 5
+##SBATCH --mem=10000
+##SBATCH -n 5
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=kp578
 
