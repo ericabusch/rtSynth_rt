@@ -5,7 +5,7 @@
 #SBATCH --mem 20GB
 #SBATCH -n 1
 module load dcm2niix
-
+pwd=$(pwd)
 sess_ID=$1
 export dcm_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/${sess_ID}/SCANS/
 export output_dir=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/recognitionDataAnalysis/raw/${sess_ID}/nifti/
@@ -29,3 +29,5 @@ for k in *.nii ; do
     echo $k
     fslinfo $k  | grep dim1
 done
+
+cd $pwd
