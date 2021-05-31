@@ -11,6 +11,8 @@ module load FreeSurfer/6.0.0
 
 # 让当前的 makeGreyMatterMask.sh 在这个folder GreyMatterMask里面运行
 subject=$1
+scan_asTemplate=$2
+
 anatPath=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${subject}/ses1/anat/
 subjectFolder=${anatPath}freesurfer/${subject}/
 
@@ -64,6 +66,12 @@ align_epi_anat.py -dset1 anat_stripped+orig -dset2 ${subject}_SurfVol_stripped_s
 # processedEPI=/gpfs/milgram/project/turk-browne/projects/rtTest/wang2014/${subject}/neurosketch_recognition_run_1_bet.nii.gz # processedEPI+orig 是一个处理好的functional 数据
 processedEPI=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/${subject}/ses1/recognition/templateFunctionalVolume.nii 
 processedEPI_bet=../anat/functional_bet.nii
+if test -f "$processedEPI"; then
+    echo "$processedEPI exists."
+else
+    python -u /gpfs/milgram/project/turk-browne/projects/rtSynth_rt/expScripts/recognition/8runRecgnitionModelTraining.py -c ${subject}.ses1.toml --scan_asTemplate ${scan_asTemplate} --preprocessOnly
+fi
+
 bet ${processedEPI} ${processedEPI_bet}
 3dresample -master ${processedEPI_bet} -prefix gm_shft_aligned_smooth_resamp+orig -input gm_shft_aligned_smooth+orig
 3dresample -input gm_shft_aligned_smooth_resamp+orig -prefix gm_resamp.nii.gz # 将afni的数据转化成为nifti的数据格式
