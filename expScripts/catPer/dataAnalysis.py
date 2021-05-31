@@ -185,14 +185,16 @@ def rand_jitter(arr):
 # os.chdir(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/subjects/{sub}/{ses}/catPer")
 # subject=f"catPer_000000{sub}_{catPerSession}.txt"
 
-os.chdir(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/expScripts/catPer/data/")
 # subject="catPer_123456subTest5.txt"
 # subject="catPer_123456subTest6.txt"
 # subject="catPer_123456sub0jeff.txt"
 # subject="catPer_123456subTest7.txt"
-sub="12345subShmily" #12345subTest11 12345subShmily
-subject=f"catPer_{sub}.txt"
 
+# os.chdir(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/expScripts/catPer/data/")
+
+sub="000000sub003_1" #12345subTest11 12345subShmily
+subject=f"catPer_{sub}.txt"
+os.chdir(f"/Users/kailong/Desktop/rtEnv/rtSynth_rt/subjects/{sub[6:].split('_')[0]}/ses{sub[6:].split('_')[1]}/catPer")
 
 versionDict={'horizontal':['bedChair', 'tableBench'],
             'vertical':['benchBed', 'chairTable'],
