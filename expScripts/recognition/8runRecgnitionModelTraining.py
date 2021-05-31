@@ -47,6 +47,7 @@ argParser.add_argument('--skipGreedy', '-g', default=0, type=int, help='skip gre
 argParser.add_argument('--forceGreedy', default=False, action='store_true', help='whether to force Greedy search in current session')
 argParser.add_argument('--testRun', '-t', default=None, type=int, help='testRun, can be [None,1,2,3,4,5,6,7,8]')
 argParser.add_argument('--scan_asTemplate', '-a', default=1, type=int, help="which scan's middle dicom as Template?")
+argParser.add_argument('--preprocessOnly', default=False, action='store_true', help='whether to only do preprocess and skip everything else')
 
 args = argParser.parse_args()
 from rtCommon.cfg_loading import mkdir,cfg_loading
@@ -60,47 +61,52 @@ def wait(waitfor, delay=1):
         time.sleep(delay)
         print('waiting for {}'.format(waitfor))
 
-'''
-convert all dicom files into nii files in the temp dir. 
-find the middle volume of the run1 as the template volume
-align every other functional volume with templateFunctionalVolume (3dvolreg)
-'''
-if not args.skipPre:
-    recognition_preprocess(cfg,args.scan_asTemplate) #somehow this cannot be run in jupyter
+if args.preprocessOnly:
+    recognition_preprocess(cfg,args.scan_asTemplate)
+else:
+    '''
+    convert all dicom files into nii files in the temp dir. 
+    find the middle volume of the run1 as the template volume
+    align every other functional volume with templateFunctionalVolume (3dvolreg)
+    '''
+    if not args.skipPre:
+        recognition_preprocess(cfg,args.scan_asTemplate) #somehow this cannot be run in jupyter
 
 
-'''
-run the mask selection
-    make ROIs
-        make-schaefer-rois.sh
-    starting from 31 megaROIs use greedyMask to find best ROI for the current subject
-'''
-# make ROIs
-if cfg.session==1:
-    if not os.path.exists(f"{cfg.recognition_dir}mask/GMschaefer_300.nii.gz"):
-        print(f"running sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
-        subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
-        wait(f"{cfg.recognition_dir}mask/GMschaefer_300.nii.gz")
+    '''
+    run the mask selection
+        make ROIs
+            make-schaefer-rois.sh
+        starting from 31 megaROIs use greedyMask to find best ROI for the current subject
+    '''
+    # make ROIs
+    if cfg.session==1:
+        if not os.path.exists(f"{cfg.recognition_dir}mask/GMschaefer_300.nii.gz"):
+            print(f"running sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}")
+            subprocess.Popen(f"sbatch {cfg.recognition_expScripts_dir}make-schaefer-rois.sh {cfg.subjectName} {cfg.recognition_dir}",shell=True)
+            wait(f"{cfg.recognition_dir}mask/GMschaefer_300.nii.gz")
 
-    # when this is the first session, you need to select the chosenMask
-    # python expScripts/recognition/greedyMask.py
-    if not args.skipGreedy:
-        print("running greedyMask")
-        greedyMask(cfg)
+        # when this is the first session, you need to select the chosenMask
+        # python expScripts/recognition/greedyMask.py
+        if not args.skipGreedy:
+            print("running greedyMask")
+            greedyMask(cfg)
 
-recordingTxt=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/recording.txt" # None
-if args.forceGreedy:
-    print("force running greedyMask")
-    cfg.chosenMask=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/chosenMask.npy"
-    recordingTxt=greedyMask(cfg)
+    recordingTxt=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/recording.txt" # None
+    if args.forceGreedy:
+        print("force running greedyMask")
+        cfg.chosenMask=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/chosenMask.npy"
+        recordingTxt=greedyMask(cfg)
 
-# train the classifiers
-# accs = minimalClass(cfg)
-accs = minimalClass(cfg,testRun=args.testRun,recordingTxt=recordingTxt)
+    # train the classifiers
+    # accs = minimalClass(cfg)
+    accs = minimalClass(cfg,testRun=args.testRun,recordingTxt=recordingTxt)
 
-print("\n\n")
-print(f"minimalClass accs={accs}")
-save_obj(accs,f"{cfg.recognition_dir}minimalClass_accs")
+    print("\n\n")
+    print(f"minimalClass accs={accs}")
+    save_obj(accs,f"{cfg.recognition_dir}minimalClass_accs")
+
+    
 # '''
 # run the mask selection
 #     make ROIs
