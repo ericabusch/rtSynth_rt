@@ -97,14 +97,18 @@ else:
 choose = np.load(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/choose.npy")
 
 # read the saved order 
-order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_{choose[run - 1]}.csv'
+if args.trying:
+    order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_trying.csv'
+else:
+    order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_{choose[run - 1]}.csv'
 trial_list = pd.read_csv(order)
 
-# 丢弃最开始的几个TR
+# 丢弃最开始的几个TR。总共需要290s/2=145TR,再加上我需要的24s，那么recognition一共是145+12=157 TR
 # Jeff: Maybe avoid having an onset for at least the first 4 TRs
-countDown = 6 #决定丢弃每个run开始的6个TR
+countDown = 3 #决定丢弃每个run开始的6个TR，实际上我的order里面还有6s的固定值，因此从scan开始到第一张图片出现过去了6+6=12s
+endCountDown = 7 #每个run结束有7个TR的blank，实际上由于之前吃掉了9个TR，现在7个TR的显示只有6个TR
 
-maxTR = int(trial_list['time'].iloc[-1] / 2 + countDown) 
+maxTR = int(trial_list['time'].iloc[-1] / 2 + countDown + endCountDown) 
 print(f"maxTR={maxTR}")
 
 # Settings for MRI sequence
@@ -202,12 +206,8 @@ image_on = ""
 button_on = ""
 button_off = ""
 
-# start global clock and fMRI pulses (start simulated or wait for real)
-print('Starting sub {} in run #{} - list #{}'.format(sub, run, choose[run - 1]))
-globalClock = core.Clock()
-vol = launchScan(mywin, MR_settings, globalClock=globalClock, simResponses=None, mode=scanmode,
-                esc_key='escape', instr='select Scan or Test, press enter',
-                wait_msg='waiting for scanner...', wait_timeout=300, log=True)
+
+
 
 background = visual.ImageStim(
     win=mywin,
@@ -265,12 +265,25 @@ def display(countDown,message): #endMorphing can be [1,5,9,13]
     return message
 responseNumber = 0
 TrialNumber = 0
+secondCounter=1
+
+# start global clock and fMRI pulses (start simulated or wait for real)
+print('Starting sub {} in run #{} - list #{}'.format(sub, run, choose[run - 1]))
+globalClock = core.Clock()
+vol = launchScan(mywin, MR_settings, globalClock=globalClock, simResponses=None, mode=scanmode,
+                esc_key='escape', instr='select Scan or Test, press enter',
+                wait_msg='waiting for scanner...', wait_timeout=300, log=True)
+
 # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
-while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
+while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']): # 其中(MR_settings['volumes'] * MR_settings['TR']) 是纯粹的trial需要的时间以及加上前面放弃的countDown=6也就是12s，再加上最后的12s空白的和。
     globalTime = globalClock.getTime()
+    if globalTime > secondCounter:
+        print(f"{secondCounter} passed")
+        secondCounter+=1
+
     trialTime = trialClock.getTime()
     keys = event.getKeys(["1", "2", "5", "0"])  # check for triggers / key presses, whenever you want to quite, type 0
-    if '0' in keys: # whenever you want to quite, type 0
+    if '0' in keys: # whenever you want to quit, type 0
         mywin.close()
         core.quit()
 
@@ -344,7 +357,7 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
                 hits += 1
             else:
                 falses += 1
-            print('- {} pressed {} after {} s. {} hits, {} FA. -'.format(qual, resp, np.around(resp_time,2), hits, falses))
+            print('- {} pressed {} after {} s. {} right, {} wrong. -'.format(qual, resp, np.around(resp_time,2), hits, falses))
             event.clearEvents()
 
     if len(onsets) != 0:  # if there are still trials remaining, draw the trial
