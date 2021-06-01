@@ -85,7 +85,7 @@ bet ${processedEPI} ${processedEPI_bet}
 # 将T1.nii去掉颅骨
 bet ../anat/T1.nii ../anat/T1_bet.nii
 # 制造T1.nii到processedEPI的投射
-flirt -ref ${processedEPI_bet} -in ../anat/T1_bet.nii -out ../anat/T1inFunc.nii -omat ../anat/T1inFunc.mat
+flirt -ref ${processedEPI_bet} -in ../anat/T1_bet.nii -out ../anat/T1inFunc.nii -omat ../anat/T1inFunc.mat -dof 6
 # fslview_deprecated ../anat/T1inFunc.nii ${processedEPI_bet}
 # 用T1.nii到processedEPI的投射 将gm转移到processedEPI空间里面
 flirt -ref ${processedEPI_bet} -in gm_anat.nii.gz -out ../anat/gm_func.nii.gz -applyxfm -init ../anat/T1inFunc.mat
