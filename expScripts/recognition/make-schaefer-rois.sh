@@ -37,22 +37,49 @@ STAND=/gpfs/milgram/apps/hpc.rhel7/software/FSL/5.0.10-centos7_64/data/standard/
 # ROIpath=/gpfs/milgram/scratch/turk-browne/tsy6/CBIG/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI
 ROIpath=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/MNI
 
-#register deskulled roi to individual subject t1
-WANG2FUNC=${recognition_dir}wang2func.mat
-TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
-TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii.gz
-if [ -f "$TEMPLATE_bet" ]; then
-    echo "TEMPLATE_bet exists"
-else 
-    echo "TEMPLATE_bet does not exist"
+stand2funcDirectly=0
+if [ "$stand2funcDirectly" -eq 1 ]; then
+    #register deskulled roi to individual subject t1
+    WANG2FUNC=${recognition_dir}wang2func.mat
+    TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
+    TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
     bet ${TEMPLATE} ${TEMPLATE_bet}
-fi
-WANGINFUNC=${recognition_dir}wanginfunc.nii.gz
-if [ -f "$WANG2FUNC" ]; then
-    echo "WANGINFUNC exists"
-else 
-    echo "WANGINFUNC does not exist"
+    WANGINFUNC=${recognition_dir}wanginfunc.nii.gz
+    # if [ -f "$WANG2FUNC" ]; then
+    #     echo "xfm mat exists"
+    # else 
+    #     echo "xfm mat does not exist"
     flirt -ref $TEMPLATE_bet -in $STAND -omat $WANG2FUNC -out $WANGINFUNC
+    # fi
+else
+    echo "running stand 2 anat 2 func"
+    #register deskulled roi to individual subject t1
+    WANG2ANAT=${recognition_dir}wang2anat.mat
+    ANAT2FUNC=${recognition_dir}anat2func.mat
+    WANG2FUNC=${recognition_dir}wang2func.mat
+    ANAT=${recognition_dir}../anat/T1.nii
+    ANAT_bet=${recognition_dir}../anat/T1_bet.nii
+    bet ${ANAT} ${ANAT_bet}
+    TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
+    TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
+    bet ${TEMPLATE} ${TEMPLATE_bet}
+    WANGinANAT=${recognition_dir}WANGinANAT.nii.gz
+    WANGinFUNC=${recognition_dir}WANGinFUNC.nii.gz
+    ANATinFUNC=${recognition_dir}ANATinFUNC.nii.gz
+
+    # wang to anat
+    flirt -ref $ANAT_bet -in $STAND -omat $WANG2ANAT -out $WANGinANAT
+
+    # anat to func
+    flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
+
+    # apply anat to func on wang_in_anat
+    flirt -ref $TEMPLATE_bet -in $WANGinANAT -out $WANGinFUNC -applyxfm -init $ANAT2FUNC
+
+    # combine wang2anat and anat2func to wang2func
+    # convert_xfm -omat AtoC.mat -concat BtoC.mat AtoB.mat
+    convert_xfm -omat $WANG2FUNC -concat $ANAT2FUNC $WANG2ANAT
+    # fslview_deprecated $WANGinFUNC $TEMPLATE_bet
 fi
 
 atlas=Schaefer2018_300Parcels_7Networks_order_FSLMNI152_1mm.nii.gz

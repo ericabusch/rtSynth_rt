@@ -35,17 +35,48 @@ ROIS="roi1 roi2 roi3 roi4 roi5 roi6 roi7 roi8 roi9 roi10 roi11 roi12 roi13 roi14
 
 ROIpath=/gpfs/milgram/project/turk-browne/shared_resources/atlases/ProbAtlas_v4/subj_vol_all
 
-#register deskulled roi to individual subject t1
-WANG2FUNC=${recognition_dir}wang2func.mat
-TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
-TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
-bet ${TEMPLATE} ${TEMPLATE_bet}
-WANGINFUNC=${recognition_dir}wanginfunc.nii.gz
-if [ -f "$WANG2FUNC" ]; then
-    echo "xfm mat exists"
-else 
-    echo "xfm mat does not exist"
+stand2funcDirectly=1
+if [ "$stand2funcDirectly" -eq 1 ]; then
+    #register deskulled roi to individual subject t1
+    WANG2FUNC=${recognition_dir}wang2func.mat
+    TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
+    TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
+    bet ${TEMPLATE} ${TEMPLATE_bet}
+    WANGINFUNC=${recognition_dir}wanginfunc.nii.gz
+    # if [ -f "$WANG2FUNC" ]; then
+    #     echo "xfm mat exists"
+    # else 
+    #     echo "xfm mat does not exist"
     flirt -ref $TEMPLATE_bet -in $STAND -omat $WANG2FUNC -out $WANGINFUNC
+    # fi
+else
+    #register deskulled roi to individual subject t1
+    WANG2ANAT=${recognition_dir}wang2anat.mat
+    ANAT2FUNC=${recognition_dir}anat2func.mat
+    WANG2FUNC=${recognition_dir}wang2func.mat
+    ANAT=${recognition_dir}../anat/T1.nii
+    ANAT_bet=${recognition_dir}../anat/T1_bet.nii
+    bet ${ANAT} ${ANAT_bet}
+    TEMPLATE=${recognition_dir}templateFunctionalVolume.nii
+    TEMPLATE_bet=${recognition_dir}templateFunctionalVolume_bet.nii
+    bet ${TEMPLATE} ${TEMPLATE_bet}
+    WANGinANAT=${recognition_dir}WANGinANAT.nii.gz
+    WANGinFUNC=${recognition_dir}WANGinFUNC.nii.gz
+    ANATinFUNC=${recognition_dir}ANATinFUNC.nii.gz
+
+    # wang to anat
+    flirt -ref $ANAT_bet -in $STAND -omat $WANG2ANAT -out $WANGinANAT
+
+    # anat to func
+    flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
+
+    # apply anat to func on wang_in_anat
+    flirt -ref $TEMPLATE_bet -in $WANGinANAT -out $WANGinFUNC -applyxfm -init $ANAT2FUNC
+
+    # combine wang2anat and anat2func to wang2func
+    # convert_xfm -omat AtoC.mat -concat BtoC.mat AtoB.mat
+    convert_xfm -omat $WANG2FUNC -concat $ANAT2FUNC $WANG2ANAT
+    # fslview_deprecated $WANGinFUNC $TEMPLATE_bet
 fi
 
 
