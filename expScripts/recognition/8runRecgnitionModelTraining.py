@@ -61,6 +61,8 @@ def wait(waitfor, delay=1):
         time.sleep(delay)
         print('waiting for {}'.format(waitfor))
 
+recordingTxt=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/recording.txt" # None
+
 if args.preprocessOnly:
     recognition_preprocess(cfg,args.scan_asTemplate)
 else:
@@ -90,9 +92,9 @@ else:
         # python expScripts/recognition/greedyMask.py
         if not args.skipGreedy:
             print("running greedyMask")
-            greedyMask(cfg)
+            recordingTxt=greedyMask(cfg)
 
-    recordingTxt=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/recording.txt" # None
+    
     if args.forceGreedy:
         print("force running greedyMask")
         cfg.chosenMask=f"{cfg.subjects_dir}{cfg.subjectName}/ses{cfg.session}/recognition/chosenMask.npy"
@@ -106,7 +108,7 @@ else:
     print(f"minimalClass accs={accs}")
     save_obj(accs,f"{cfg.recognition_dir}minimalClass_accs")
 
-    
+
 # '''
 # run the mask selection
 #     make ROIs
