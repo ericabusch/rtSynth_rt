@@ -13,7 +13,12 @@ import os
 import sys
 import argparse
 import numpy as np
-sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
+if 'milgram' in os.getcwd():
+    main_dir = "/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/" # main_dir = "/home/watts/Desktop/ntblab/kailong/rtSynth_rt/"
+else:
+    main_dir="/Users/kailong/Desktop/rtEnv/rtSynth_rt/"
+sys.path.append(main_dir)
+
 import rtCommon.utils as utils
 from rtCommon.utils import loadConfigFile
 
