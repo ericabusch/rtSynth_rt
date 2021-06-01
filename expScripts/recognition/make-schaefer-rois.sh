@@ -71,7 +71,7 @@ else
     flirt -ref $ANAT_bet -in $STAND -omat $WANG2ANAT -out $WANGinANAT
 
     # anat to func
-    flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
+    flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6 # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
 
     # apply anat to func on wang_in_anat
     flirt -ref $TEMPLATE_bet -in $WANGinANAT -out $WANGinFUNC -applyxfm -init $ANAT2FUNC
