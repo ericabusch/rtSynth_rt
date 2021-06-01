@@ -34,7 +34,8 @@ mkdir -p ${mask_dir} # save the output files in the current folder
 STAND=/gpfs/milgram/apps/hpc.rhel7/software/FSL/5.0.10-centos7_64/data/standard/MNI152_T1_1mm_brain.nii.gz
 
 
-ROIpath=/gpfs/milgram/scratch/turk-browne/tsy6/CBIG/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI
+# ROIpath=/gpfs/milgram/scratch/turk-browne/tsy6/CBIG/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI
+ROIpath=/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/MNI
 
 #register deskulled roi to individual subject t1
 WANG2FUNC=${recognition_dir}wang2func.mat
