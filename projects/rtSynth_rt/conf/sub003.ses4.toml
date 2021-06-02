@@ -10,8 +10,8 @@ title = 'rtSynth_rt'
 session=4 # which session is this? which day is this on? could be 1 2 3 4 5 
 subjectDay = 4 #this is for the naming of web/conf/{subjactName}_day{subjectDay}_run{runNum}.toml
 subjectIDforxnat="rtSynth_sub003_ses4" # PATIENTID has to be unique for each subject
-preDay_YYYYMMDD="20210604" # can be "0" if there is no previous day for this session
-YYYYMMDD="20210606" # 20210531 20210602 20210604 20210606 20210607
+preDay_YYYYMMDD="20210603" # can be "0" if there is no previous day for this session
+YYYYMMDD="20210604" # 20210531 20210602 20210603 20210604 20210606
 
 subjectName = "sub003" # subject folder name in the rtSynth_rt/subjects folder
 LASTNAME="rtSynth_sub003"
