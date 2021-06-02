@@ -769,21 +769,16 @@ def behaviorDataLoading(cfg,curr_run):
     behav_data=behav_data[behav_data['isCorrect']] # discard the trials where the subject made wrong selection
     return behav_data
 
-
-
 def classifierProb(clf,X,Y):
     ID=np.where((clf.classes_==Y)*1==1)[0][0]
     p = clf.predict_proba(X)[:,ID]
     return p
-
-
 
 def Wait(waitfor, delay=1):
     while not os.path.exists(waitfor):
         time.sleep(delay)
         print('waiting for {}'.format(waitfor))
         
-
 def fetchXnat(sess_ID):
     "rtSynth_sub001"
     "rtSynth_sub001_ses2"
@@ -1206,7 +1201,7 @@ def saveChosenMask(bestROIs=('8.nii.gz', '159.nii.gz', '235.nii.gz', '163.nii.gz
 
     savemask = nib.Nifti1Image(mask, affine=aff)
     nib.save(savemask, f"{workingDir}chosenMask.nii.gz")
-    
+
 def AdaptiveThreshold(cfg,ThresholdLog):
     # if Catalin_current_session_design:
     #     ThresholdLog_curr_ses=ThresholdLog[ThresholdLog['session']==cfg.session]
