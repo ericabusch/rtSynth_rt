@@ -85,11 +85,16 @@ bet ${processedEPI} ${processedEPI_bet}
 # 将T1.nii去掉颅骨
 bet ../anat/T1.nii ../anat/T1_bet.nii
 # 制造T1.nii到processedEPI的投射
-flirt -ref ${processedEPI_bet} -in ../anat/T1_bet.nii -out ../anat/T1inFunc.nii -omat ../anat/T1inFunc.mat -dof 6
+# flirt -ref ${processedEPI_bet} -in ../anat/T1_bet.nii -out ../anat/T1inFunc.nii -omat ../anat/T1inFunc.mat -dof 6
+TEMPLATE_bet=$processedEPI_bet
+ANAT_bet=../anat/T1_bet.nii
+ANAT2FUNC=anat2func.mat
+ANATinFUNC=ANATinFUNC.nii.gz
+flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6 # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
 # fslview_deprecated ../anat/T1inFunc.nii ${processedEPI_bet}
 # 用T1.nii到processedEPI的投射 将gm转移到processedEPI空间里面
-flirt -ref ${processedEPI_bet} -in gm_anat.nii.gz -out ../anat/gm_func.nii.gz -applyxfm -init ../anat/T1inFunc.mat
-fslview_deprecated ${processedEPI_bet} ../anat/gm_func.nii.gz
+flirt -ref ${TEMPLATE_bet} -in gm_anat.nii.gz -out ../anat/gm_func.nii.gz -applyxfm -init $ANAT2FUNC
+# fslview_deprecated ${processedEPI_bet} ../anat/gm_func.nii.gz
 # 查看效果，产生的gm是否在functional space里面。
 # fslview_deprecated ${functionGreyMatter} ${processedEPI}
 # fslview_deprecated gm.nii.gz ${processedEPI}

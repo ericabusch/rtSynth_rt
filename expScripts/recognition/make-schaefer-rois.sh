@@ -70,8 +70,12 @@ else
     # wang to anat
     flirt -ref $ANAT_bet -in $STAND -omat $WANG2ANAT -out $WANGinANAT
 
-    # anat to func
-    flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6 # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
+    # anat to func, this was run in /Users/kailong/Desktop/rtEnv/rtSynth_rt/expScripts/recognition/makeGreyMatterMask.sh
+    if [ -f "$ANAT2FUNC" ]; then
+        echo "xfm mat exists"
+    else 
+        echo "xfm mat does not exist"
+        flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6 # flirt -ref $TEMPLATE_bet -in $ANAT_bet -omat $ANAT2FUNC -out $ANATinFUNC -dof 6
 
     # apply anat to func on wang_in_anat
     flirt -ref $TEMPLATE_bet -in $WANGinANAT -out $WANGinFUNC -applyxfm -init $ANAT2FUNC
