@@ -1119,6 +1119,94 @@ def greedyMask(cfg,N=78): # N used to be 31, 25
     np.save(cfg.chosenMask,mask)
     return recordingTxt
 
+def view_greedy_curve(tmp_folder="/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/tmp__folder_2021-06-01-19-46-52",toml="sub003.ses1.toml"):
+    import os
+    import sys
+    sys.path.append('/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/')
+    import argparse
+    import numpy as np
+    import nibabel as nib
+    import scipy.io as sio
+    import subprocess
+    from scipy.stats import zscore
+    from nibabel.nicom import dicomreaders
+    import pydicom as dicom  # type: ignore
+    import time
+    from glob import glob
+    import shutil
+    from nilearn.image import new_img_like
+    import joblib
+    import rtCommon.utils as utils
+    from rtCommon.utils import loadConfigFile
+    import pickle5 as pickle
+    def save_obj(obj, name):
+        with open(name + '.pkl', 'wb') as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+    def load_obj(name):
+        with open(name + '.pkl', 'rb') as f:
+            return pickle.load(f)
+    # from rtCommon.fileClient import FileInterface
+    # import rtCommon.projectUtils as projUtils
+    # from rtCommon.imageHandling import readRetryDicomFromFileInterface, getDicomFileName, convertDicomImgToNifti
+
+
+    argParser = argparse.ArgumentParser()
+    argParser.add_argument('--config', '-c', default=toml, type=str, help='experiment file (.json or .toml)')
+    argParser.add_argument('--skipPre', '-s', default=False, action='store_true', help='skip preprocess or not')
+    argParser.add_argument('--skipGreedy', '-g', default=0, type=int, help='skip greedy or not')
+    argParser.add_argument('--forceGreedy', default=False, action='store_true', help='whether to force Greedy search in current session')
+    argParser.add_argument('--testRun', '-t', default=None, type=int, help='testRun, can be [None,1,2,3,4,5,6,7,8]')
+    argParser.add_argument('--scan_asTemplate', '-a', default=1, type=int, help="which scan's middle dicom as Template?")
+    argParser.add_argument('--preprocessOnly', default=False, action='store_true', help='whether to only do preprocess and skip everything else')
+
+    args = argParser.parse_args("")
+    from rtCommon.cfg_loading import mkdir,cfg_loading
+    # config="sub001.ses2.toml"
+    cfg = cfg_loading(args.config)
+
+    # when every mask has run, find the best mask and save as the chosenMask
+    roiloc="schaefer2018"
+    dataSource="realtime"
+    subjects=[cfg.subjectName]
+    N=78
+    GreedyBestAcc=np.zeros((len(subjects),N+1))
+    GreedyBestAcc[GreedyBestAcc==0]=None
+    for ii,subject in enumerate(subjects):
+        for len_topN_1 in range(N-1,0,-1):
+            try:
+                # print(f"./{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
+                di = load_obj(f"{tmp_folder}/{subject}_{N}_{roiloc}_{dataSource}_{len_topN_1}")
+                GreedyBestAcc[ii,len_topN_1-1] = di['bestAcc']
+            except:
+                pass
+    GreedyBestAcc=GreedyBestAcc.T
+
+    import matplotlib.pyplot as plt
+    plt.imshow(GreedyBestAcc)
+    _=plt.figure()
+    for i in range(GreedyBestAcc.shape[0]):
+        plt.scatter([i]*GreedyBestAcc.shape[1],GreedyBestAcc[i],c='g',s=2)
+    plt.plot(np.arange(GreedyBestAcc.shape[0]),np.nanmean(GreedyBestAcc,axis=1))
+
+    performance_mean = np.nanmean(GreedyBestAcc,axis=1)
+
+def saveChosenMask(bestROIs=('8.nii.gz', '159.nii.gz', '235.nii.gz', '163.nii.gz', '271.nii.gz', '164.nii.gz', '258.nii.gz', '80.nii.gz', '218.nii.gz', '67.nii.gz', '211.nii.gz', '2.nii.gz', '220.nii.gz', '62.nii.gz', '160.nii.gz', '22.nii.gz', '79.nii.gz'),sub='sub003'):
+    import nibabel as nib
+    import pandas as pd
+    workingDir=f"/gpfs/milgram/project/turk-browne/projects/rtSynth_rt/subjects/{sub}/ses1/recognition/mask/"
+    for pn, parc in enumerate(bestROIs):
+        _mask = nib.load(workingDir+f"GMschaefer_{parc}")
+        aff = _mask.affine
+        _mask = _mask.get_data()
+        _mask = _mask.astype(int)
+        mask = _mask if pn == 0 else mask + _mask
+
+    mask[mask>0] = 1
+
+    savemask = nib.Nifti1Image(mask, affine=aff)
+    nib.save(savemask, f"{workingDir}chosenMask.nii.gz")
+    
 def AdaptiveThreshold(cfg,ThresholdLog):
     # if Catalin_current_session_design:
     #     ThresholdLog_curr_ses=ThresholdLog[ThresholdLog['session']==cfg.session]
