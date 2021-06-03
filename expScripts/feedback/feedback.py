@@ -745,6 +745,7 @@ emoji("OFF")
 monetaryReward.setAutoDraw(False)
 money=monetaryReward10cent*10 + monetaryReward5cent*5 + monetaryReward0cents*0
 message=display(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.",message)
+print(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.")
 mywin.flip()
 
 time.sleep(5)
