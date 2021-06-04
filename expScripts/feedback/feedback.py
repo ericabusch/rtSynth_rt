@@ -55,6 +55,23 @@ class SubjectService:
         self.recvThread.setDaemon(True)
         self.recvThread.start()
 
+def moneySummary(df):
+    sessionList=np.unique(list(df['session']))
+    money_total=0
+    for sessionID in sessionList:
+        t = df[df['session']==sessionID]
+        t_money=np.sum(10*t['monetaryReward10cent'])+np.sum(5*t['monetaryReward5cent'])
+        money_total+=t_money
+        print(f"money for session{sessionID+1} is {int(t_money)} cents")
+    print(f"total money earned is {int(money_total)} cents")
+
+    # get a list of money for each run
+    run_money=[]
+    for currRunID in range(len(df)):
+        run_money.append(10*df.loc[currRunID,'monetaryReward10cent']+5*df.loc[currRunID,'monetaryReward5cent'])
+
+    # df['run_money']=run_money
+    print(f"money for each run={run_money}")
 
 argParser = argparse.ArgumentParser()
 
@@ -748,8 +765,14 @@ message=display(f"You have {successful_trials} successful trials in this run \n 
 print(f"You have {successful_trials} successful trials in this run \n You just earned {money} cents.")
 mywin.flip()
 
+
+
 time.sleep(5)
 mywin.close()
+
+# report money summary and money for each run
+moneySummary(ThresholdLog)
+
 core.quit()
 
 # except Exception as e:
