@@ -100,7 +100,14 @@ choose = np.load(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recogni
 if args.trying:
     order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_trying.csv'
 else:
-    order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_{choose[run - 1]}.csv'
+    if len(choose)>(run-1):
+        order = f'{cfg.recognition_expScripts_dir}/orders/recognitionOrders_{choose[run - 1]}.csv'
+    else:
+        choose=list(choose)
+        choose.append(int(np.random.choice(np.arange(1, 49), 1)))
+        choose=np.asarray(choose)
+        print(f"-------------------------------------------- \n appending choose file!!!!! current run = {run}; \n new choose={choose}")
+        np.save(f"{cfg.subjects_dir}/{cfg.subjectName}/ses{cfg.session}/recognition/choose.npy",choose)
 trial_list = pd.read_csv(order)
 
 # 丢弃最开始的几个TR。总共需要290s/2=145TR,再加上我需要的24s，那么recognition一共是145+12=157 TR
