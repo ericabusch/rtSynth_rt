@@ -148,6 +148,8 @@ imgPaths = list(trial_list['imgPath'])
 button_lefts = list(trial_list['button_left'])
 button_rights = list(trial_list['button_right'])
 ims = list(trial_list['imcode'])
+# Trial_ID = list(trial_list['Unnamed: 0'])
+# Trial_ID.append(Trial_ID[-1]+1)
 imcodeDict={
 'A': 'bed',
 'B': 'chair',
@@ -161,19 +163,23 @@ correctResponseDict={
 # Initialize two blank lists -
 trials = [] # 'trials' to develop a list of indices pointing to images (for drawing from preloaded images)
 changes = [] # 'changes' to develop a list of 1s or 0s to indicate whether there should or should not be a red fixation
+Trial_ID = []
 count = 0
 # For all of the TRs/acquisitions
 for i in list(range(maxTR)):
     # If it is a critical TR (i.e. image should be presented), pull the correct list index and red fixation code
     if i in all_TRons:
         im = trial_list['imcode'].iloc[count]
+        curr_trial_ID =  trial_list['Unnamed: 0'].iloc[count]
         change = all_changes[count]
         count += 1
     # otherwise, assign these blank or 0 coded values.
     else:
+        curr_trial_ID = ''
         im = ''
         change = 0
     trials.append(im)
+    Trial_ID.append(curr_trial_ID)
     changes.append(change)
 
 # verify distinct time courses, write out regressor files
@@ -297,7 +303,8 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']): # å
         elif len(onsets) != 0:
             message.setAutoDraw(False)
             # write the data!
-            data = data.append({'Sub': sub, 'Run': run, 'TR': trigger_counter - 1, 'Onset': time_list[0],
+            print(f"running trial {Trial_ID[0]}")
+            data = data.append({'Trial_ID':Trial_ID[0],'Sub': sub, 'Run': run, 'TR': trigger_counter - 1, 'Onset': time_list[0],
                                 'Item': trials[0], 'Change': changes[0], 'Resp': resp,
                                 'RT': resp_time, 'image_on': image_on, 'button_on': button_on,
                                 'button_off': button_off},
@@ -308,7 +315,8 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']): # å
             onsets.pop(0)  # ['blank', 'blank', 'blank', 'blank', 'stim', 'blank', 'stim', 'blank', 'stim', 'blank', 'blank', 'stim', 'blank', 'stim', 'blank',...]
             time_list.pop(0)  # [0.0, 1.5, 3.0, 4.5, 6.0, 7.5, 9.0, 10.5, 12.0, 13.5, 15.0, 16.5, 18.0,...]
             changes.pop(0)
-
+            Trial_ID.pop(0)
+            
             image_on = ""
             button_on = ""
             button_off = ""
@@ -333,6 +341,7 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']): # å
                 button_lefts.pop(0)
                 button_rights.pop(0)
                 ims.pop(0)
+                
 
                 button_left_.setText(button_left)
                 button_right_.setText(button_right)
